@@ -39,7 +39,8 @@
         }
       ],
       "react-native-audio-api",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,

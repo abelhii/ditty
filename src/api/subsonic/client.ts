@@ -82,7 +82,8 @@ export async function computeToken(password: string, salt: string): Promise<stri
   });
 }
 
-async function request<T = Record<string, never>>(
+/** Signs and sends a Subsonic REST request, unwraps the envelope, and throws on server error. */
+export async function request<T = Record<string, never>>(
   serverUrl: string,
   endpoint: string,
   params: Record<string, string | number | boolean | undefined>,

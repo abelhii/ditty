@@ -8,6 +8,15 @@ dependencies:
   '@expo/ui':
     specifier: ~57.0.7
     version: 57.0.7(@babel/core@7.29.7)(@types/react@19.2.17)(expo@57.0.8)(react-dom@19.2.3)(react-native-worklets@0.10.0)(react-native@0.86.0)(react@19.2.3)
+  '@tanstack/query-async-storage-persister':
+    specifier: ^5.101.4
+    version: 5.101.4
+  '@tanstack/react-query':
+    specifier: ^5.101.4
+    version: 5.101.4(react@19.2.3)
+  '@tanstack/react-query-persist-client':
+    specifier: ^5.101.4
+    version: 5.101.4(@tanstack/react-query@5.101.4)(react@19.2.3)
   expo:
     specifier: ~57.0.8
     version: 57.0.8(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.7)(expo-router@57.0.8)(react-dom@19.2.3)(react-native-web@0.21.2)(react-native-worklets@0.10.0)(react-native@0.86.0)(react@19.2.3)(typescript@6.0.3)
@@ -41,6 +50,9 @@ dependencies:
   expo-splash-screen:
     specifier: ~57.0.5
     version: 57.0.5(expo@57.0.8)(typescript@6.0.3)
+  expo-sqlite:
+    specifier: ~57.0.1
+    version: 57.0.1(expo@57.0.8)(react-native@0.86.0)(react@19.2.3)
   expo-status-bar:
     specifier: ~57.0.1
     version: 57.0.1(expo@57.0.8)(react-native@0.86.0)(react@19.2.3)
@@ -2480,6 +2492,43 @@ packages:
     dependencies:
       '@sinonjs/commons': 3.0.1
 
+  /@tanstack/query-async-storage-persister@5.101.4:
+    resolution: {integrity: sha512-ROenNOVvxIZ1zKsBAiIvvslLo2xD8Me/vFz/tChdmuI7ciU+ET63yRrQ01W899Tx1ayQXdsGQJqYqjjVZk+OBQ==}
+    dependencies:
+      '@tanstack/query-core': 5.101.4
+      '@tanstack/query-persist-client-core': 5.101.4
+    dev: false
+
+  /@tanstack/query-core@5.101.4:
+    resolution: {integrity: sha512-gNwcvOJcRbLWPOLG/2OBm+zM+Yv+MKsXKEOWC57USuZDEsI71hEErQsiEGx5wX9rzWWkfwM0fVSPoiIFSsxfiw==}
+    dev: false
+
+  /@tanstack/query-persist-client-core@5.101.4:
+    resolution: {integrity: sha512-Bmu+RfWhwYEyYZEwSeKC0gX4+KTkiEB3yO8oz9BfAY/Jfe3ndz9EnYVhihIZPmWIr8NXayF7JuraNQcrXQQCCg==}
+    dependencies:
+      '@tanstack/query-core': 5.101.4
+    dev: false
+
+  /@tanstack/react-query-persist-client@5.101.4(@tanstack/react-query@5.101.4)(react@19.2.3):
+    resolution: {integrity: sha512-CY5i7PPKS/5B8OR2zAs9nCbLpgqI4jN8eBhtAxKRMNHyGcQhmyOy4PkkJrAAXT+ecGj++fBJTgQw6OpyCt/2SQ==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.101.4
+      react: ^18 || ^19
+    dependencies:
+      '@tanstack/query-persist-client-core': 5.101.4
+      '@tanstack/react-query': 5.101.4(react@19.2.3)
+      react: 19.2.3
+    dev: false
+
+  /@tanstack/react-query@5.101.4(react@19.2.3):
+    resolution: {integrity: sha512-yRg2pfOCxIs4ZJW3XYYHU/WgtD04FHSnfHlpRT7h7pR77hwkdRG4wxbKe4aq6P0RvXUTBSQpQeadS1SUYUe+KA==}
+    peerDependencies:
+      react: ^18 || ^19
+    dependencies:
+      '@tanstack/query-core': 5.101.4
+      react: 19.2.3
+    dev: false
+
   /@testing-library/dom@10.4.1:
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
     engines: {node: '>=18'}
@@ -3254,6 +3303,10 @@ packages:
     dependencies:
       possible-typed-array-names: 1.1.0
     dev: true
+
+  /await-lock@2.2.2:
+    resolution: {integrity: sha512-aDczADvlvTGajTDjcjpJMqRkOF6Qdz3YbPZm/PyW6tKPkx2hlYBzxMhEywM/tU72HrVZjgl5VCdRuMlA7pZ8Gw==}
+    dev: false
 
   /babel-jest@29.7.0(@babel/core@7.29.7):
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -4779,6 +4832,19 @@ packages:
     transitivePeerDependencies:
       - supports-color
       - typescript
+    dev: false
+
+  /expo-sqlite@57.0.1(expo@57.0.8)(react-native@0.86.0)(react@19.2.3):
+    resolution: {integrity: sha512-I6KoUvfGIiROTKxr5D3H+jRIGA/iEvWEtqHK4XMukAA7tVTinz/YdS8zOz6/DdG6vgrNmvF7gyOcbhLinlfxzQ==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+    dependencies:
+      await-lock: 2.2.2
+      expo: 57.0.8(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.7)(expo-router@57.0.8)(react-dom@19.2.3)(react-native-web@0.21.2)(react-native-worklets@0.10.0)(react-native@0.86.0)(react@19.2.3)(typescript@6.0.3)
+      react: 19.2.3
+      react-native: 0.86.0(@babel/core@7.29.7)(@react-native/jest-preset@0.86.1)(@react-native/metro-config@0.86.1)(@types/react@19.2.17)(react@19.2.3)
     dev: false
 
   /expo-status-bar@57.0.1(expo@57.0.8)(react-native@0.86.0)(react@19.2.3):

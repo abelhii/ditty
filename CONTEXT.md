@@ -21,6 +21,6 @@ A named, server-persisted, user-curated list of Tracks, created/edited/deleted v
 Subsonic API. Distinct from the Queue.
 
 **Library**:
-The server-backed catalog — artists, albums, tracks, genres, playlists — mirrored locally
-(in SQLite) for offline browsing.
+The server-backed catalog — artists, albums, tracks, genres, playlists — cached locally
+for offline browsing of what's already been seen.
 _Avoid_: Catalog

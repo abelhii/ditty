@@ -1,95 +1,100 @@
-import { useRef, useState } from 'react';
-import { Button, Platform, StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { Button, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import {
-  Audio,
-  AudioContext,
-  type AudioTagHandle,
-  isFfmpegEnabled,
-} from 'react-native-audio-api';
-
+import { queryKeys } from '@/api/queryKeys';
+import { getAlbum, getArtist, getArtists } from '@/api/subsonic/endpoints/browsing';
+import { useAuthStore } from '@/auth/useAuthStore';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import * as PlaybackController from '@/player/PlaybackController';
+import { getCurrentTrack } from '@/player/QueueManager';
+import { usePlayerStore } from '@/player/usePlayerStore';
 
-// Streaming spike (build order step 0, see PLAN.md): confirm react-native-audio-api's
-// <Audio> tag + MediaElementAudioSourceNode plays a plain progressive-HTTP MP3 URL
-// (the shape of a Subsonic/Navidrome `stream` endpoint response), routed through the
-// audio graph rather than played directly — this is the same routing the future EQ
-// nodes will need to sit on. SoundHelix hosts a well-known public-domain progressive
-// MP3 used for this kind of test; swap for a real Navidrome stream URL once a server
-// is available.
-const SPIKE_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-
+// End-to-end smoke test (build order step 4): confirms auth -> browsing endpoints ->
+// normalization -> PlaybackController -> AudioEngine -> a real Navidrome stream all work
+// together end to end. Deliberately doesn't touch <Audio> directly — AudioEngine (mounted in
+// _layout.tsx) is the only thing allowed to do that, see docs/adr/0001-player-state-flows-through-store.md.
+// Supersedes the build-order step 0 spike, which predates AudioEngine and drove <Audio> itself.
 export default function HomeScreen() {
-  const [audioContext] = useState(() => new AudioContext());
-  const audioRef = useRef<AudioTagHandle>(null);
-  const [log, setLog] = useState<string[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [position, setPosition] = useState(0);
+  const credentials = useAuthStore((state) => state.credentials);
+  const queue = usePlayerStore((state) => state.queue);
+  const status = usePlayerStore((state) => state.status);
+  const position = usePlayerStore((state) => state.position);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function appendLog(line: string) {
-    setLog((prev) => [...prev.slice(-6), line]);
-  }
+  const artistsQuery = useQuery({
+    queryKey: queryKeys.artists(),
+    queryFn: () => {
+      if (!credentials) throw new Error('Not authenticated.');
+      return getArtists(credentials.serverUrl, credentials);
+    },
+    enabled: credentials !== null,
+  });
 
-  function routeThroughGraph() {
-    if (!audioRef.current) return;
+  const currentTrack = getCurrentTrack(queue);
 
-    const source = audioContext.createMediaElementSource(audioRef.current);
-    const gain = audioContext.createGain();
-    source.connect(gain);
-    gain.connect(audioContext.destination);
-    appendLog('graph routed: source -> gain -> destination');
+  async function loadFirstTrack() {
+    if (!credentials || !artistsQuery.data) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const firstArtist = artistsQuery.data[0];
+      if (!firstArtist) throw new Error('No artists found on this server.');
+
+      const { albums } = await getArtist(credentials.serverUrl, credentials, firstArtist.id);
+      const firstAlbum = albums[0];
+      if (!firstAlbum) throw new Error(`${firstArtist.name} has no albums.`);
+
+      const { tracks } = await getAlbum(credentials.serverUrl, credentials, firstAlbum.id);
+      const firstTrack = tracks[0];
+      if (!firstTrack) throw new Error(`${firstAlbum.name} has no tracks.`);
+
+      PlaybackController.play([firstTrack]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load a track.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedText type="title" style={styles.title}>
-          Streaming spike
+          Playback smoke test
         </ThemedText>
-        <ThemedText type="small">ffmpeg enabled: {String(isFfmpegEnabled())}</ThemedText>
-        <ThemedText type="small">platform: {Platform.OS}</ThemedText>
+        <ThemedText type="small">
+          {artistsQuery.isLoading
+            ? 'Loading artists…'
+            : `${artistsQuery.data?.length ?? 0} artists available`}
+        </ThemedText>
 
-        <Audio
-          ref={audioRef}
-          source={SPIKE_URL}
-          context={audioContext}
-          onLoad={() => {
-            appendLog('onLoad');
-            routeThroughGraph();
-          }}
-          onError={(e) => appendLog(`onError: ${String(e)}`)}
-          onPlay={() => {
-            setIsPlaying(true);
-            appendLog('onPlay');
-          }}
-          onPause={() => {
-            setIsPlaying(false);
-            appendLog('onPause');
-          }}
-          onEnded={() => appendLog('onEnded')}
-          onPositionChange={(seconds) => setPosition(seconds)}
+        <Button
+          title={loading ? 'Loading…' : 'Play first track'}
+          onPress={loadFirstTrack}
+          disabled={loading || !artistsQuery.data}
         />
 
-        <ThemedText type="default">position: {position.toFixed(1)}s</ThemedText>
+        {error && <ThemedText type="small">{error}</ThemedText>}
+
+        <ThemedView type="backgroundElement" style={styles.status}>
+          <ThemedText type="default">status: {status}</ThemedText>
+          <ThemedText type="default">position: {position.toFixed(1)}s</ThemedText>
+          <ThemedText type="default">
+            track: {currentTrack ? `${currentTrack.title} — ${currentTrack.artist}` : 'none'}
+          </ThemedText>
+        </ThemedView>
 
         <ThemedView style={styles.controls}>
           <Button
-            title={isPlaying ? 'Pause' : 'Play'}
-            onPress={() => (isPlaying ? audioRef.current?.pause() : audioRef.current?.play())}
+            title={status === 'playing' ? 'Pause' : 'Play'}
+            onPress={() => PlaybackController.togglePlayPause()}
           />
-          <Button title="Seek +10s" onPress={() => audioRef.current?.seekToTime(position + 10)} />
-        </ThemedView>
-
-        <ThemedView type="backgroundElement" style={styles.logBox}>
-          {log.length === 0 && <ThemedText type="small">waiting for events…</ThemedText>}
-          {log.map((line, i) => (
-            <ThemedText key={i} type="code" style={styles.logLine}>
-              {line}
-            </ThemedText>
-          ))}
+          <Button title="Skip" onPress={() => PlaybackController.skipNext()} />
         </ThemedView>
       </SafeAreaView>
     </ThemedView>
@@ -115,12 +120,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.three,
   },
-  logBox: {
+  status: {
     borderRadius: Spacing.three,
     padding: Spacing.three,
     gap: Spacing.one,
-  },
-  logLine: {
-    fontSize: 11,
   },
 });

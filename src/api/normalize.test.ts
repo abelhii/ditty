@@ -1,0 +1,140 @@
+import {
+  flattenArtistIndex,
+  normalizeAlbum,
+  normalizeArtist,
+  normalizeGenre,
+  normalizePlaylist,
+  normalizeTrack,
+} from '@/api/normalize';
+
+describe('normalizeArtist', () => {
+  it('maps all fields', () => {
+    expect(
+      normalizeArtist({ id: 'ar1', name: 'CARNÚN', coverArt: 'ar-1', albumCount: 3 }),
+    ).toEqual({ id: 'ar1', name: 'CARNÚN', albumCount: 3, coverArtId: 'ar-1' });
+  });
+
+  it('defaults albumCount to 0 when missing', () => {
+    expect(normalizeArtist({ id: 'ar1', name: 'CARNÚN' }).albumCount).toBe(0);
+  });
+});
+
+describe('flattenArtistIndex', () => {
+  it('flattens alphabetical index groups into one array', () => {
+    const index = [
+      { name: 'A', artist: [{ id: 'ar1', name: 'ABBA' }] },
+      { name: 'C', artist: [{ id: 'ar2', name: 'CARNÚN' }, { id: 'ar3', name: 'Cher' }] },
+    ];
+    expect(flattenArtistIndex(index).map((a) => a.id)).toEqual(['ar1', 'ar2', 'ar3']);
+  });
+
+  it('handles a group with no artists', () => {
+    expect(flattenArtistIndex([{ name: 'Z' }])).toEqual([]);
+  });
+
+  it('handles an empty index', () => {
+    expect(flattenArtistIndex([])).toEqual([]);
+  });
+});
+
+describe('normalizeAlbum', () => {
+  it('maps all fields', () => {
+    expect(
+      normalizeAlbum({
+        id: 'al1',
+        name: 'Homework',
+        artist: 'Daft Punk',
+        artistId: 'ar1',
+        coverArt: 'al-1',
+        songCount: 16,
+        duration: 4321,
+        year: 1997,
+        genre: 'Electronic',
+      }),
+    ).toEqual({
+      id: 'al1',
+      name: 'Homework',
+      artist: 'Daft Punk',
+      artistId: 'ar1',
+      songCount: 16,
+      duration: 4321,
+      year: 1997,
+      genre: 'Electronic',
+      coverArtId: 'al-1',
+    });
+  });
+
+  it('defaults artist to an empty string when missing', () => {
+    expect(normalizeAlbum({ id: 'al1', name: 'Homework', songCount: 16, duration: 4321 }).artist).toBe('');
+  });
+});
+
+describe('normalizeTrack', () => {
+  it('maps all fields', () => {
+    expect(
+      normalizeTrack({
+        id: 's1',
+        title: 'Around the World',
+        album: 'Homework',
+        artist: 'Daft Punk',
+        coverArt: 'al-1',
+        duration: 429,
+      }),
+    ).toEqual({
+      id: 's1',
+      title: 'Around the World',
+      artist: 'Daft Punk',
+      album: 'Homework',
+      duration: 429,
+      coverArtId: 'al-1',
+    });
+  });
+
+  it('defaults artist, album, and duration when missing', () => {
+    expect(normalizeTrack({ id: 's1', title: 'Untitled' })).toEqual({
+      id: 's1',
+      title: 'Untitled',
+      artist: '',
+      album: '',
+      duration: 0,
+      coverArtId: undefined,
+    });
+  });
+});
+
+describe('normalizeGenre', () => {
+  it('maps value to name', () => {
+    expect(normalizeGenre({ value: 'Punk', songCount: 1, albumCount: 1 })).toEqual({
+      name: 'Punk',
+      songCount: 1,
+      albumCount: 1,
+    });
+  });
+});
+
+describe('normalizePlaylist', () => {
+  it('maps public to isPublic', () => {
+    expect(
+      normalizePlaylist({
+        id: 'pl1',
+        name: 'Random',
+        owner: 'admin',
+        public: false,
+        songCount: 43,
+        duration: 17875,
+      }),
+    ).toEqual({
+      id: 'pl1',
+      name: 'Random',
+      owner: 'admin',
+      isPublic: false,
+      songCount: 43,
+      duration: 17875,
+      coverArtId: undefined,
+    });
+  });
+
+  it('defaults isPublic to false when missing', () => {
+    expect(normalizePlaylist({ id: 'pl1', name: 'Random', songCount: 0, duration: 0 }).isPublic).toBe(false);
+  });
+});
