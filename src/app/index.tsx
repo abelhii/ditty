@@ -1,61 +1,96 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useRef, useState } from 'react';
+import { Button, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import {
+  Audio,
+  AudioContext,
+  type AudioTagHandle,
+  isFfmpegEnabled,
+} from 'react-native-audio-api';
+
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+// Streaming spike (build order step 0, see PLAN.md): confirm react-native-audio-api's
+// <Audio> tag + MediaElementAudioSourceNode plays a plain progressive-HTTP MP3 URL
+// (the shape of a Subsonic/Navidrome `stream` endpoint response), routed through the
+// audio graph rather than played directly — this is the same routing the future EQ
+// nodes will need to sit on. SoundHelix hosts a well-known public-domain progressive
+// MP3 used for this kind of test; swap for a real Navidrome stream URL once a server
+// is available.
+const SPIKE_URL = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
 
 export default function HomeScreen() {
+  const [audioContext] = useState(() => new AudioContext());
+  const audioRef = useRef<AudioTagHandle>(null);
+  const [log, setLog] = useState<string[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+
+  function appendLog(line: string) {
+    setLog((prev) => [...prev.slice(-6), line]);
+  }
+
+  function routeThroughGraph() {
+    if (!audioRef.current) return;
+
+    const source = audioContext.createMediaElementSource(audioRef.current);
+    const gain = audioContext.createGain();
+    source.connect(gain);
+    gain.connect(audioContext.destination);
+    appendLog('graph routed: source -> gain -> destination');
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
+        <ThemedText type="title" style={styles.title}>
+          Streaming spike
         </ThemedText>
+        <ThemedText type="small">ffmpeg enabled: {String(isFfmpegEnabled())}</ThemedText>
+        <ThemedText type="small">platform: {Platform.OS}</ThemedText>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+        <Audio
+          ref={audioRef}
+          source={SPIKE_URL}
+          context={audioContext}
+          onLoad={() => {
+            appendLog('onLoad');
+            routeThroughGraph();
+          }}
+          onError={(e) => appendLog(`onError: ${String(e)}`)}
+          onPlay={() => {
+            setIsPlaying(true);
+            appendLog('onPlay');
+          }}
+          onPause={() => {
+            setIsPlaying(false);
+            appendLog('onPause');
+          }}
+          onEnded={() => appendLog('onEnded')}
+          onPositionChange={(seconds) => setPosition(seconds)}
+        />
+
+        <ThemedText type="default">position: {position.toFixed(1)}s</ThemedText>
+
+        <ThemedView style={styles.controls}>
+          <Button
+            title={isPlaying ? 'Pause' : 'Play'}
+            onPress={() => (isPlaying ? audioRef.current?.pause() : audioRef.current?.play())}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
+          <Button title="Seek +10s" onPress={() => audioRef.current?.seekToTime(position + 10)} />
         </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
+        <ThemedView type="backgroundElement" style={styles.logBox}>
+          {log.length === 0 && <ThemedText type="small">waiting for events…</ThemedText>}
+          {log.map((line, i) => (
+            <ThemedText key={i} type="code" style={styles.logLine}>
+              {line}
+            </ThemedText>
+          ))}
+        </ThemedView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -64,35 +99,28 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
   },
   safeArea: {
     flex: 1,
     paddingHorizontal: Spacing.four,
-    alignItems: 'center',
     gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
+    alignSelf: 'center',
     maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    width: '100%',
   },
   title: {
-    textAlign: 'center',
+    marginTop: Spacing.four,
   },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
+  controls: {
+    flexDirection: 'row',
     gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  },
+  logBox: {
+    borderRadius: Spacing.three,
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+  logLine: {
+    fontSize: 11,
   },
 });
