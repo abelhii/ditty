@@ -16,7 +16,7 @@ the original draft is called out explicitly below, with the reasoning behind it.
 | Playback | `react-native-audio-api` (MIT, Software Mansion) | **Not** `react-native-track-player` — v5 is commercially licensed (free for personal/educational use only, paid for commercial apps); v4 is Apache-2.0 but frozen/unmaintained. `react-native-audio-api` is a Web Audio API–style engine: MIT licensed, ships an Expo config plugin and a `PlaybackNotificationManager` for lock-screen/notification controls, and its node-graph model doubles as the foundation for a future EQ. Its New Architecture maturity isn't clearly documented — this is the single riskiest bet in the plan, hence validated first (see Build Order). Trade-off: it's a low-level audio primitive library, not a purpose-built player — queue management, gapless logic, and playback state have to be built on top. |
 | App state | Zustand | Lightweight, good for player/UI state |
 | Server data | TanStack Query (React Query) | Orchestrates fetch/refetch/retry against the Subsonic API; writes results into the local SQLite mirror rather than being the cache of record (see Local persistence) |
-| Local persistence | **`expo-sqlite`** (source of truth for offline library browsing) | Chosen over WatermelonDB — the data shape (tracks/albums/artists/genres/playlists) is simple relational data with mostly one-way server→local sync, not high-frequency bidirectional reactive writes, so WatermelonDB's reactive-ORM layer would be redundant given TanStack Query already provides the reactive/refetch layer. Optionally paired with `drizzle-orm` for typed queries/migrations. MMKV for fast key-value (settings, queue snapshot). |
+| Local persistence | **`expo-sqlite`** (source of truth for offline library browsing) | Chosen over WatermelonDB — the data shape (tracks/albums/artists/genres/playlists) is simple relational data with mostly one-way server→local sync, not high-frequency bidirectional reactive writes, so WatermelonDB's reactive-ORM layer would be redundant given TanStack Query already provides the reactive/refetch layer. Optionally paired with `drizzle-orm` for typed queries/migrations. MMKV for fast key-value (settings). **Queue/position persistence revised (2026-07-26, step 3 grilling session)**: Navidrome/Subsonic implements the Subsonic API's `getPlayQueue`/`savePlayQueue` (server-side, cross-device — `current` comes back as a string ID on Navidrome, not the `int` the spec describes), which replaces the original local-only-MMKV assumption as the primary mechanism for restart/cross-device queue recovery. Exact design (server-first vs. local-cache-plus-sync) is deferred to step 8, not step 3 — see Build Order. |
 | Secrets | `expo-secure-store` on iOS/Android; `localStorage` on web (branched via `Platform.OS`), storing **`{username, salt, token}` only — never the plaintext password** | Subsonic's token scheme (`token = md5(password + salt)`) doesn't require a fresh salt per session; one salt/token pair generated at login can be reused indefinitely. Storing the raw password would be a bigger blast radius on device compromise than storing a server-scoped token. Password is held in memory only during the login flow, re-prompted only on explicit re-login (e.g. token rejected, password changed server-side). **Web caveat**: browsers have no equivalent to Keychain/Keystore accessible to a client-side SPA — `localStorage` is plaintext and readable by any script on the page (XSS-exposed). Accepted trade-off for web, decided 2026-07-26: the blast radius is still bounded to a revocable token (never the password), same as native, just without at-rest encryption. |
 | API layer | Hand-rolled Subsonic REST client | Simple param+token API; no heavy SDK needed. `computeToken` branches on `Platform.OS`: native uses `expo-crypto`'s `digestStringAsync` (MD5), web uses the pure-JS `js-md5` package, since browsers' WebCrypto `SubtleCrypto.digest()` doesn't implement MD5 at all (excluded from the spec as insecure). |
 
@@ -114,8 +114,8 @@ src/
 - Queue: add to queue, play next, reorder, view queue
 - Buffering/stall UI states
 - **Gapless playback is explicitly parked out of MVP** — see Deferred/Future Features. It's the most custom, labor-intensive part of the build (manual source-node scheduling, pre-buffering, edge cases across skip/reorder/repeat-one/shuffle) and isn't a dealbreaker for v1; ship basic sequential playback (small gap acceptable) first.
-- Persist queue + playback position across app restarts
-- **Lock-screen / notification playback controls (iOS & Android)** — play/pause/skip, artwork, scrubber, and (Android) a persistent media-style notification with a dismiss action; wired through `react-native-audio-api`'s `PlaybackNotificationManager`, kept in sync with `PlaybackController` state so controls stay correct across backgrounding/kill
+- Persist queue + playback position across app restarts — mechanism (Navidrome's `getPlayQueue`/`savePlayQueue`) decided, exact design deferred to step 8 (see Tech Stack: Local persistence)
+- **Lock-screen / notification playback controls (iOS & Android)** — decided set (2026-07-26): `play`/`pause`/`nextTrack`/`previousTrack`/`seekTo` only, matching the MVP feature set exactly; `stop` (doesn't fit a queue player) and `skipForward`/`skipBackward` (fixed-increment skip isn't an MVP feature) are deliberately left out. Artwork + scrubber via `PlaybackNotificationInfo`, and (Android) a persistent media-style notification with a dismiss action; wired through `react-native-audio-api`'s `PlaybackNotificationManager`, kept in sync with player state the same way `AudioEngine` is — see Build Order step 3.
 
 **Offline library browsing** *(pulled into MVP from the original "decide scope later" edge case)*
 - Full local SQLite mirror of library metadata (tracks/albums/artists/genres/playlists) as source of truth
@@ -171,8 +171,8 @@ src/
 **Playback**
 - **Validated** (2026-07-26, build order step 0): the `<Audio>` tag component routed through `MediaElementAudioSourceNode` — not `StreamerNode`, which is HLS-oriented and still experimental for general use — is the correct primitive for a plain progressive-HTTP MP3 URL. FFmpeg (needed for proper HTTP byte-range streaming rather than a full-file download before playback starts) ships bundled and enabled by default. Confirmed working on a real device build (RN 0.86 / Expo 57, New Architecture default): play/pause/seek all functioned against a hardcoded remote MP3 in `src/app/index.tsx`. `<Audio>` also routes cleanly through `GainNode` before the destination, validating the graph-based approach the future EQ depends on.
 - Transcoding/bitrate settings and server-driven format changes
-- Audio focus interruptions (calls, other apps, Bluetooth)
-- Notification/lock-screen control state staying in sync with actual playback state across OS-level kills — manual state syncing in `NotificationBridge` on every transition
+- **Audio focus interruptions — decided (2026-07-26, step 3 grilling session)**: `AudioEngine` subscribes to `react-native-audio-api`'s `AudioManager` `interruption` event (calls, other apps taking focus) and auto-pauses on interruption start, resuming only if the OS signals `shouldResume`. Built in step 3. Bluetooth/other device route changes (`routeChange` event) are a separate, still-undecided event — not handled by this decision, left for a later pass.
+- Notification/lock-screen control state staying in sync with actual playback state across OS-level kills — `NotificationBridge` and `AudioEngine` both follow the same reactive pattern (see Build Order step 3 and `docs/adr/0001-player-state-flows-through-store.md`): neither owns state independently, both subscribe to `usePlayerStore` and stay correct by construction rather than manual syncing
 
 **Library**
 - Pagination for large libraries (10k+ tracks)
@@ -183,6 +183,7 @@ src/
 - Recently-played ring buffer for shuffle
 - "Play next" vs "add to queue" distinction
 - Persisting reorder/repeat/shuffle state
+- Queue vs. Playlist vs. Library are three distinct concepts, easy to conflate — see `CONTEXT.md` for the canonical definitions. `QueueManager` (step 3) is pure local queue-ordering logic and has no knowledge of the network; it operates on already-resolved `Track`s regardless of where they came from (a mocked list in step 3, the SQLite-mirrored Library from step 4/5 onward)
 
 **Search**
 - `search3` returns artists/albums/songs in one call — design UI around combined results, not three separate requests
@@ -193,7 +194,31 @@ src/
 
 1. **Streaming spike** (moved ahead of everything else) — bare dev client, hardcoded progressive-HTTP URL, confirm `react-native-audio-api` plays it correctly and works on New Architecture. No Subsonic client code yet — if this fails, the whole audio-library choice needs revisiting before anything else is built on top of it.
 2. Dev client setup (local prebuild) + Subsonic auth/client skeleton (salt+token only)
-3. `react-native-audio-api` integration: `AudioEngine`, `QueueManager` (+ unit tests), `PlaybackController`, `NotificationBridge` (lock-screen/notification controls)
+3. `react-native-audio-api` integration: `AudioEngine`, `QueueManager` (+ unit tests), `PlaybackController`, `NotificationBridge` (lock-screen/notification controls). Architecture decided via grilling session, 2026-07-26 (full rationale: `docs/adr/0001-player-state-flows-through-store.md`, terms: `CONTEXT.md`):
+
+   - **`usePlayerStore` (Zustand) is the single source of truth.** `react-native-audio-api`'s `<Audio>` component has no imperative "load new track" method — only a reactive `source` prop — so `AudioEngine` can't be a headless class; it's React-backed (a hook + one persistently-mounted host, likely in `_layout.tsx`). Given that, the app is **reactive/store-driven**, not imperative: `PlaybackController` only ever writes *proposed* state into the store; `AudioEngine` is the only thing that touches the `<Audio>` ref/`AudioContext` graph, and the only thing that writes *observed* facts (position, playback status, interruption-driven pauses) back into the store.
+   - **`QueueManager` is pure functions, no internal state.** Given `queue state, operation` → returns new `queue state`. No store access, no network awareness — called only by `PlaybackController`. See the Queue edge case above for why this boundary matters.
+   - **`NotificationBridge`** follows the same reactive pattern as `AudioEngine` (subscribes to the store to render the OS notification) but forwards button presses into `PlaybackController` calls — the same entry point the UI itself uses. Controls: see Feature List → Playback.
+   - **Scope decided this session**: audio-focus interruption handling built now (see Key Edge Cases → Playback); queue/position persistence deferred to step 8 (see Tech Stack → Local persistence); a minimal `getStreamUrl()` added to `api/subsonic/endpoints/media.ts` now — just the URL builder, ahead of the rest of that file — so the engine can be exercised against real Navidrome tracks via hand-written mock `Track` objects, without waiting for library browsing (step 5).
+
+     ```
+     Library browsing UI (future step)
+           │ reads
+           ▼
+     SQLite mirror  ◀── synced by ──  TanStack Query  ◀── calls ──  api/subsonic/endpoints/*
+           │
+           │ user taps "play this album" → hands PlaybackController a list of already-resolved Tracks
+           ▼
+     PlaybackController ──calls (pure math)──▶ QueueManager
+           │ writes proposed state
+           ▼
+     usePlayerStore ◀──writes back observed facts── AudioEngine ──plays via── stream URL
+           ▲                                              (getStreamUrl(), from api/subsonic/endpoints/media.ts)
+           │ subscribes + renders
+     NotificationBridge / UI components
+     ```
+
+     Example trace — user taps "skip forward": UI calls `PlaybackController.skipNext()` → it calls `QueueManager.getNextTrack(currentQueueState, repeatMode)` (pure) → writes the result into `usePlayerStore` → `AudioEngine`'s subscription fires, swaps the `<Audio source>`, calls `.play()` → `<Audio>`'s `onPlay`/`onPositionChange` events write back into the store → UI and `NotificationBridge` re-render from the store.
 4. Local DB layer: `expo-sqlite` schema + `db/sync.ts` (+ unit tests) — lands before library browsing since browsing reads from the SQLite mirror, not directly off the network
 5. Library browsing (artists/albums/genres) with pagination, backed by the SQLite mirror
 6. Search (search3)

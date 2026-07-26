@@ -8,6 +8,8 @@ import { useAuthStore } from '@/auth/useAuthStore';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { ThemedView } from '@/components/themed-view';
+import { AudioEngine } from '@/player/AudioEngine';
+import { NotificationBridge } from '@/player/NotificationBridge';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,7 +26,13 @@ export default function TabLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
       {status === 'hydrating' && <ThemedView style={{ flex: 1 }} />}
-      {status === 'authenticated' && <AppTabs />}
+      {status === 'authenticated' && (
+        <>
+          <AppTabs />
+          <AudioEngine />
+          <NotificationBridge />
+        </>
+      )}
       {status === 'unauthenticated' && <ServerConfigScreen />}
     </ThemeProvider>
   );

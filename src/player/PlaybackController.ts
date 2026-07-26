@@ -1,0 +1,82 @@
+import type { Track } from '@/api/types';
+import * as QueueManager from '@/player/QueueManager';
+import type { RepeatMode } from '@/player/QueueManager';
+import { usePlayerStore } from '@/player/usePlayerStore';
+
+/**
+ * The public API for playback — called by the UI and by NotificationBridge, never by
+ * AudioEngine directly. Every function here only writes proposed state into
+ * `usePlayerStore`; AudioEngine reacts to it and writes back what actually happened.
+ * See docs/adr/0001-player-state-flows-through-store.md.
+ */
+
+function currentQueue(): QueueManager.QueueState {
+  return usePlayerStore.getState().queue;
+}
+
+/** Replaces the queue and starts playback at `startIndex`. */
+export function play(tracks: Track[], startIndex = 0): void {
+  const queue = QueueManager.createQueueState(tracks, startIndex);
+  usePlayerStore.setState({ queue, desiredPlaying: tracks.length > 0 });
+}
+
+export function togglePlayPause(): void {
+  const { desiredPlaying, queue } = usePlayerStore.getState();
+  if (!QueueManager.getCurrentTrack(queue)) return;
+  usePlayerStore.setState({ desiredPlaying: !desiredPlaying });
+}
+
+export function pause(): void {
+  usePlayerStore.setState({ desiredPlaying: false });
+}
+
+export function resume(): void {
+  if (!QueueManager.getCurrentTrack(currentQueue())) return;
+  usePlayerStore.setState({ desiredPlaying: true });
+}
+
+export function skipNext(): void {
+  const queue = QueueManager.next(currentQueue());
+  usePlayerStore.setState({
+    queue,
+    desiredPlaying: QueueManager.getCurrentTrack(queue) !== undefined,
+  });
+}
+
+export function skipPrevious(): void {
+  usePlayerStore.setState({ queue: QueueManager.previous(currentQueue()) });
+}
+
+export function seekTo(seconds: number): void {
+  usePlayerStore.getState().requestSeek(seconds);
+}
+
+export function setShuffle(enabled: boolean): void {
+  usePlayerStore.setState({ queue: QueueManager.setShuffle(currentQueue(), enabled) });
+}
+
+export function setRepeat(mode: RepeatMode): void {
+  usePlayerStore.setState({ queue: QueueManager.setRepeat(currentQueue(), mode) });
+}
+
+export function addToQueue(track: Track): void {
+  usePlayerStore.setState({ queue: QueueManager.enqueue(currentQueue(), track) });
+}
+
+export function playNext(track: Track): void {
+  usePlayerStore.setState({ queue: QueueManager.playNext(currentQueue(), track) });
+}
+
+export function removeFromQueue(index: number): void {
+  usePlayerStore.setState({ queue: QueueManager.removeAt(currentQueue(), index) });
+}
+
+export function reorderQueue(fromIndex: number, toIndex: number): void {
+  usePlayerStore.setState({ queue: QueueManager.reorder(currentQueue(), fromIndex, toIndex) });
+}
+
+/** Called by AudioEngine when the current track finishes naturally. Routes through the same
+ *  entry point as a UI/notification skip so nothing needs special-case "track ended" logic. */
+export function handleTrackEnded(): void {
+  skipNext();
+}
