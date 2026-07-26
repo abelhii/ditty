@@ -38,7 +38,8 @@
           "imageWidth": 76
         }
       ],
-      "react-native-audio-api"
+      "react-native-audio-api",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,

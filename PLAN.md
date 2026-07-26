@@ -17,13 +17,14 @@ the original draft is called out explicitly below, with the reasoning behind it.
 | App state | Zustand | Lightweight, good for player/UI state |
 | Server data | TanStack Query (React Query) | Orchestrates fetch/refetch/retry against the Subsonic API; writes results into the local SQLite mirror rather than being the cache of record (see Local persistence) |
 | Local persistence | **`expo-sqlite`** (source of truth for offline library browsing) | Chosen over WatermelonDB — the data shape (tracks/albums/artists/genres/playlists) is simple relational data with mostly one-way server→local sync, not high-frequency bidirectional reactive writes, so WatermelonDB's reactive-ORM layer would be redundant given TanStack Query already provides the reactive/refetch layer. Optionally paired with `drizzle-orm` for typed queries/migrations. MMKV for fast key-value (settings, queue snapshot). |
-| Secrets | `expo-secure-store`, storing **`{username, salt, token}` only — never the plaintext password** | Subsonic's token scheme (`token = md5(password + salt)`) doesn't require a fresh salt per session; one salt/token pair generated at login can be reused indefinitely. Storing the raw password would be a bigger blast radius on device compromise than storing a server-scoped token. Password is held in memory only during the login flow, re-prompted only on explicit re-login (e.g. token rejected, password changed server-side). |
-| API layer | Hand-rolled Subsonic REST client | Simple param+token API; no heavy SDK needed |
+| Secrets | `expo-secure-store` on iOS/Android; `localStorage` on web (branched via `Platform.OS`), storing **`{username, salt, token}` only — never the plaintext password** | Subsonic's token scheme (`token = md5(password + salt)`) doesn't require a fresh salt per session; one salt/token pair generated at login can be reused indefinitely. Storing the raw password would be a bigger blast radius on device compromise than storing a server-scoped token. Password is held in memory only during the login flow, re-prompted only on explicit re-login (e.g. token rejected, password changed server-side). **Web caveat**: browsers have no equivalent to Keychain/Keystore accessible to a client-side SPA — `localStorage` is plaintext and readable by any script on the page (XSS-exposed). Accepted trade-off for web, decided 2026-07-26: the blast radius is still bounded to a revocable token (never the password), same as native, just without at-rest encryption. |
+| API layer | Hand-rolled Subsonic REST client | Simple param+token API; no heavy SDK needed. `computeToken` branches on `Platform.OS`: native uses `expo-crypto`'s `digestStringAsync` (MD5), web uses the pure-JS `js-md5` package, since browsers' WebCrypto `SubtleCrypto.digest()` doesn't implement MD5 at all (excluded from the spec as insecure). |
 
-**Platform scope: mobile-only (iOS/Android) for MVP.** `react-native-web` is present in the
-scaffold, but web is explicitly unsupported for v1 — no design effort spent on web fallbacks
-for secure-store (no Keychain/Keystore equivalent) or lock-screen/notification integration.
-Revisit only if a desktop/browser client becomes a real goal later.
+**Platform scope: mobile-first (iOS/Android), with web supported where feasible.** `react-native-web`
+is present in the scaffold and is now a real (if secondary) target, starting with auth — see the
+Secrets row above for the storage caveat. Web support for playback (`react-native-audio-api`'s web
+support is unverified) and lock-screen/notification integration is still undecided and should be
+evaluated per-subsystem as each is built, not assumed.
 
 ---
 
@@ -165,6 +166,7 @@ src/
 - Salt/token persisted; password never stored (see Tech Stack) — re-prompt only on explicit re-login
 - Self-signed certs, http vs https, malformed URLs
 - Partial Subsonic API support across Navidrome versions — probe, don't assume
+- Web: salt/token persisted in `localStorage` rather than an encrypted store — accepted, documented trade-off (see Tech Stack: Secrets)
 
 **Playback**
 - **Validated** (2026-07-26, build order step 0): the `<Audio>` tag component routed through `MediaElementAudioSourceNode` — not `StreamerNode`, which is HLS-oriented and still experimental for general use — is the correct primitive for a plain progressive-HTTP MP3 URL. FFmpeg (needed for proper HTTP byte-range streaming rather than a full-file download before playback starts) ships bundled and enabled by default. Confirmed working on a real device build (RN 0.86 / Expo 57, New Architecture default): play/pause/seek all functioned against a hardcoded remote MP3 in `src/app/index.tsx`. `<Audio>` also routes cleanly through `GainNode` before the destination, validating the graph-based approach the future EQ depends on.
