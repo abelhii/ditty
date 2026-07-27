@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { Audio, AudioContext, AudioManager, type AudioTagHandle } from 'react-native-audio-api';
 
@@ -82,7 +83,10 @@ export function AudioEngine() {
       source={source}
       context={audioContext}
       onLoad={() => {
-        if (!hasRoutedGraph.current && audioRef.current) {
+        // Web's <Audio> ref is a plain {play, pause, ...} facade, not the real <audio> element
+        // underneath — there's no way to route it through an AudioContext graph on web with
+        // this library version (the `context` prop is accepted but unused there). Native only.
+        if (!hasRoutedGraph.current && audioRef.current && Platform.OS !== 'web') {
           const sourceNode = audioContext.createMediaElementSource(audioRef.current);
           const gain = audioContext.createGain();
           sourceNode.connect(gain);

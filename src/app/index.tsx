@@ -1,17 +1,21 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Button, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Button, StyleSheet } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { queryKeys } from '@/api/queryKeys';
-import { getAlbum, getArtist, getArtists } from '@/api/subsonic/endpoints/browsing';
-import { useAuthStore } from '@/auth/useAuthStore';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
-import * as PlaybackController from '@/player/PlaybackController';
-import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/usePlayerStore';
+import { queryKeys } from "@/api/queryKeys";
+import {
+  getAlbum,
+  getArtist,
+  getArtists,
+} from "@/api/subsonic/endpoints/browsing";
+import { useAuthStore } from "@/auth/useAuthStore";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { MaxContentWidth, Spacing } from "@/constants/theme";
+import * as PlaybackController from "@/player/PlaybackController";
+import { getCurrentTrack } from "@/player/QueueManager";
+import { usePlayerStore } from "@/player/usePlayerStore";
 
 // End-to-end smoke test (build order step 4): confirms auth -> browsing endpoints ->
 // normalization -> PlaybackController -> AudioEngine -> a real Navidrome stream all work
@@ -29,7 +33,7 @@ export default function HomeScreen() {
   const artistsQuery = useQuery({
     queryKey: queryKeys.artists(),
     queryFn: () => {
-      if (!credentials) throw new Error('Not authenticated.');
+      if (!credentials) throw new Error("Not authenticated.");
       return getArtists(credentials.serverUrl, credentials);
     },
     enabled: credentials !== null,
@@ -39,23 +43,32 @@ export default function HomeScreen() {
 
   async function loadFirstTrack() {
     if (!credentials || !artistsQuery.data) return;
+    console.log(artistsQuery.data);
     setError(null);
     setLoading(true);
     try {
-      const firstArtist = artistsQuery.data[0];
-      if (!firstArtist) throw new Error('No artists found on this server.');
+      const firstArtist = artistsQuery.data[20];
+      if (!firstArtist) throw new Error("No artists found on this server.");
 
-      const { albums } = await getArtist(credentials.serverUrl, credentials, firstArtist.id);
+      const { albums } = await getArtist(
+        credentials.serverUrl,
+        credentials,
+        firstArtist.id,
+      );
       const firstAlbum = albums[0];
       if (!firstAlbum) throw new Error(`${firstArtist.name} has no albums.`);
 
-      const { tracks } = await getAlbum(credentials.serverUrl, credentials, firstAlbum.id);
+      const { tracks } = await getAlbum(
+        credentials.serverUrl,
+        credentials,
+        firstAlbum.id,
+      );
       const firstTrack = tracks[0];
       if (!firstTrack) throw new Error(`${firstAlbum.name} has no tracks.`);
 
       PlaybackController.play([firstTrack]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load a track.');
+      setError(err instanceof Error ? err.message : "Failed to load a track.");
     } finally {
       setLoading(false);
     }
@@ -69,12 +82,12 @@ export default function HomeScreen() {
         </ThemedText>
         <ThemedText type="small">
           {artistsQuery.isLoading
-            ? 'Loading artists…'
+            ? "Loading artists…"
             : `${artistsQuery.data?.length ?? 0} artists available`}
         </ThemedText>
 
         <Button
-          title={loading ? 'Loading…' : 'Play first track'}
+          title={loading ? "Loading…" : "Play first track"}
           onPress={loadFirstTrack}
           disabled={loading || !artistsQuery.data}
         />
@@ -83,15 +96,20 @@ export default function HomeScreen() {
 
         <ThemedView type="backgroundElement" style={styles.status}>
           <ThemedText type="default">status: {status}</ThemedText>
-          <ThemedText type="default">position: {position.toFixed(1)}s</ThemedText>
           <ThemedText type="default">
-            track: {currentTrack ? `${currentTrack.title} — ${currentTrack.artist}` : 'none'}
+            position: {position.toFixed(1)}s
+          </ThemedText>
+          <ThemedText type="default">
+            track:{" "}
+            {currentTrack
+              ? `${currentTrack.title} — ${currentTrack.artist}`
+              : "none"}
           </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.controls}>
           <Button
-            title={status === 'playing' ? 'Pause' : 'Play'}
+            title={status === "playing" ? "Pause" : "Play"}
             onPress={() => PlaybackController.togglePlayPause()}
           />
           <Button title="Skip" onPress={() => PlaybackController.skipNext()} />
@@ -109,15 +127,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.four,
     gap: Spacing.three,
-    alignSelf: 'center',
+    alignSelf: "center",
     maxWidth: MaxContentWidth,
-    width: '100%',
+    width: "100%",
   },
   title: {
     marginTop: Spacing.four,
   },
   controls: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.three,
   },
   status: {
