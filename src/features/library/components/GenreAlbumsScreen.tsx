@@ -59,7 +59,7 @@ export function GenreAlbumsScreen({ genre }: GenreAlbumsScreenProps) {
                     album={item}
                     width={tileWidth}
                     coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
-                    onPress={() => router.push(`/album/${item.id}`)}
+                    onPress={() => router.push(`/library/album/${item.id}`)}
                   />
                 ) : null
               }

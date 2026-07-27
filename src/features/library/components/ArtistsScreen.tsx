@@ -63,7 +63,7 @@ export function ArtistsScreen() {
                         credentials,
                         CoverArtSize.list,
                       )}
-                      onPress={() => router.push(`/artist/${item.id}`)}
+                      onPress={() => router.push(`/library/artist/${item.id}`)}
                     />
                   ) : null
                 }
@@ -90,7 +90,7 @@ export function ArtistsScreen() {
                 renderItem={({ item }) => (
                   <GenreRow
                     genre={item}
-                    onPress={() => router.push(`/genre/${encodeURIComponent(item.name)}`)}
+                    onPress={() => router.push(`/library/genre/${encodeURIComponent(item.name)}`)}
                   />
                 )}
                 contentContainerStyle={listContentStyle}

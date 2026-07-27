@@ -66,7 +66,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                         {album.artist}
                       </ThemedText>
                       {genre && (
-                        <Pressable onPress={() => router.push(`/genre/${encodeURIComponent(genre)}`)}>
+                        <Pressable onPress={() => router.push(`/library/genre/${encodeURIComponent(genre)}`)}>
                           <ThemedText type="linkPrimary">{genre}</ThemedText>
                         </Pressable>
                       )}

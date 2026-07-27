@@ -70,7 +70,7 @@ export function ArtistDetailScreen({ artistId }: ArtistDetailScreenProps) {
                     album={item}
                     width={tileWidth}
                     coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
-                    onPress={() => router.push(`/album/${item.id}`)}
+                    onPress={() => router.push(`/library/album/${item.id}`)}
                   />
                 ) : null
               }
