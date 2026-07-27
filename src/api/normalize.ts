@@ -1,4 +1,4 @@
-import type { Album, Artist, Genre, Playlist, Track } from '@/api/types';
+import type { Album, Artist, ArtistSection, Genre, Playlist, Track } from '@/api/types';
 import type {
   SubsonicAlbum,
   SubsonicArtist,
@@ -20,6 +20,15 @@ export function normalizeArtist(raw: SubsonicArtist): Artist {
 /** Flattens getArtists' alphabetical index groups into one array. */
 export function flattenArtistIndex(index: SubsonicIndex[]): Artist[] {
   return index.flatMap((group) => (group.artist ?? []).map(normalizeArtist));
+}
+
+/** Preserves getArtists' alphabetical index groups, for a sectioned Artists screen — see
+ *  the Artist screen's A-Z headers (Build Order step 5). */
+export function groupArtistIndex(index: SubsonicIndex[]): ArtistSection[] {
+  return index.map((group) => ({
+    letter: group.name,
+    artists: (group.artist ?? []).map(normalizeArtist),
+  }));
 }
 
 export function normalizeAlbum(raw: SubsonicAlbum): Album {

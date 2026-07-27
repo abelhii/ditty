@@ -36,18 +36,21 @@ root-level `app/` was a mismatch, not an intentional restructure).
 
 ```
 src/
-  app/                          # expo-router screens
-    (tabs)/
-      index.tsx                 # home/discover
-      library.tsx
-      search.tsx
-      playlists.tsx
-      settings.tsx
+  app/                          # expo-router screens — flat, top-level route files, not a (tabs)
+                                 # group; NativeTabs is mounted directly in _layout.tsx (see
+                                 # components/app-tabs.tsx) — a divergence from this draft caught
+                                 # and corrected during the step 5 grilling session (2026-07-27)
+    index.tsx                   # home/discover (currently: build-order-step-4 smoke-test screen)
+    library.tsx                 # step 5: sectioned artists list
+    search.tsx
+    playlists.tsx
+    settings.tsx                # step 5: logout button
     player/
       now-playing.tsx           # full-screen player (modal)
       queue.tsx
-    album/[id].tsx
-    artist/[id].tsx
+    album/[id].tsx              # step 5
+    artist/[id].tsx             # step 5
+    genre/[name].tsx            # step 5: paginated albums-by-genre
     playlist/[id].tsx
     _layout.tsx
 
@@ -55,14 +58,14 @@ src/
     subsonic/
       client.ts               # low-level fetch wrapper, auth/signing
       endpoints/
-        browsing.ts           # getArtists, getArtist, getAlbum, getGenres, getPlaylists
+        browsing.ts           # getArtists, getArtist, getAlbum, getGenres, getPlaylists, getAlbumsByGenre (step 5)
         search.ts
         playlists.ts
-        media.ts               # stream/download URL builders
+        media.ts               # stream/download URL builders, getCoverArtUrl (step 5)
         annotations.ts        # star, scrobble, rating
       types.ts
       errors.ts
-    types.ts                    # normalized app-level models (Track, Artist, Album, Genre...)
+    types.ts                    # normalized app-level models (Track, Artist, Album, Genre, ArtistSection...)
     normalize.ts               # pure functions: raw Subsonic shapes -> normalized models (unit tested)
     kvStorage.ts               # platform-branched sync KV adapter: expo-sqlite/kv-store (native) / localStorage (web)
     queryClient.ts             # QueryClient + persister setup, built on kvStorage.ts (see Build Order step 4)
@@ -79,9 +82,11 @@ src/
       useProgress.ts
 
   features/
-    library/
-      hooks/ (useArtists, useAlbums, useGenres...)
-      components/
+    library/                  # step 5
+      hooks/                  # useArtists, useArtist, useAlbum, useGenres, useAlbumsByGenre — read
+                               # credentials from useAuthStore internally, no serverUrl/auth props
+      components/             # orchestration: screen-level components calling the hooks above,
+                               # composing components/'s shared molecules, wiring taps to PlaybackController
     search/
       hooks/useSearch.ts       # debounced, multi-entity
       components/
@@ -91,12 +96,14 @@ src/
       hooks/useFavourites.ts
 
   auth/
-    useAuthStore.ts            # server URL, salt/token (no password persisted)
+    useAuthStore.ts            # server URL, salt/token (no password persisted); logout() clears the query cache too
     ServerConfigScreen.tsx
 
-  components/                 # shared UI (TrackRow, AlbumGrid, MiniPlayer...)
+  components/                 # shared UI — declarative, no data-fetching/store access (local UI-only
+                               # state like open/closed is fine, e.g. Collapsible, AnimatedSplashOverlay)
+                               # atoms: CoverArtImage, QueryState (loading/offline-empty/error+retry/pull-to-refresh)
+                               # molecules: ArtistRow, AlbumTile, TrackRow, GenreRow, MiniPlayer...
   utils/
-    cache.ts                  # image cache management (file-path references only — no image blobs in the query cache)
     network.ts                # connectivity awareness
 ```
 
@@ -226,7 +233,18 @@ src/
    - **Prefetch on login**: `getArtists`, `getGenres`, `getPlaylists`, `getStarred2` — cheap, single calls each, so top-level screens feel instant. Everything else (an artist's albums, an album's tracks) is fetched lazily on navigation.
    - **`api/normalize.ts` is the new unit-tested seam**, replacing the old `db/sync.ts` diff/merge logic: pure functions mapping raw Subsonic shapes (`ArtistID3`, `AlbumID3`, `Child`) to the app's normalized `Track`/`Artist`/`Album`/`Genre` types in `api/types.ts`.
    - **`api/subsonic/endpoints/browsing.ts`** gets `getArtists`/`getArtist`/`getAlbum`/`getGenres`/`getPlaylists` now; the hooks/UI that consume them (`features/library/hooks/*`) are step 5, same split as originally planned.
-5. Library browsing (artists/albums/genres) with pagination, backed by the persisted TanStack Query cache
+5. Library browsing (artists/albums/genres) with pagination, backed by the persisted TanStack Query cache. Architecture decided via grilling session, 2026-07-27:
+
+   - **Tabs**: drop the scaffold `explore` tab; add `library` (wired to this step) and `settings` (a logout button, calling the existing `useAuthStore.logout()` — see below). `index` (home/discover) is left as the build-order-step-4 smoke-test screen for now; its real "home/discover" content isn't part of this step.
+   - **Logout also clears the query cache**: `useAuthStore.logout()` now calls `queryClient.clear()` in addition to clearing persisted credentials. Cache keys aren't scoped by server/user (`queryKeys.ts` is just `['artists']`, etc.), so without this a second account/server would see the first account's cached library until every query happened to refetch.
+   - **Artists list gets A-Z section headers, preserving the server's own grouping.** `getArtists` already returns artists grouped into alphabetical sections (`SubsonicIndex[]`), with server-side rules (e.g. `ignoredArticles`) already applied. `normalize.ts`'s `flattenArtistIndex` discards this; a new function preserves it (`{ letter, artists }[]`) for the Artists screen instead of re-deriving groups client-side.
+   - **Genre → albums is the one real pagination surface.** Tapping a genre drills into a paginated album grid via a new `getAlbumList2` call (`type=byGenre`), fetched via `useInfiniteQuery`, 500/page (Subsonic's max). Every other list in this step (artists, genres, playlists, an artist's albums, an album's tracks) comes back in one unpaginated call.
+   - **Cover art** (full rationale: `docs/adr/0003-cover-art-sizing-and-caching.md`): new `getCoverArtUrl(serverUrl, coverArtId, auth, size)` builder alongside `getStreamUrl` in `api/subsonic/endpoints/media.ts`. Rendered via `expo-image` (disk+memory cached out of the box) rather than the query cache — cover art never becomes react-query state, it's a signed URL passed straight to `<Image>`. Two fixed sizes for now: `150` for list rows, `600` for detail headers — a third, larger size for tablet/web is deliberately deferred, not overlooked (no tablet/web layout exists yet to size it for). `utils/cache.ts` stays unbuilt/deferred — `expo-image`'s cache covers the documented need.
+   - **Playback wiring**: album detail's "Play" button calls `PlaybackController.play(tracks, 0)`; tapping a track row calls `play(tracks, tappedIndex)`; a per-row overflow menu exposes "Play next"/"Add to queue" via the already-built `playNext`/`addToQueue`. Artist detail is a pure drill-down to albums — no "play all songs by artist" (not in the Feature List, and `getArtist` doesn't return a flat song list anyway).
+   - **Hooks read credentials internally.** `useArtists`, `useArtist(id)`, `useAlbum(id)`, `useGenres`, `useAlbumsByGenre(genre)` (in `features/library/hooks/`) each read `credentials` from `useAuthStore` directly rather than taking `serverUrl`/`auth` as params — safe since these screens only render behind the `status === 'authenticated'` gate in `_layout.tsx`. Avoids threading credentials as props through nested routes.
+   - **Shared loading/error/empty handling.** One component (`components/QueryState.tsx`) wraps a query result: spinner while loading, a distinct "you're offline and haven't viewed this yet" message for a cold cache with no network (a new case — see `docs/adr/0002-no-local-library-mirror.md`'s offline-browsing limits), error + retry, or children once data's there. Includes pull-to-refresh (`refetch()`), the only way to bypass the 5-minute `staleTime` early.
+   - **No NativeWind/Tailwind.** Considered for the new screens' styling, rejected: it's a project-wide tooling/migration decision with real cost (either rewrite the existing `Colors`/`Spacing`/`ThemedText`/`ThemedView` system in NativeWind, or run two styling systems side by side), for a problem (layout boilerplate) that plain `StyleSheet` already handles. Staying on `StyleSheet` + the existing themed components.
+   - **Components built atomic-design style, shared vs. feature-orchestration split.** `components/` (shared, declarative — no data-fetching or store access, though local UI-only state like an open/closed toggle is fine, same as the existing `Collapsible`/`AnimatedSplashOverlay`) gets the atoms/molecules: `CoverArtImage`, `QueryState`, `ArtistRow`, `AlbumTile`, `TrackRow`, `GenreRow`. `features/library/components/` gets the orchestration layer — the screen-level components that call the hooks above and wire taps to `PlaybackController`. `player/` stays a top-level sibling of `features/`, not nested under it — it's cross-cutting infrastructure every feature calls into, not a screen-oriented slice itself.
 6. Search (search3)
 7. Playlists + favourites (CRUD + optimistic UI)
 8. Polish: persistence, offline queue recovery, error states
@@ -245,3 +263,4 @@ src/
 | Gapless playback | MVP feature | Parked to future features, after core playback is proven |
 | Web platform | Implied via `react-native-web` in scaffold | Explicitly out of scope for MVP; mobile-only |
 | Testing | Not mentioned | Unit tests for `QueueManager` and `db/sync.ts` specifically |
+| Tab/route structure | Draft assumed a `(tabs)` route group (`app/(tabs)/index.tsx`, etc.) with 5 tabs (home, library, search, playlists, settings) | Actual `app-tabs.tsx` mounts `NativeTabs` directly in `_layout.tsx` over flat top-level route files, no `(tabs)` group — caught during the step 5 grilling session (2026-07-27). Tabs are added incrementally as real content lands: `explore` dropped, `library` and `settings` added in step 5; `search`/`playlists` tabs still pending their own steps |

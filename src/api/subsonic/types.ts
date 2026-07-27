@@ -115,6 +115,12 @@ export type GetPlaylistsResponse = {
   };
 };
 
+export type GetAlbumList2Response = {
+  albumList2: {
+    album?: SubsonicAlbum[];
+  };
+};
+
 export type GetStarred2Response = {
   starred2: {
     artist?: SubsonicArtist[];

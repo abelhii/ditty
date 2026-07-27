@@ -1,5 +1,6 @@
 import {
   flattenArtistIndex,
+  groupArtistIndex,
   normalizeAlbum,
   normalizeArtist,
   normalizeGenre,
@@ -34,6 +35,33 @@ describe('flattenArtistIndex', () => {
 
   it('handles an empty index', () => {
     expect(flattenArtistIndex([])).toEqual([]);
+  });
+});
+
+describe('groupArtistIndex', () => {
+  it('preserves the server-provided alphabetical grouping', () => {
+    const index = [
+      { name: 'A', artist: [{ id: 'ar1', name: 'ABBA' }] },
+      { name: 'C', artist: [{ id: 'ar2', name: 'CARNÚN' }, { id: 'ar3', name: 'Cher' }] },
+    ];
+    expect(groupArtistIndex(index)).toEqual([
+      { letter: 'A', artists: [{ id: 'ar1', name: 'ABBA', albumCount: 0, coverArtId: undefined }] },
+      {
+        letter: 'C',
+        artists: [
+          { id: 'ar2', name: 'CARNÚN', albumCount: 0, coverArtId: undefined },
+          { id: 'ar3', name: 'Cher', albumCount: 0, coverArtId: undefined },
+        ],
+      },
+    ]);
+  });
+
+  it('keeps a group with no artists as an empty section rather than dropping it', () => {
+    expect(groupArtistIndex([{ name: 'Z' }])).toEqual([{ letter: 'Z', artists: [] }]);
+  });
+
+  it('handles an empty index', () => {
+    expect(groupArtistIndex([])).toEqual([]);
   });
 });
 
