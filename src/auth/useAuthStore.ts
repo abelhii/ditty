@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import { queryClient } from '@/api/queryClient';
 import { computeToken, generateSalt, normalizeServerUrl, ping } from '@/api/subsonic/client';
 import {
   clearPersistedCredentials,
@@ -73,6 +74,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     await clearPersistedCredentials();
+    // Cache keys aren't scoped by server/user, so a second account would otherwise see the
+    // first account's cached library until every query happened to refetch.
+    queryClient.clear();
     set({ status: 'unauthenticated', credentials: null, error: null });
   },
 }));

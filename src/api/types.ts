@@ -36,6 +36,13 @@ export type Genre = {
   albumCount: number;
 };
 
+/** One alphabetical group from getArtists, e.g. { letter: 'C', artists: [...] } — preserves the
+ *  server's own grouping (including rules like ignoredArticles) rather than re-deriving it. */
+export type ArtistSection = {
+  letter: string;
+  artists: Artist[];
+};
+
 export type Playlist = {
   id: string;
   name: string;
