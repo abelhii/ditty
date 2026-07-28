@@ -20,7 +20,19 @@ session — see `docs/adr/0001-player-state-flows-through-store.md`)
 A named, server-persisted, user-curated list of Tracks, created/edited/deleted via the
 Subsonic API. Distinct from the Queue.
 
+**Favourite** (a.k.a. Starred):
+A single Track, Album, or Artist the user has flagged via the Subsonic `star` endpoint. The
+set of all flagged items (from `getStarred2`) is the user's Favourites. A Favourite is one
+marked item, not an ordered list — distinct from a Playlist.
+
 **Library**:
 The server-backed catalog — artists, albums, tracks, genres, playlists — cached locally
-for offline browsing of what's already been seen.
-_Avoid_: Catalog
+for offline browsing of what's already been seen. Corresponds to Subsonic's own "media
+library" (the thing `getScanStatus`/`startScan` scan); the API reserves "library" for the
+catalog, so we do too.
+_Avoid_: Catalog. Do **not** use "Library" for the user's personal collection (see My Music).
+
+**My Music**:
+The app's UI surface grouping the user's *personal* collections — their Playlists and their
+Favourites. A navigation grouping, not a distinct domain entity, and deliberately not called
+"Library" (which is the server catalog).

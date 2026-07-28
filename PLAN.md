@@ -10,7 +10,7 @@ the original draft is called out explicitly below, with the reasoning behind it.
 ## Tech Stack
 
 | Concern | Choice | Why |
-|---|---|---|
+| --- | --- | --- |
 | Framework | Expo (dev client, not Expo Go) | Fast iteration, but native modules require a custom dev client build. **Local prebuild** (`expo prebuild` + `expo run:ios`/`run:android`) is the default iteration loop; EAS dev builds are a fallback for testing on a device away from the dev machine. |
 | Navigation | Expo Router | File-based. Lives under `src/app/`, matching this repo's existing `src/`-scoped scaffold — **not** a root-level `app/` as originally drafted. |
 | Playback | `react-native-audio-api` (MIT, Software Mansion) | **Not** `react-native-track-player` — v5 is commercially licensed (free for personal/educational use only, paid for commercial apps); v4 is Apache-2.0 but frozen/unmaintained. `react-native-audio-api` is a Web Audio API–style engine: MIT licensed, ships an Expo config plugin and a `PlaybackNotificationManager` for lock-screen/notification controls, and its node-graph model doubles as the foundation for a future EQ. Its New Architecture maturity isn't clearly documented — this is the single riskiest bet in the plan, hence validated first (see Build Order). Trade-off: it's a low-level audio primitive library, not a purpose-built player — queue management, gapless logic, and playback state have to be built on top. |
@@ -41,21 +41,22 @@ src/
                                  # components/app-tabs.tsx) — a divergence from this draft caught
                                  # and corrected during the step 5 grilling session (2026-07-27)
     index.tsx                   # home/discover (currently: build-order-step-4 smoke-test screen)
-    library.tsx                 # step 5: sectioned artists list
+    library.tsx                 # step 5: sectioned artists list. step 7 drops this as a *tab*
+                                 #   (Home links to Artists/Albums instead); the route stays
     search/                     # step 6: own nested stack (mirrors library/), reuses the
       index.tsx                 #   step-5 detail screens via a basePath prop
       artist/[id].tsx
       album/[id].tsx
-    playlists.tsx
+    my-music.tsx                # step 7b: My Music tab — playlists list + pinned Favourites
     settings.tsx                # step 5: logout button
     player/
-      now-playing.tsx           # full-screen player (modal)
-      queue.tsx
+      now-playing.tsx           # step 7a: full-screen player (modal) — real screen
+      queue.tsx                 # step 7a: full queue, tap-to-jump / reorder / remove
     album/[id].tsx              # step 5
     artist/[id].tsx             # step 5
     genre/[name].tsx            # step 5: paginated albums-by-genre
-    playlist/[id].tsx
-    _layout.tsx
+    playlist/[id].tsx           # step 7b: playlist detail (tracks + play + edit)
+    _layout.tsx                 # step 7a: mounts the MiniPlayer overlay above NativeTabs
 
   api/
     subsonic/
@@ -63,12 +64,13 @@ src/
       endpoints/
         browsing.ts           # getArtists, getArtist, getAlbum, getGenres, getPlaylists, getAlbumsByGenre (step 5)
         search.ts
-        playlists.ts
+        playlists.ts          # step 7b: getPlaylists/getPlaylist/create/update/deletePlaylist
         media.ts               # stream/download URL builders, getCoverArtUrl (step 5)
-        annotations.ts        # star, scrobble, rating
+        annotations.ts        # step 7b: star/unstar (+ getStarred2); scrobble/rating later
       types.ts
       errors.ts
-    types.ts                    # normalized app-level models (Track, Artist, Album, Genre, ArtistSection...)
+    types.ts                    # normalized app-level models (Track, Artist, Album, Genre, ArtistSection...);
+                                 #   step 7b adds a `starred` flag to Track/Artist/Album
     normalize.ts               # pure functions: raw Subsonic shapes -> normalized models (unit tested)
     kvStorage.ts               # platform-branched sync KV adapter: expo-sqlite/kv-store (native) / localStorage (web)
     queryClient.ts             # QueryClient + persister setup, built on kvStorage.ts (see Build Order step 4)
@@ -93,10 +95,13 @@ src/
     search/                   # step 6
       hooks/                  # useSearch (debounced search3), useRecentSearches (kvStorage-backed)
       components/SearchScreen.tsx  # sectioned combined-results scroll + recent searches
-    playlists/
-      hooks/ (usePlaylists, useCreatePlaylist, useAddToPlaylist)
-    favourites/
-      hooks/useFavourites.ts
+    playlists/                # step 7b
+      hooks/ (usePlaylists, usePlaylist, useCreatePlaylist, useUpdatePlaylist,
+               useDeletePlaylist, useAddToPlaylist)
+      components/ (My Music landing, PlaylistDetailScreen)
+    favourites/               # step 7b
+      hooks/ (useFavourites over getStarred2, useStar, useUnstar)
+      components/FavouritesScreen.tsx  # segmented Songs | Albums | Artists
 
   auth/
     useAuthStore.ts            # server URL, salt/token (no password persisted); logout() clears the query cache too
@@ -105,7 +110,8 @@ src/
   components/                 # shared UI — declarative, no data-fetching/store access (local UI-only
                                # state like open/closed is fine, e.g. Collapsible, AnimatedSplashOverlay)
                                # atoms: CoverArtImage, QueryState (loading/offline-empty/error+retry/pull-to-refresh)
-                               # molecules: ArtistRow, AlbumTile, TrackRow, GenreRow, MiniPlayer...
+                               # molecules: ArtistRow, AlbumTile, TrackRow, GenreRow, MiniPlayer
+                               #   (step 7a overlay), TrackActionsMenu (step 7b shared overflow)...
   utils/
     network.ts                # connectivity awareness
 ```
@@ -117,6 +123,7 @@ src/
 ### MVP
 
 **Playback**
+
 - Play/pause, next/previous, seek
 - Shuffle (with recent-repeat avoidance)
 - Repeat modes: off / one / all
@@ -127,6 +134,7 @@ src/
 - **Lock-screen / notification playback controls (iOS & Android)** — decided set (2026-07-26): `play`/`pause`/`nextTrack`/`previousTrack`/`seekTo` only, matching the MVP feature set exactly; `stop` (doesn't fit a queue player) and `skipForward`/`skipBackward` (fixed-increment skip isn't an MVP feature) are deliberately left out. Artwork + scrubber via `PlaybackNotificationInfo`, and (Android) a persistent media-style notification with a dismiss action; wired through `react-native-audio-api`'s `PlaybackNotificationManager`, kept in sync with player state the same way `AudioEngine` is — see Build Order step 3.
 
 **Offline library browsing** *(pulled into MVP from the original "decide scope later" edge case; mechanism revised 2026-07-26, step 4 grilling session — see `docs/adr/0002-no-local-library-mirror.md`)*
+
 - No local database mirror. TanStack Query's own cache is the local library cache, persisted across app restarts via `@tanstack/react-query-persist-client` (see Tech Stack: Local persistence).
 - Top-level lists — `getArtists`, `getGenres`, `getPlaylists`, `getStarred2` — are prefetched right after login, so the top-level library/favourites screens feel instant. Everything below that (an artist's albums, an album's tracks) is fetched lazily on navigation and cached from then on.
 - Default cache tuning (easy to revise later): `staleTime` ~5 minutes (quietly refetches in the background when online), persisted-cache `gcTime`/`maxAge` ~7 days (offline browsing of recently-viewed things survives across app restarts for about a week).
@@ -134,6 +142,7 @@ src/
 - Explicitly distinct from **offline playback** (downloaded audio files) — that stays a future feature, and never shares storage with the metadata cache above.
 
 **Playlists & Favourites**
+
 - View, create, rename, delete playlists (server-backed)
 - Add/remove tracks from playlists
 - Star/unstar tracks, albums, artists
@@ -141,15 +150,18 @@ src/
 - Optimistic UI updates with rollback on failure
 
 **Search**
+
 - Search by track, album, artist, genre (via `search3`)
 - Debounced input, cached recent searches
 
 **Server & Auth**
+
 - Server URL entry + normalization (scheme, trailing slash, `/rest` handling)
 - Subsonic token auth (salt + md5) — salt/token persisted in `expo-secure-store`, password never persisted (see Tech Stack)
 - Basic capability probing (not all Navidrome instances support every extension)
 
 **Testing**
+
 - Unit tests for `QueueManager` (shuffle/repeat/queue-mutation logic) and `api/normalize.ts`
   (raw Subsonic response shapes → normalized `Track`/`Artist`/`Album`/`Genre` models) — these
   are pure-logic modules where silent bugs are costly and hard to spot manually.
@@ -173,29 +185,34 @@ src/
 ## Key Edge Cases
 
 **Auth & connection**
+
 - Salt/token persisted; password never stored (see Tech Stack) — re-prompt only on explicit re-login
 - Self-signed certs, http vs https, malformed URLs
 - Partial Subsonic API support across Navidrome versions — probe, don't assume
 - Web: salt/token persisted in `localStorage` rather than an encrypted store — accepted, documented trade-off (see Tech Stack: Secrets)
 
 **Playback**
+
 - **Validated** (2026-07-26, build order step 0): the `<Audio>` tag component routed through `MediaElementAudioSourceNode` — not `StreamerNode`, which is HLS-oriented and still experimental for general use — is the correct primitive for a plain progressive-HTTP MP3 URL. FFmpeg (needed for proper HTTP byte-range streaming rather than a full-file download before playback starts) ships bundled and enabled by default. Confirmed working on a real device build (RN 0.86 / Expo 57, New Architecture default): play/pause/seek all functioned against a hardcoded remote MP3 in `src/app/index.tsx`. `<Audio>` also routes cleanly through `GainNode` before the destination, validating the graph-based approach the future EQ depends on.
 - Transcoding/bitrate settings and server-driven format changes
 - **Audio focus interruptions — decided (2026-07-26, step 3 grilling session)**: `AudioEngine` subscribes to `react-native-audio-api`'s `AudioManager` `interruption` event (calls, other apps taking focus) and auto-pauses on interruption start, resuming only if the OS signals `shouldResume`. Built in step 3. Bluetooth/other device route changes (`routeChange` event) are a separate, still-undecided event — not handled by this decision, left for a later pass.
 - Notification/lock-screen control state staying in sync with actual playback state across OS-level kills — `NotificationBridge` and `AudioEngine` both follow the same reactive pattern (see Build Order step 3 and `docs/adr/0001-player-state-flows-through-store.md`): neither owns state independently, both subscribe to `usePlayerStore` and stay correct by construction rather than manual syncing
 
 **Library**
+
 - Pagination for large libraries (10k+ tracks) — relevant to `getAlbumList2` (max 500/page) and any listing screen, not to a sync crawl (see below)
 - IDs aren't always stable across rescans — prefer MusicBrainz IDs for long-lived references (favourites, stats). Not yet verified that Navidrome actually exposes `musicBrainzId` fields on artist/album/song responses — confirm against a real instance before relying on this.
 - **No incremental-fetch support in the Subsonic API — confirmed 2026-07-26, step 4 grilling session**: `getArtists`/`getAlbumList2` have no changed-since parameter; only the older, file-structure-based `getIndexes` supports `ifModifiedSince`, and it doesn't map onto ID3 artist/album/track IDs. Rather than build a full-catalog crawl-and-diff to work around this, the plan now avoids a local mirror entirely — see Tech Stack: Local persistence and `docs/adr/0002-no-local-library-mirror.md`.
 
 **Queue**
+
 - Recently-played ring buffer for shuffle
 - "Play next" vs "add to queue" distinction
 - Persisting reorder/repeat/shuffle state
 - Queue vs. Playlist vs. Library are three distinct concepts, easy to conflate — see `CONTEXT.md` for the canonical definitions. `QueueManager` (step 3) is pure local queue-ordering logic and has no knowledge of the network; it operates on already-resolved `Track`s regardless of where they came from (a mocked list in step 3, the TanStack-Query-cached Library from step 4/5 onward)
 
 **Search**
+
 - `search3` returns artists/albums/songs in one call — design UI around combined results, not three separate requests
 
 ---
@@ -260,7 +277,83 @@ src/
    - **Own nested stack, reusing the step-5 detail screens.** `src/app/search/{index,artist/[id],album/[id]}.tsx` are thin route files rendering the shared `ArtistDetailScreen`/`AlbumDetailScreen`, so drilling (Artist → its albums → Album) stays *inside* the Search tab (native tabs each keep their own stack). Those two components gain a **`basePath` prop** (`/library` vs `/search`) so their internal album-push respects the current tab instead of hardcoding `/library`; the genre link from an album may still deep-link to `/library/genre/…` (genre is a Library concept, absent from `search3` results — that single cross-tab jump is fine). A new `search` tab is added to `app-tabs.tsx` + `app-tabs.web.tsx`. Songs have no detail screen (tap = play).
    - **Song tap plays now without destroying the queue** (full rationale: `docs/adr/0004-search-tap-preserves-queue.md`): if a queue already exists, a new `PlaybackController.playNow(track)` inserts the song at the current position and plays it immediately (the current track becomes next — nothing lost); if no queue exists, it fetches `getAlbum(song.albumId)` and plays that album from the tapped song, falling back to the single song if the fetch fails. "Play related songs" (`getSimilarSongs2`) is future (parked as Auto DJ, step 10). Album/artist taps go to their detail screens (queue untouched). The per-row overflow menu (Play next / Add to queue, via the existing `playNext`/`addToQueue`) carries over from `AlbumDetailScreen`. **Deliberate divergence**: album-detail's track tap stays queue-*replacing* (a deliberate "make this album my queue"); search's exploratory context preserves it instead — see the ADR.
    - **New/changed code**: `api/subsonic/endpoints/search.ts` (`search3`) + `GetSearch3Response`/`searchResult3` types, `queryKeys.search(query)`, reusing the existing `normalize.ts` normalizers (`Track` gains `albumId`, for the no-queue `playNow` album lookup); `features/search/hooks/` (`useSearch` debounced, `useRecentSearches`) + `features/search/components/SearchScreen.tsx`; pure `features/search/{filterSongsByTitle,filterArtistsWithContent,recentSearches}.ts` (unit-tested); `PlaybackController.playNow` (+ pure `QueueManager.playNow`); `basePath` threaded into `ArtistDetailScreen`.
-7. Playlists + favourites (CRUD + optimistic UI)
+7. Playlists + favourites (CRUD + optimistic UI) + Queue view. Sliced into two sub-steps and
+   designed via grilling session, 2026-07-28. **7a (player transport shell) is built first** — it's
+   the missing UI half of the already-built playback engine, and the Queue view has no entry point
+   without it; **7b (playlists + favourites)** follows.
+
+   **7a — Player transport shell.** Three surfaces: a persistent **MiniPlayer** → expands to a
+   full-screen **now-playing** modal → **Queue** opened from within now-playing.
+
+   - **MiniPlayer is a hand-rolled JS overlay on all platforms** (full rationale:
+     `docs/adr/0005-miniplayer-js-overlay-not-native-accessory.md`). Mounted as a sibling of
+     `NativeTabs` in `_layout.tsx`, positioned above the tab bar via safe-area insets + tab-bar
+     height, driven by `usePlayerStore`. Expo v57's `NativeTabs.BottomAccessory` would be the native
+     way to dock it, but it's **iOS-only** — deferred in favour of one cross-platform implementation
+     (iOS+Android are co-equal MVP targets). Swapping in the native accessory on iOS later is a
+     contained change. MiniPlayer contents: artwork + title/artist + play-pause + a hairline progress
+     line, tap anywhere to expand.
+   - **now-playing** (modal sheet, swipe-to-dismiss; MiniPlayer hidden while open): big artwork,
+     title/artist/album, scrubber + seek (`position`/`status` from the store, `duration` from the
+     track), play-pause, prev/next, shuffle, repeat toggles, and an open-queue button. Buffering
+     shows via the existing `status: 'loading'`. The favourite (star) toggle and add-to-playlist
+     action are **deferred to 7b** (their endpoints don't exist until then).
+   - **Queue view:** renders the full `QueueState.tracks` — already-played dimmed above, current
+     highlighted, upcoming below — with **tap-to-jump**, drag-reorder (`reorder`), and swipe-remove
+     (`removeAt`). Tap-to-jump needs a new pure `QueueManager.jumpTo(index)` + `PlaybackController.jumpTo`
+     (today `play()` only *replaces* the queue; there's no jump-within-existing-queue). `jumpTo` gets
+     a unit test alongside the other `QueueManager` functions.
+   - **New/changed code (7a):** `QueueManager.jumpTo` (+ test) and `PlaybackController.jumpTo`;
+     `components/MiniPlayer.tsx` (the overlay) mounted in `_layout.tsx`; `player/hooks/useProgress.ts`
+     for the scrubber; real screens for the `player/now-playing.tsx` and `player/queue.tsx` routes.
+
+   **7b — Playlists + Favourites.** Server-backed CRUD with optimistic UI, plus the starred-items
+   collection. Terminology stays API-faithful: **Library = catalog**, **Playlists**, and
+   **Favourites (= starred)** are three distinct concepts (see `CONTEXT.md`); the API reserves
+   "library" for the media catalog, so we never call the personal collection "Library".
+
+   - **Tab bar becomes `Home | Search | My Music | Settings`.** The catalog-browse **`library` tab
+     is dropped as a tab** (its `artist`/`album`/`genre` routes stay); Home links straight to Artists
+     and Albums — "called what they are" — and step 9 turns those into horizontal carousels + a "See
+     all" into the full lists. `My Music` (see `CONTEXT.md`) is the new tab grouping the two personal
+     collections; it is deliberately *not* named "Library". Dropping the catalog tab freed the slot
+     that lets Playlists and Favourites share one tab without crowding.
+   - **My Music** = the user's **Playlists** as a vertical list, with a pinned **Favourites**
+     shortcut row at the top (Spotify's "Liked Songs" shape) that drills into a **Favourites screen**.
+     Favourites are three collections (`getStarred2` → starred songs/albums/artists), shown behind a
+     **segmented control: Songs | Albums | Artists**, each with its own row/tile layout (contrast
+     search's combined scroll — favourites can grow large).
+   - **Playlist ops:** create, rename, delete, add-track, remove-track (via the positional
+     `songIndexToRemove` — a sharp edge for optimistic updates), and a public/private toggle
+     (`updatePlaylist`'s `public`). **Track reorder is deferred** — the Subsonic API has no reorder
+     primitive; it'd mean re-sending the whole ordered `songId` list via `createPlaylist(playlistId, …)`
+     (full replace), achievable later. Playlist detail is modeled on `AlbumDetailScreen`: cover +
+     name + count/duration header, a Play button (`play(tracks, 0)`), a TrackRow list, per-row overflow.
+   - **Favourite / actions UX:** row-level actions live in the shared **overflow menu** —
+     star/unstar, add-to-playlist, play-next, add-to-queue, and remove-from-playlist (on playlist
+     detail). AlbumDetail's local `Modal`+`MenuOption` menu is extracted into a shared
+     `TrackActionsMenu` reused across album/playlist/search/queue/now-playing. A **standalone heart**
+     appears only on album/artist/playlist **detail headers** and **now-playing** (one-tap favouriting
+     where intent is highest); dense list rows stay clean and favourite via the menu. Rendering heart
+     state requires a new **`starred` field** on normalized `Track`/`Album`/`Artist` (from the API's
+     `starred`/`starredAt`), added in `types.ts` + `normalize.ts`.
+   - **Add-to-playlist:** single-track only, opening a sheet of existing playlists + an inline "New
+     playlist"; a "+" in the My Music/Playlists header also creates. Album/artist bulk add-to-playlist
+     and "save queue as playlist" are **deferred** (kept 7b focused; both are clean follow-ups).
+   - **Optimistic UI:** star/unstar, rename, delete, add-track, remove-track are optimistic with
+     rollback (cancel in-flight → snapshot → patch cache → roll back `onError` → invalidate
+     `onSettled`). **Create playlist is await-then-invalidate**, not optimistic — an optimistic insert
+     needs a temp client id reconciled to the server's real id, fragile and not worth it for a rare
+     action.
+   - **New/changed code (7b):** `api/subsonic/endpoints/playlists.ts` (`getPlaylists`/`getPlaylist`/
+     `createPlaylist`/`updatePlaylist`/`deletePlaylist`) + `annotations.ts` (`star`/`unstar`) +
+     `getStarred2`; `starred` added to `Track`/`Album`/`Artist` in `api/types.ts` + `normalize.ts`;
+     `queryKeys.playlist(id)` and the existing `starred()` key put to use; `features/playlists/`
+     (hooks: `usePlaylists`/`usePlaylist`/`useCreatePlaylist`/`useUpdatePlaylist`/`useDeletePlaylist`/
+     `useAddToPlaylist`; screens: My Music landing + playlist detail) and `features/favourites/`
+     (`useFavourites` over `getStarred2`, `useStar`/`useUnstar`; Favourites screen); the shared
+     `components/TrackActionsMenu.tsx`; `playlist/[id].tsx` route; `app-tabs.tsx` + `app-tabs.web.tsx`
+     updated to `Home | Search | My Music | Settings`.
 8. Polish: persistence, offline queue recovery, error states
 9. Home / discover shelves (split out of step 6 during the 2026-07-28 grilling session) — the real content for `index.tsx`, replacing the build-order-step-4 smoke-test placeholder. Client-side grouping of `getAlbumList2` shelves: **Recently Added** (`type=newest`, by date added to the server's scan/import), **New Releases** (by the album's own release/original date — OpenSubsonic `originalReleaseDate`/`releaseDate`, distinct from date-added), **Explore** (`random`/`recent`/`frequent`). These are faceted *browse*, no text query — deliberately kept separate from Search. If genre/year *attribute* filtering is ever wanted, it belongs here (`getAlbumList2 byGenre/byYear`), not bolted onto the search box.
 10. Future features, in order: Auto DJ (cheapest, uses existing Navidrome endpoint) → scrobbling → discovery → listening stats → social/jam → gapless playback → EQ (lowest priority)
@@ -270,7 +363,7 @@ src/
 ## Summary of Changes from Original Draft
 
 | Area | Original draft | Revised |
-|---|---|---|
+| --- | --- | --- |
 | File structure | Root-level `app/` | Everything under `src/`, matching existing scaffold |
 | Streaming spike timing | Step 2 | Step 0 — before any other code, given it's the highest-risk bet |
 | Local persistence | "expo-sqlite (or WatermelonDB)" — undecided, cache-only framing | No local database at all — TanStack Query's persisted cache is the local library cache (`expo-sqlite/kv-store`/`localStorage`), decided after a full-mirror plan was tried and reversed in the step 4 grilling session (2026-07-26) — see Build Order step 4 and `docs/adr/0002-no-local-library-mirror.md` |
@@ -278,5 +371,6 @@ src/
 | Gapless playback | MVP feature | Parked to future features, after core playback is proven |
 | Web platform | Implied via `react-native-web` in scaffold | Explicitly out of scope for MVP; mobile-only |
 | Testing | Not mentioned | Unit tests for `QueueManager` and `db/sync.ts` specifically |
-| Tab/route structure | Draft assumed a `(tabs)` route group (`app/(tabs)/index.tsx`, etc.) with 5 tabs (home, library, search, playlists, settings) | Actual `app-tabs.tsx` mounts `NativeTabs` directly in `_layout.tsx` over flat top-level route files, no `(tabs)` group — caught during the step 5 grilling session (2026-07-27). Tabs are added incrementally as real content lands: `explore` dropped, `library` and `settings` added in step 5; `search` added in step 6; `playlists` tab still pending its own step |
+| Tab/route structure | Draft assumed a `(tabs)` route group (`app/(tabs)/index.tsx`, etc.) with 5 tabs (home, library, search, playlists, settings) | Actual `app-tabs.tsx` mounts `NativeTabs` directly in `_layout.tsx` over flat top-level route files, no `(tabs)` group — caught during the step 5 grilling session (2026-07-27). Tabs are added incrementally as real content lands: `explore` dropped, `library` and `settings` added in step 5; `search` added in step 6. **Step 7 (2026-07-28)** restructures to `Home \| Search \| My Music \| Settings`: the `library` catalog *tab* is dropped (Home links to Artists/Albums, and step 9's carousels absorb it; routes stay), and **My Music** — one new tab grouping Playlists + Favourites — replaces the originally-planned standalone `playlists` tab. My Music is deliberately not "Library", which the API and glossary reserve for the catalog (Subsonic's "media library") |
+| Player transport UI | Not explicitly scoped in the original draft (playback *engine* only) | Step 7a builds the missing player shell — a persistent MiniPlayer + now-playing modal + Queue view — before the playlists/favourites CRUD. The MiniPlayer is a hand-rolled JS overlay on all platforms rather than iOS-only `NativeTabs.BottomAccessory` (`docs/adr/0005-miniplayer-js-overlay-not-native-accessory.md`). Decided step 7 grilling session (2026-07-28) |
 | Search scope | "Search by track, album, artist, genre" implied filters | Text `search3` only — the API has no genre/year/type filter on search, so attribute filters are out; the "Recently Added / New Releases / Explore" grouping the user asked for is faceted `getAlbumList2` *browse*, split into its own home/discover step (Build Order step 9), not part of search. Decided step 6 grilling session (2026-07-28) |
