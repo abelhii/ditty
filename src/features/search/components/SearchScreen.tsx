@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useRouter } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { useState } from "react";
 import {
   Modal,
   Pressable,
@@ -8,25 +8,28 @@ import {
   StyleSheet,
   TextInput,
   useWindowDimensions,
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
-import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
-import type { Album, Artist, Track } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
-import { AlbumTile } from '@/components/AlbumTile';
-import { ArtistRow } from '@/components/ArtistRow';
-import { QueryState } from '@/components/QueryState';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { TrackRow } from '@/components/TrackRow';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useSearch } from '@/features/search/hooks/useSearch';
-import { useRecentSearches } from '@/features/search/hooks/useRecentSearches';
-import { useTheme } from '@/hooks/use-theme';
-import * as PlaybackController from '@/player/PlaybackController';
-import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/usePlayerStore';
+import { CoverArtSize, getCoverArtUrl } from "@/api/subsonic/endpoints/media";
+import type { Album, Artist, Track } from "@/api/types";
+import { useAuthStore } from "@/auth/useAuthStore";
+import { AlbumTile } from "@/components/AlbumTile";
+import { ArtistRow } from "@/components/ArtistRow";
+import { QueryState } from "@/components/QueryState";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { TrackRow } from "@/components/TrackRow";
+import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { useRecentSearches } from "@/features/search/hooks/useRecentSearches";
+import { useSearch } from "@/features/search/hooks/useSearch";
+import { useTheme } from "@/hooks/use-theme";
+import * as PlaybackController from "@/player/PlaybackController";
+import { getCurrentTrack } from "@/player/QueueManager";
+import { usePlayerStore } from "@/player/usePlayerStore";
 
 const GRID_COLUMNS = 2;
 const GRID_GAP = Spacing.four;
@@ -43,18 +46,23 @@ export function SearchScreen() {
   const credentials = useAuthStore((state) => state.credentials);
   const currentTrack = getCurrentTrack(usePlayerStore((state) => state.queue));
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const { query, term, isActive } = useSearch(input);
   const recent = useRecentSearches();
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
   const contentWidth = Math.min(width, MaxContentWidth) - Spacing.four * 2;
-  const tileWidth = (contentWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+  const tileWidth =
+    (contentWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
-    credentials ? getCoverArtUrl(credentials.serverUrl, coverArtId, credentials, size) : undefined;
+    credentials
+      ? getCoverArtUrl(credentials.serverUrl, coverArtId, credentials, size)
+      : undefined;
 
-  const contentPadding = { paddingBottom: insets.bottom + BottomTabInset + Spacing.three };
+  const contentPadding = {
+    paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+  };
 
   // Recent searches are saved on result tap (not per keystroke), so we only ever persist terms the
   // user acted on rather than every prefix fragment they typed.
@@ -73,14 +81,14 @@ export function SearchScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <ThemedText type="title" style={styles.title}>
           Search
         </ThemedText>
 
         <ThemedView type="backgroundElement" style={styles.inputRow}>
           <SymbolView
-            name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+            name={{ ios: "magnifyingglass", android: "search", web: "search" }}
             size={18}
             tintColor={theme.textSecondary}
           />
@@ -96,9 +104,13 @@ export function SearchScreen() {
             clearButtonMode="while-editing"
           />
           {input.length > 0 && (
-            <Pressable hitSlop={12} onPress={() => setInput('')}>
+            <Pressable hitSlop={12} onPress={() => setInput("")}>
               <SymbolView
-                name={{ ios: 'xmark.circle.fill', android: 'cancel', web: 'cancel' }}
+                name={{
+                  ios: "xmark.circle.fill",
+                  android: "cancel",
+                  web: "cancel",
+                }}
                 size={18}
                 tintColor={theme.textSecondary}
               />
@@ -109,13 +121,19 @@ export function SearchScreen() {
         {isActive ? (
           <QueryState
             query={query}
-            isEmpty={(r) => r.artists.length === 0 && r.albums.length === 0 && r.tracks.length === 0}
-            emptyMessage={`No results for "${term}".`}>
+            isEmpty={(r) =>
+              r.artists.length === 0 &&
+              r.albums.length === 0 &&
+              r.tracks.length === 0
+            }
+            emptyMessage={`No results for "${term}".`}
+          >
             {({ artists, albums, tracks }) => (
               <ScrollView
                 contentContainerStyle={contentPadding}
                 keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag">
+                keyboardDismissMode="on-drag"
+              >
                 {artists.length > 0 && (
                   <>
                     <SectionHeader label="Artists" />
@@ -123,8 +141,30 @@ export function SearchScreen() {
                       <ArtistRow
                         key={artist.id}
                         artist={artist}
-                        coverArtUri={coverUri(artist.coverArtId, CoverArtSize.list)}
+                        coverArtUri={coverUri(
+                          artist.coverArtId,
+                          CoverArtSize.list,
+                        )}
                         onPress={() => openArtist(artist)}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {tracks.length > 0 && (
+                  <>
+                    <SectionHeader label="Songs" />
+                    {tracks.map((track) => (
+                      <TrackRow
+                        key={track.id}
+                        track={track}
+                        coverArtUri={coverUri(
+                          track.coverArtId,
+                          CoverArtSize.list,
+                        )}
+                        isPlaying={currentTrack?.id === track.id}
+                        onPress={() => playSong(track)}
+                        onOverflowPress={() => setMenuTrack(track)}
                       />
                     ))}
                   </>
@@ -139,27 +179,14 @@ export function SearchScreen() {
                           key={album.id}
                           album={album}
                           width={tileWidth}
-                          coverArtUri={coverUri(album.coverArtId, CoverArtSize.list)}
+                          coverArtUri={coverUri(
+                            album.coverArtId,
+                            CoverArtSize.list,
+                          )}
                           onPress={() => openAlbum(album)}
                         />
                       ))}
                     </ThemedView>
-                  </>
-                )}
-
-                {tracks.length > 0 && (
-                  <>
-                    <SectionHeader label="Songs" />
-                    {tracks.map((track) => (
-                      <TrackRow
-                        key={track.id}
-                        track={track}
-                        coverArtUri={coverUri(track.coverArtId, CoverArtSize.list)}
-                        isPlaying={currentTrack?.id === track.id}
-                        onPress={() => playSong(track)}
-                        onOverflowPress={() => setMenuTrack(track)}
-                      />
-                    ))}
                   </>
                 )}
               </ScrollView>
@@ -179,7 +206,8 @@ export function SearchScreen() {
           visible={menuTrack !== null}
           transparent
           animationType="fade"
-          onRequestClose={() => setMenuTrack(null)}>
+          onRequestClose={() => setMenuTrack(null)}
+        >
           <Pressable style={styles.overlay} onPress={() => setMenuTrack(null)}>
             <ThemedView type="backgroundElement" style={styles.menu}>
               <MenuOption
@@ -222,7 +250,11 @@ function RecentSearches({
   if (recents.length === 0) {
     return (
       <ThemedView style={styles.emptyHint}>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.centerText}>
+        <ThemedText
+          type="small"
+          themeColor="textSecondary"
+          style={styles.centerText}
+        >
           Search for artists, albums, and songs.
         </ThemedText>
       </ThemedView>
@@ -230,7 +262,10 @@ function RecentSearches({
   }
 
   return (
-    <ScrollView contentContainerStyle={contentStyle} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={contentStyle}
+      keyboardShouldPersistTaps="handled"
+    >
       <ThemedView style={styles.recentHeader}>
         <ThemedText type="smallBold" themeColor="textSecondary">
           Recent
@@ -245,9 +280,10 @@ function RecentSearches({
         <Pressable
           key={recentTerm}
           style={({ pressed }) => [styles.recentRow, pressed && styles.pressed]}
-          onPress={() => onRerun(recentTerm)}>
+          onPress={() => onRerun(recentTerm)}
+        >
           <SymbolView
-            name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
+            name={{ ios: "clock", android: "schedule", web: "schedule" }}
             size={16}
             tintColor={theme.textSecondary}
           />
@@ -256,7 +292,7 @@ function RecentSearches({
           </ThemedText>
           <Pressable hitSlop={12} onPress={() => onRemove(recentTerm)}>
             <SymbolView
-              name={{ ios: 'xmark', android: 'close', web: 'close' }}
+              name={{ ios: "xmark", android: "close", web: "close" }}
               size={16}
               tintColor={theme.textSecondary}
             />
@@ -277,9 +313,18 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-function MenuOption({ label, onPress }: { label: string; onPress: () => void }) {
+function MenuOption({
+  label,
+  onPress,
+}: {
+  label: string;
+  onPress: () => void;
+}) {
   return (
-    <Pressable style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]} onPress={onPress}>
+    <Pressable
+      style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]}
+      onPress={onPress}
+    >
       <ThemedText>{label}</ThemedText>
     </Pressable>
   );
@@ -291,17 +336,17 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    alignSelf: 'center',
+    alignSelf: "center",
     maxWidth: MaxContentWidth,
-    width: '100%',
+    width: "100%",
   },
   title: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
   },
   inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.two,
     marginHorizontal: Spacing.four,
     marginVertical: Spacing.three,
@@ -319,22 +364,22 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.one,
   },
   albumGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: GRID_GAP,
     paddingHorizontal: Spacing.four,
   },
   recentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.one,
   },
   recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.three,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.four,
@@ -344,20 +389,20 @@ const styles = StyleSheet.create({
   },
   emptyHint: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: Spacing.four,
   },
   centerText: {
-    textAlign: 'center',
+    textAlign: "center",
   },
   pressed: {
     opacity: 0.7,
   },
   overlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
   },
   menu: {
     borderTopLeftRadius: Spacing.three,
