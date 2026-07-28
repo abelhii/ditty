@@ -16,13 +16,19 @@ import { useArtist } from '@/features/library/hooks/useArtist';
 const GRID_COLUMNS = 2;
 const GRID_GAP = Spacing.four;
 
+/** The tab stacks that render this screen — the prefix its album drill-down pushes onto, so the
+ *  push lands in the current tab's own stack. Kept as literals (not a free-form string) so
+ *  expo-router's typed routes still validate the resulting href. */
+type DetailBasePath = '/library' | '/search';
+
 type ArtistDetailScreenProps = {
   artistId: string;
+  basePath?: DetailBasePath;
 };
 
 /** An artist's albums — a pure drill-down, no "play all songs by artist" (getArtist doesn't
  *  return a flat song list, and it isn't in the Feature List). */
-export function ArtistDetailScreen({ artistId }: ArtistDetailScreenProps) {
+export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDetailScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -70,7 +76,13 @@ export function ArtistDetailScreen({ artistId }: ArtistDetailScreenProps) {
                     album={item}
                     width={tileWidth}
                     coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
-                    onPress={() => router.push(`/library/album/${item.id}`)}
+                    onPress={() =>
+                      router.push(
+                        basePath === '/search'
+                          ? `/search/album/${item.id}`
+                          : `/library/album/${item.id}`,
+                      )
+                    }
                   />
                 ) : null
               }

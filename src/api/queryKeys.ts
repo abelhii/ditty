@@ -9,4 +9,7 @@ export const queryKeys = {
   albumsByGenre: (genre: string) => ['albumsByGenre', genre] as const,
   playlists: () => ['playlists'] as const,
   starred: () => ['starred'] as const,
+  /** Search results are keyed by query string. The `'search'` root key is also what
+   *  queryClient.ts's dehydrate filter matches to keep search out of the persisted cache. */
+  search: (query: string) => ['search', query] as const,
 };

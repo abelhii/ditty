@@ -104,6 +104,7 @@ describe('normalizeTrack', () => {
         id: 's1',
         title: 'Around the World',
         album: 'Homework',
+        albumId: 'al-1',
         artist: 'Daft Punk',
         coverArt: 'al-1',
         duration: 429,
@@ -113,6 +114,7 @@ describe('normalizeTrack', () => {
       title: 'Around the World',
       artist: 'Daft Punk',
       album: 'Homework',
+      albumId: 'al-1',
       duration: 429,
       coverArtId: 'al-1',
     });

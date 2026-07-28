@@ -1,4 +1,6 @@
+import { getAlbum } from '@/api/subsonic/endpoints/browsing';
 import type { Track } from '@/api/types';
+import { useAuthStore } from '@/auth/useAuthStore';
 import * as QueueManager from '@/player/QueueManager';
 import type { RepeatMode } from '@/player/QueueManager';
 import { usePlayerStore } from '@/player/usePlayerStore';
@@ -18,6 +20,43 @@ function currentQueue(): QueueManager.QueueState {
 export function play(tracks: Track[], startIndex = 0): void {
   const queue = QueueManager.createQueueState(tracks, startIndex);
   usePlayerStore.setState({ queue, desiredPlaying: tracks.length > 0 });
+}
+
+/**
+ * Plays `track` now *without destroying an existing queue* — search's exploratory song tap, as
+ * opposed to album detail's queue-replacing `play` (rationale: docs/adr/0004-search-tap-preserves-queue.md).
+ * - Queue already playing → insert at the current position and play immediately; the previously-
+ *   playing track becomes next, the rest of the queue preserved.
+ * - No queue → start one from the tapped song's album (a richer queue than a lone track), falling
+ *   back to the single track if the album can't be fetched (offline / not cached).
+ */
+export async function playNow(track: Track): Promise<void> {
+  const queue = currentQueue();
+  if (QueueManager.getCurrentTrack(queue)) {
+    usePlayerStore.setState({ queue: QueueManager.playNow(queue, track), desiredPlaying: true });
+    return;
+  }
+
+  const tracks = await albumTracksFor(track);
+  const startIndex = Math.max(
+    0,
+    tracks.findIndex((t) => t.id === track.id),
+  );
+  play(tracks, startIndex);
+}
+
+/** The tapped song's album tracks, or just the song itself if there's no album id or the fetch
+ *  fails (offline / album not cached). */
+async function albumTracksFor(track: Track): Promise<Track[]> {
+  const credentials = useAuthStore.getState().credentials;
+  if (!credentials || !track.albumId) return [track];
+
+  try {
+    const { tracks } = await getAlbum(credentials.serverUrl, credentials, track.albumId);
+    return tracks.length > 0 ? tracks : [track];
+  } catch {
+    return [track];
+  }
 }
 
 export function togglePlayPause(): void {
