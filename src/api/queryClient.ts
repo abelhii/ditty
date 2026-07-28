@@ -1,5 +1,5 @@
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, defaultShouldDehydrateQuery } from '@tanstack/react-query';
 import type { PersistQueryClientProviderProps } from '@tanstack/react-query-persist-client';
 
 import { getItem, removeItem, setItem } from '@/api/kvStorage';
@@ -29,4 +29,11 @@ const persister = createAsyncStoragePersister({
 export const persistOptions: PersistQueryClientProviderProps['persistOptions'] = {
   persister,
   maxAge: SEVEN_DAYS,
+  dehydrateOptions: {
+    // Search results are live "ask the server now" queries — persisting them would bloat the KV
+    // cache with transient entries and surface confusing stale offline results. Keep everything
+    // else on the default (successful queries persist). See Build Order step 6.
+    shouldDehydrateQuery: (query) =>
+      query.queryKey[0] !== 'search' && defaultShouldDehydrateQuery(query),
+  },
 };

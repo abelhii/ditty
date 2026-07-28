@@ -90,6 +90,20 @@ export function playNext(state: QueueState, track: Track): QueueState {
   };
 }
 
+/** Inserts a track at the current position and makes it the current track — the previously-playing
+ *  track becomes next, the rest of the queue preserved after it. Search's "play now, keep the
+ *  queue" (see docs/adr/0004-search-tap-preserves-queue.md); contrast with `play`, which replaces
+ *  the whole queue. */
+export function playNow(state: QueueState, track: Track): QueueState {
+  const insertAt = state.currentIndex === -1 ? 0 : state.currentIndex;
+  return {
+    ...state,
+    tracks: [...state.tracks.slice(0, insertAt), track, ...state.tracks.slice(insertAt)],
+    originalOrder: [...state.originalOrder, track],
+    currentIndex: insertAt,
+  };
+}
+
 export function removeAt(state: QueueState, index: number): QueueState {
   if (index < 0 || index >= state.tracks.length) return state;
 

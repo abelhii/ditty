@@ -5,6 +5,9 @@ export type Track = {
   title: string;
   artist: string;
   album: string;
+  /** The album this track belongs to — used to start a queue from the album when a search song is
+   *  tapped with no queue playing (see docs/adr/0004-search-tap-preserves-queue.md). */
+  albumId?: string;
   /** Seconds. */
   duration: number;
   coverArtId?: string;

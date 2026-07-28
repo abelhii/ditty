@@ -121,6 +121,18 @@ export type GetAlbumList2Response = {
   };
 };
 
+/** search3 returns artists, albums, and songs together in one result object — the UI is built
+ *  around this combined shape, not three separate requests (see Key Edge Cases → Search). */
+export type SearchResult3 = {
+  artist?: SubsonicArtist[];
+  album?: SubsonicAlbum[];
+  song?: SubsonicSong[];
+};
+
+export type GetSearch3Response = {
+  searchResult3: SearchResult3;
+};
+
 export type GetStarred2Response = {
   starred2: {
     artist?: SubsonicArtist[];

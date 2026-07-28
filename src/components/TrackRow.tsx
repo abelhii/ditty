@@ -2,31 +2,49 @@ import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet } from 'react-native';
 
 import type { Track } from '@/api/types';
+import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+const THUMBNAIL_SIZE = 40;
+
 type TrackRowProps = {
   track: Track;
-  /** 1-based track position shown in place of cover art. */
-  position: number;
+  /** 1-based track position, shown in the leading slot — for an ordered list like album detail.
+   *  Omit it (e.g. in search results, where songs aren't part of one album) to show the track's
+   *  cover art thumbnail instead. */
+  position?: number;
+  /** Cover art URL, used for the leading thumbnail when `position` is omitted. */
+  coverArtUri?: string;
   isPlaying?: boolean;
   onPress: () => void;
   onOverflowPress: () => void;
 };
 
-export function TrackRow({ track, position, isPlaying = false, onPress, onOverflowPress }: TrackRowProps) {
+export function TrackRow({
+  track,
+  position,
+  coverArtUri,
+  isPlaying = false,
+  onPress,
+  onOverflowPress,
+}: TrackRowProps) {
   const theme = useTheme();
 
   return (
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
-      <ThemedText
-        type="small"
-        themeColor={isPlaying ? 'text' : 'textSecondary'}
-        style={styles.position}>
-        {position}
-      </ThemedText>
+      {position !== undefined ? (
+        <ThemedText
+          type="small"
+          themeColor={isPlaying ? 'text' : 'textSecondary'}
+          style={styles.position}>
+          {position}
+        </ThemedText>
+      ) : (
+        <CoverArtImage uri={coverArtUri} style={styles.thumbnail} />
+      )}
       <ThemedView style={styles.text}>
         <ThemedText numberOfLines={1} themeColor={isPlaying ? 'text' : undefined}>
           {track.title}
@@ -69,6 +87,11 @@ const styles = StyleSheet.create({
   position: {
     width: Spacing.four,
     textAlign: 'center',
+  },
+  thumbnail: {
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+    borderRadius: Spacing.one,
   },
   text: {
     flex: 1,

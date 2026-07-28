@@ -20,6 +20,13 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="search">
+        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+        {/* No search PNG in the icon set — use the platform's built-in search glyph (SF Symbol on
+            iOS, material icon on Android) instead of shipping a new asset. */}
+        <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="library">
         <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

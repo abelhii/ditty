@@ -42,7 +42,10 @@ src/
                                  # and corrected during the step 5 grilling session (2026-07-27)
     index.tsx                   # home/discover (currently: build-order-step-4 smoke-test screen)
     library.tsx                 # step 5: sectioned artists list
-    search.tsx
+    search/                     # step 6: own nested stack (mirrors library/), reuses the
+      index.tsx                 #   step-5 detail screens via a basePath prop
+      artist/[id].tsx
+      album/[id].tsx
     playlists.tsx
     settings.tsx                # step 5: logout button
     player/
@@ -87,9 +90,9 @@ src/
                                # credentials from useAuthStore internally, no serverUrl/auth props
       components/             # orchestration: screen-level components calling the hooks above,
                                # composing components/'s shared molecules, wiring taps to PlaybackController
-    search/
-      hooks/useSearch.ts       # debounced, multi-entity
-      components/
+    search/                   # step 6
+      hooks/                  # useSearch (debounced search3), useRecentSearches (kvStorage-backed)
+      components/SearchScreen.tsx  # sectioned combined-results scroll + recent searches
     playlists/
       hooks/ (usePlaylists, useCreatePlaylist, useAddToPlaylist)
     favourites/
@@ -245,10 +248,19 @@ src/
    - **Shared loading/error/empty handling.** One component (`components/QueryState.tsx`) wraps a query result: spinner while loading, a distinct "you're offline and haven't viewed this yet" message for a cold cache with no network (a new case — see `docs/adr/0002-no-local-library-mirror.md`'s offline-browsing limits), error + retry, or children once data's there. Includes pull-to-refresh (`refetch()`), the only way to bypass the 5-minute `staleTime` early.
    - **No NativeWind/Tailwind.** Considered for the new screens' styling, rejected: it's a project-wide tooling/migration decision with real cost (either rewrite the existing `Colors`/`Spacing`/`ThemedText`/`ThemedView` system in NativeWind, or run two styling systems side by side), for a problem (layout boilerplate) that plain `StyleSheet` already handles. Staying on `StyleSheet` + the existing themed components.
    - **Components built atomic-design style, shared vs. feature-orchestration split.** `components/` (shared, declarative — no data-fetching or store access, though local UI-only state like an open/closed toggle is fine, same as the existing `Collapsible`/`AnimatedSplashOverlay`) gets the atoms/molecules: `CoverArtImage`, `QueryState`, `ArtistRow`, `AlbumTile`, `TrackRow`, `GenreRow`. `features/library/components/` gets the orchestration layer — the screen-level components that call the hooks above and wire taps to `PlaybackController`. `player/` stays a top-level sibling of `features/`, not nested under it — it's cross-cutting infrastructure every feature calls into, not a screen-oriented slice itself.
-6. Search (search3)
+6. Search (`search3`) + recent searches. Architecture decided via grilling session, 2026-07-28:
+
+   - **Text search only — no attribute filters.** `search3` takes only `query` + per-entity `count`/`offset` + `musicFolderId`; it has *no* genre/year/type filter. Genre/year filtering lives on a *different* endpoint (`getAlbumList2 byGenre/byYear`, albums only; `getSongsByGenre`) that takes no text query — so "search + filters" can't be combined server-side, and attribute filters are deliberately out of this step. Client-side grouping/discovery shelves (Recently Added, New Releases, Explore) are split into their own step — see step 9.
+   - **Combined result → single sectioned scroll.** `search3` returns artists + albums + songs in one call (the plan's "design UI around combined results, not three separate requests" note). Rendered as one vertical scroll with three labeled sections reusing the step-5 molecules (`ArtistRow`/`AlbumTile`/`TrackRow`) — *not* a per-entity segmented view (that segmented "result-type filter" is deferred; adding it later is the clean follow-up if the combined scroll feels cramped). Fixed counts **20 artists / 20 albums / 40 songs**, all rendered, no pagination / no "See all" for MVP (pagination is a Library concern per Key Edge Cases, not a search one).
+   - **Debounced input, recent searches.** 300 ms debounce, fires at **≥ 2 chars**; an empty/sub-threshold box shows **Recent Searches** instead of results. Recent searches are query *strings* persisted in `kvStorage` (JSON array, most-recent-first, case-insensitive dedup, cap 10), **saved on result tap** (not per debounced keystroke — avoids saving prefix fragments); tap-to-rerun, ✕-to-remove, Clear-all. They live in the KV store (the plan's designated home for recent searches), not the query cache.
+   - **Search results are in-memory only** — excluded from the persisted query cache via `persistOptions.dehydrateOptions.shouldDehydrateQuery` (skip queries whose root key is `'search'`). Search is a live "ask the server now" action; persisting it would bloat the KV cache with transient queries and surface confusing *stale* offline results. Recent-search *strings* persist regardless; library-browsing persistence is unchanged.
+   - **Own nested stack, reusing the step-5 detail screens.** `src/app/search/{index,artist/[id],album/[id]}.tsx` are thin route files rendering the shared `ArtistDetailScreen`/`AlbumDetailScreen`, so drilling (Artist → its albums → Album) stays *inside* the Search tab (native tabs each keep their own stack). Those two components gain a **`basePath` prop** (`/library` vs `/search`) so their internal album-push respects the current tab instead of hardcoding `/library`; the genre link from an album may still deep-link to `/library/genre/…` (genre is a Library concept, absent from `search3` results — that single cross-tab jump is fine). A new `search` tab is added to `app-tabs.tsx` + `app-tabs.web.tsx`. Songs have no detail screen (tap = play).
+   - **Song tap plays now without destroying the queue** (full rationale: `docs/adr/0004-search-tap-preserves-queue.md`): if a queue already exists, a new `PlaybackController.playNow(track)` inserts the song at the current position and plays it immediately (the current track becomes next — nothing lost); if no queue exists, it fetches `getAlbum(song.albumId)` and plays that album from the tapped song, falling back to the single song if the fetch fails. "Play related songs" (`getSimilarSongs2`) is future (parked as Auto DJ, step 10). Album/artist taps go to their detail screens (queue untouched). The per-row overflow menu (Play next / Add to queue, via the existing `playNext`/`addToQueue`) carries over from `AlbumDetailScreen`. **Deliberate divergence**: album-detail's track tap stays queue-*replacing* (a deliberate "make this album my queue"); search's exploratory context preserves it instead — see the ADR.
+   - **New/changed code**: `api/subsonic/endpoints/search.ts` (`search3`) + `GetSearch3Response`/`searchResult3` types, `queryKeys.search(query)`, reusing the existing `normalize.ts` normalizers; `features/search/hooks/` (`useSearch` debounced, `useRecentSearches`) + `features/search/components/SearchScreen.tsx`; `PlaybackController.playNow`; `basePath` threaded into the two shared detail screens.
 7. Playlists + favourites (CRUD + optimistic UI)
 8. Polish: persistence, offline queue recovery, error states
-9. Future features, in order: Auto DJ (cheapest, uses existing Navidrome endpoint) → scrobbling → discovery → listening stats → social/jam → gapless playback → EQ (lowest priority)
+9. Home / discover shelves (split out of step 6 during the 2026-07-28 grilling session) — the real content for `index.tsx`, replacing the build-order-step-4 smoke-test placeholder. Client-side grouping of `getAlbumList2` shelves: **Recently Added** (`type=newest`, by date added to the server's scan/import), **New Releases** (by the album's own release/original date — OpenSubsonic `originalReleaseDate`/`releaseDate`, distinct from date-added), **Explore** (`random`/`recent`/`frequent`). These are faceted *browse*, no text query — deliberately kept separate from Search. If genre/year *attribute* filtering is ever wanted, it belongs here (`getAlbumList2 byGenre/byYear`), not bolted onto the search box.
+10. Future features, in order: Auto DJ (cheapest, uses existing Navidrome endpoint) → scrobbling → discovery → listening stats → social/jam → gapless playback → EQ (lowest priority)
 
 ---
 
@@ -263,4 +275,5 @@ src/
 | Gapless playback | MVP feature | Parked to future features, after core playback is proven |
 | Web platform | Implied via `react-native-web` in scaffold | Explicitly out of scope for MVP; mobile-only |
 | Testing | Not mentioned | Unit tests for `QueueManager` and `db/sync.ts` specifically |
-| Tab/route structure | Draft assumed a `(tabs)` route group (`app/(tabs)/index.tsx`, etc.) with 5 tabs (home, library, search, playlists, settings) | Actual `app-tabs.tsx` mounts `NativeTabs` directly in `_layout.tsx` over flat top-level route files, no `(tabs)` group — caught during the step 5 grilling session (2026-07-27). Tabs are added incrementally as real content lands: `explore` dropped, `library` and `settings` added in step 5; `search`/`playlists` tabs still pending their own steps |
+| Tab/route structure | Draft assumed a `(tabs)` route group (`app/(tabs)/index.tsx`, etc.) with 5 tabs (home, library, search, playlists, settings) | Actual `app-tabs.tsx` mounts `NativeTabs` directly in `_layout.tsx` over flat top-level route files, no `(tabs)` group — caught during the step 5 grilling session (2026-07-27). Tabs are added incrementally as real content lands: `explore` dropped, `library` and `settings` added in step 5; `search` added in step 6; `playlists` tab still pending its own step |
+| Search scope | "Search by track, album, artist, genre" implied filters | Text `search3` only — the API has no genre/year/type filter on search, so attribute filters are out; the "Recently Added / New Releases / Explore" grouping the user asked for is faceted `getAlbumList2` *browse*, split into its own home/discover step (Build Order step 9), not part of search. Decided step 6 grilling session (2026-07-28) |

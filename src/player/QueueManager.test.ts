@@ -5,6 +5,7 @@ import {
   getCurrentTrack,
   next,
   playNext,
+  playNow,
   previous,
   removeAt,
   reorder,
@@ -114,6 +115,29 @@ describe('playNext', () => {
   it('inserts at the front of an empty queue', () => {
     const state = playNext(createQueueState([]), track('a'));
     expect(state.tracks.map((t) => t.id)).toEqual(['a']);
+    expect(state.currentIndex).toBe(0);
+  });
+});
+
+describe('playNow', () => {
+  it('inserts at the current position and makes it current, current track becomes next', () => {
+    const state = playNow(createQueueState(tracks, 1), track('x'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'x', 'b', 'c']);
+    // currentIndex still points at the inserted track...
+    expect(getCurrentTrack(state)?.id).toBe('x');
+    // ...and the previously-playing track is now immediately next.
+    expect(next(state).tracks[next(state).currentIndex].id).toBe('b');
+  });
+
+  it('preserves the rest of the queue after the previous current track', () => {
+    const state = playNow(createQueueState(tracks, 0), track('x'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['x', 'a', 'b', 'c']);
+    expect(state.currentIndex).toBe(0);
+  });
+
+  it('starts a one-track queue when the queue is empty', () => {
+    const state = playNow(createQueueState([]), track('x'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['x']);
     expect(state.currentIndex).toBe(0);
   });
 });
