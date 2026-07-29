@@ -1,12 +1,8 @@
 import { queryClient } from '@/api/queryClient';
 import { queryKeys } from '@/api/queryKeys';
-import {
-  getArtistSections,
-  getArtists,
-  getGenres,
-  getPlaylists,
-  getStarred,
-} from '@/api/subsonic/endpoints/browsing';
+import { getStarred } from '@/api/subsonic/endpoints/annotations';
+import { getArtistSections, getArtists, getGenres } from '@/api/subsonic/endpoints/browsing';
+import { getPlaylists } from '@/api/subsonic/endpoints/playlists';
 import type { SubsonicAuth } from '@/api/subsonic/types';
 
 /** Prefetches the top-level "Your Library" lists right after login, so those screens feel

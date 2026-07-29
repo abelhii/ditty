@@ -1,15 +1,17 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { FavouriteButton } from '@/components/FavouriteButton';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbum } from '@/features/library/hooks/useAlbum';
@@ -70,13 +72,16 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                           <ThemedText type="linkPrimary">{genre}</ThemedText>
                         </Pressable>
                       )}
-                      <Pressable
-                        style={({ pressed }) => [styles.playButton, pressed && styles.pressed]}
-                        onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
-                        <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
-                          <ThemedText type="smallBold">Play</ThemedText>
-                        </ThemedView>
-                      </Pressable>
+                      <ThemedView style={styles.actions}>
+                        <Pressable
+                          style={({ pressed }) => pressed && styles.pressed}
+                          onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
+                          <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
+                            <ThemedText type="smallBold">Play</ThemedText>
+                          </ThemedView>
+                        </Pressable>
+                        <FavouriteButton target={{ kind: 'album', item: album }} size={26} />
+                      </ThemedView>
                     </ThemedView>
                   }
                   renderItem={({ item, index }) => (
@@ -90,44 +95,13 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                   )}
                 />
 
-                <Modal
-                  visible={menuTrack !== null}
-                  transparent
-                  animationType="fade"
-                  onRequestClose={() => setMenuTrack(null)}>
-                  <Pressable style={styles.overlay} onPress={() => setMenuTrack(null)}>
-                    <ThemedView type="backgroundElement" style={styles.menu}>
-                      <MenuOption
-                        label="Play next"
-                        onPress={() => {
-                          if (menuTrack) PlaybackController.playNext(menuTrack);
-                          setMenuTrack(null);
-                        }}
-                      />
-                      <MenuOption
-                        label="Add to queue"
-                        onPress={() => {
-                          if (menuTrack) PlaybackController.addToQueue(menuTrack);
-                          setMenuTrack(null);
-                        }}
-                      />
-                    </ThemedView>
-                  </Pressable>
-                </Modal>
+                <TrackActionsMenu track={menuTrack} onClose={() => setMenuTrack(null)} />
               </>
             );
           }}
         </QueryState>
       </SafeAreaView>
     </ThemedView>
-  );
-}
-
-function MenuOption({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]} onPress={onPress}>
-      <ThemedText>{label}</ThemedText>
-    </Pressable>
   );
 }
 
@@ -155,7 +129,10 @@ const styles = StyleSheet.create({
   centerText: {
     textAlign: 'center',
   },
-  playButton: {
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.four,
     marginTop: Spacing.two,
   },
   pressed: {
@@ -165,20 +142,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.six,
     borderRadius: Spacing.five,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  menu: {
-    borderTopLeftRadius: Spacing.three,
-    borderTopRightRadius: Spacing.three,
-    paddingVertical: Spacing.two,
-    paddingBottom: Spacing.six,
-  },
-  menuOption: {
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
   },
 });

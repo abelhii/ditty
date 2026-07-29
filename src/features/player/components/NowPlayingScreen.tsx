@@ -4,13 +4,16 @@ import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, View } from 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
+import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { FavouriteButton } from '@/components/FavouriteButton';
 import { PlayPauseButton } from '@/components/MiniPlayer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
@@ -41,6 +44,7 @@ export function NowPlayingScreen() {
   const repeat = usePlayerStore((state) => state.queue.repeat);
   const progress = useProgress();
 
+  const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<Track | null>(null);
   const [translateY] = useState(() => new Animated.Value(SCREEN_HEIGHT));
 
   // The overlay stays mounted (rendering null when closed), so the slide-up has to fire on each
@@ -108,6 +112,21 @@ export function NowPlayingScreen() {
               </ThemedText>
             </View>
 
+            <View style={styles.secondaryActions}>
+              <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={26} />
+              <Pressable
+                hitSlop={10}
+                accessibilityLabel="Add to playlist"
+                onPress={() => setAddToPlaylistTrack(currentTrack)}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <SymbolView
+                  name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
+                  size={26}
+                  tintColor={theme.textSecondary}
+                />
+              </Pressable>
+            </View>
+
             <Scrubber {...progress} onSeek={PlaybackController.seekTo} />
 
             <View style={styles.transport}>
@@ -145,6 +164,8 @@ export function NowPlayingScreen() {
           </View>
         </View>
       </ThemedView>
+
+      <AddToPlaylistSheet track={addToPlaylistTrack} onClose={() => setAddToPlaylistTrack(null)} />
     </Animated.View>
   );
 }
@@ -222,6 +243,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
     width: '100%',
+  },
+  secondaryActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.five,
   },
   center: {
     textAlign: 'center',

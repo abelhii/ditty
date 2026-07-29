@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import {
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,6 +21,7 @@ import { ArtistRow } from "@/components/ArtistRow";
 import { QueryState } from "@/components/QueryState";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
+import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
 import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
 import { useRecentSearches } from "@/features/search/hooks/useRecentSearches";
@@ -202,31 +202,7 @@ export function SearchScreen() {
           />
         )}
 
-        <Modal
-          visible={menuTrack !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMenuTrack(null)}
-        >
-          <Pressable style={styles.overlay} onPress={() => setMenuTrack(null)}>
-            <ThemedView type="backgroundElement" style={styles.menu}>
-              <MenuOption
-                label="Play next"
-                onPress={() => {
-                  if (menuTrack) PlaybackController.playNext(menuTrack);
-                  setMenuTrack(null);
-                }}
-              />
-              <MenuOption
-                label="Add to queue"
-                onPress={() => {
-                  if (menuTrack) PlaybackController.addToQueue(menuTrack);
-                  setMenuTrack(null);
-                }}
-              />
-            </ThemedView>
-          </Pressable>
-        </Modal>
+        <TrackActionsMenu track={menuTrack} onClose={() => setMenuTrack(null)} />
       </SafeAreaView>
     </ThemedView>
   );
@@ -313,23 +289,6 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-function MenuOption({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]}
-      onPress={onPress}
-    >
-      <ThemedText>{label}</ThemedText>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -398,20 +357,5 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
-  },
-  overlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  menu: {
-    borderTopLeftRadius: Spacing.three,
-    borderTopRightRadius: Spacing.three,
-    paddingVertical: Spacing.two,
-    paddingBottom: Spacing.six,
-  },
-  menuOption: {
-    paddingVertical: Spacing.three,
-    paddingHorizontal: Spacing.four,
   },
 });

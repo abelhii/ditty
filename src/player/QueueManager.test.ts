@@ -15,7 +15,7 @@ import {
 } from '@/player/QueueManager';
 
 function track(id: string): Track {
-  return { id, title: `Track ${id}`, artist: 'Artist', album: 'Album', duration: 180 };
+  return { id, title: `Track ${id}`, artist: 'Artist', album: 'Album', duration: 180, starred: false };
 }
 
 const tracks = [track('a'), track('b'), track('c')];

@@ -4,7 +4,6 @@ import {
   normalizeAlbum,
   normalizeArtist,
   normalizeGenre,
-  normalizePlaylist,
   normalizeTrack,
 } from '@/api/normalize';
 import { request } from '@/api/subsonic/client';
@@ -14,11 +13,9 @@ import type {
   GetArtistResponse,
   GetArtistsResponse,
   GetGenresResponse,
-  GetPlaylistsResponse,
-  GetStarred2Response,
   SubsonicAuth,
 } from '@/api/subsonic/types';
-import type { Album, Artist, ArtistSection, Genre, Playlist, Track } from '@/api/types';
+import type { Album, Artist, ArtistSection, Genre, Track } from '@/api/types';
 
 /** Subsonic's max page size for getAlbumList2 — also the trigger for "there's another page". */
 export const ALBUM_LIST_PAGE_SIZE = 500;
@@ -64,11 +61,6 @@ export async function getGenres(serverUrl: string, auth: SubsonicAuth): Promise<
   return (genres.genre ?? []).map(normalizeGenre);
 }
 
-export async function getPlaylists(serverUrl: string, auth: SubsonicAuth): Promise<Playlist[]> {
-  const { playlists } = await request<GetPlaylistsResponse>(serverUrl, 'getPlaylists', {}, auth);
-  return (playlists.playlist ?? []).map(normalizePlaylist);
-}
-
 /** Paginated albums-by-genre, via getAlbumList2 (Subsonic's max page size is 500) — the one real
  *  pagination surface in step 5 (Build Order step 5). */
 export async function getAlbumsByGenre(
@@ -84,16 +76,4 @@ export async function getAlbumsByGenre(
     auth,
   );
   return (albumList2.album ?? []).map(normalizeAlbum);
-}
-
-export async function getStarred(
-  serverUrl: string,
-  auth: SubsonicAuth,
-): Promise<{ artists: Artist[]; albums: Album[]; tracks: Track[] }> {
-  const { starred2 } = await request<GetStarred2Response>(serverUrl, 'getStarred2', {}, auth);
-  return {
-    artists: (starred2.artist ?? []).map(normalizeArtist),
-    albums: (starred2.album ?? []).map(normalizeAlbum),
-    tracks: (starred2.song ?? []).map(normalizeTrack),
-  };
 }

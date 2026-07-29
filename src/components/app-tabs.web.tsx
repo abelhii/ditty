@@ -23,14 +23,16 @@ export default function AppTabs() {
     <Tabs>
       <TabList asChild>
         <CustomTabList>
-          <TabTrigger name="home" href="/" asChild>
+          {/* Home points at the catalog browse stack (`/library`); `/` redirects there. Step 7b
+              dropped the standalone Library tab in favour of My Music. */}
+          <TabTrigger name="home" href="/library" asChild>
             <TabButton>Home</TabButton>
           </TabTrigger>
           <TabTrigger name="search" href="/search" asChild>
             <TabButton>Search</TabButton>
           </TabTrigger>
-          <TabTrigger name="library" href="/library" asChild>
-            <TabButton>Library</TabButton>
+          <TabTrigger name="my-music" href="/my-music" asChild>
+            <TabButton>My Music</TabButton>
           </TabTrigger>
           <TabTrigger name="settings" href="/settings" asChild>
             <TabButton>Settings</TabButton>
