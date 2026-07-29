@@ -123,6 +123,14 @@ export function removeAt(state: QueueState, index: number): QueueState {
   return { ...state, tracks, originalOrder, currentIndex };
 }
 
+/** Moves the current position to `index` within the existing queue, leaving the track order
+ *  untouched — the queue view's "tap a track to jump to it". Contrast `play`/`createQueueState`,
+ *  which build a brand-new queue. Out-of-range indices are ignored. */
+export function jumpTo(state: QueueState, index: number): QueueState {
+  if (index < 0 || index >= state.tracks.length) return state;
+  return { ...state, currentIndex: index };
+}
+
 export function reorder(state: QueueState, fromIndex: number, toIndex: number): QueueState {
   const inRange = (i: number) => i >= 0 && i < state.tracks.length;
   if (!inRange(fromIndex) || !inRange(toIndex) || fromIndex === toIndex) return state;

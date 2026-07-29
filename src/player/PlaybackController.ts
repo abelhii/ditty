@@ -82,6 +82,16 @@ export function skipNext(): void {
   });
 }
 
+/** Jumps to an existing track in the current queue and plays it — the queue view's tap-to-jump.
+ *  Unlike `play`, the queue itself is left intact (see QueueManager.jumpTo). */
+export function jumpTo(index: number): void {
+  const queue = QueueManager.jumpTo(currentQueue(), index);
+  usePlayerStore.setState({
+    queue,
+    desiredPlaying: QueueManager.getCurrentTrack(queue) !== undefined,
+  });
+}
+
 export function skipPrevious(): void {
   usePlayerStore.setState({ queue: QueueManager.previous(currentQueue()) });
 }

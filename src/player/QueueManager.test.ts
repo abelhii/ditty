@@ -3,6 +3,7 @@ import {
   createQueueState,
   enqueue,
   getCurrentTrack,
+  jumpTo,
   next,
   playNext,
   playNow,
@@ -189,6 +190,30 @@ describe('reorder', () => {
   it('is a no-op for equal or out-of-range indexes', () => {
     const state = reorder(createQueueState(tracks, 0), 1, 1);
     expect(state.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('jumpTo', () => {
+  it('moves currentIndex to the given track without reordering', () => {
+    const state = jumpTo(createQueueState(tracks, 0), 2);
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+    expect(getCurrentTrack(state)?.id).toBe('c');
+  });
+
+  it('can jump backwards to an already-played track', () => {
+    const state = jumpTo(createQueueState(tracks, 2), 0);
+    expect(getCurrentTrack(state)?.id).toBe('a');
+  });
+
+  it('is a no-op for an out-of-range index', () => {
+    const start = createQueueState(tracks, 1);
+    expect(jumpTo(start, 3)).toBe(start);
+    expect(jumpTo(start, -1)).toBe(start);
+  });
+
+  it('is a no-op on an empty queue', () => {
+    const start = createQueueState([]);
+    expect(jumpTo(start, 0)).toBe(start);
   });
 });
 

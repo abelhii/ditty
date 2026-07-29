@@ -10,7 +10,10 @@ import { ServerConfigScreen } from '@/auth/ServerConfigScreen';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
+import { MiniPlayer } from '@/components/MiniPlayer';
 import { ThemedView } from '@/components/themed-view';
+import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
+import { QueueScreen } from '@/features/player/components/QueueScreen';
 import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
 
@@ -40,6 +43,9 @@ export default function TabLayout() {
         {status === 'authenticated' && (
           <>
             <AppTabs />
+            <MiniPlayer />
+            <NowPlayingScreen />
+            <QueueScreen />
             <AudioEngine />
             <NotificationBridge />
           </>
