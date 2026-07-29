@@ -49,14 +49,14 @@ src/
       album/[id].tsx
     my-music.tsx                # step 7b: My Music tab — playlists list + pinned Favourites
     settings.tsx                # step 5: logout button
-    player/
-      now-playing.tsx           # step 7a: full-screen player (modal) — real screen
-      queue.tsx                 # step 7a: full queue, tap-to-jump / reorder / remove
     album/[id].tsx              # step 5
     artist/[id].tsx             # step 5
     genre/[name].tsx            # step 5: paginated albums-by-genre
     playlist/[id].tsx           # step 7b: playlist detail (tracks + play + edit)
-    _layout.tsx                 # step 7a: mounts the MiniPlayer overlay above NativeTabs
+    _layout.tsx                 # step 7a: mounts MiniPlayer + now-playing + queue overlays above
+                                 #   NativeTabs. now-playing/queue are JS overlays (features/player/
+                                 #   components/), NOT router routes: NativeTabs is the root navigator
+                                 #   and can't host modal routes without a root Stack — see ADR 0005
 
   api/
     subsonic/
@@ -293,7 +293,8 @@ src/
      (iOS+Android are co-equal MVP targets). Swapping in the native accessory on iOS later is a
      contained change. MiniPlayer contents: artwork + title/artist + play-pause + a hairline progress
      line, tap anywhere to expand.
-   - **now-playing** (modal sheet, swipe-to-dismiss; MiniPlayer hidden while open): big artwork,
+   - **now-playing** (full-screen JS overlay, slide-up + swipe-down-to-dismiss; MiniPlayer hidden
+     while open): big artwork,
      title/artist/album, scrubber + seek (`position`/`status` from the store, `duration` from the
      track), play-pause, prev/next, shuffle, repeat toggles, and an open-queue button. Buffering
      shows via the existing `status: 'loading'`. The favourite (star) toggle and add-to-playlist
@@ -304,8 +305,13 @@ src/
      (today `play()` only *replaces* the queue; there's no jump-within-existing-queue). `jumpTo` gets
      a unit test alongside the other `QueueManager` functions.
    - **New/changed code (7a):** `QueueManager.jumpTo` (+ test) and `PlaybackController.jumpTo`;
-     `components/MiniPlayer.tsx` (the overlay) mounted in `_layout.tsx`; `player/hooks/useProgress.ts`
-     for the scrubber; real screens for the `player/now-playing.tsx` and `player/queue.tsx` routes.
+     `components/MiniPlayer.tsx` (the overlay, exports the shared `PlayPauseButton`) mounted in
+     `_layout.tsx`; `player/usePlayerUiStore.ts` (overlay open/close state); `player/hooks/useProgress.ts`
+     (+ `formatTime`) for the scrubber; `features/player/components/` — `NowPlayingScreen`, `QueueScreen`,
+     and `Scrubber` — all JS overlays mounted in `_layout.tsx` rather than `player/now-playing.tsx` /
+     `player/queue.tsx` router routes (NativeTabs-at-root can't host modal routes without a root Stack;
+     decided during 7a — see ADR 0005). Gestures (swipe-dismiss, drag-reorder, swipe-remove, scrubber)
+     are hand-rolled on `Animated` + `PanResponder`, no reanimated dependency.
 
    **7b — Playlists + Favourites.** Server-backed CRUD with optimistic UI, plus the starred-items
    collection. Terminology stays API-faithful: **Library = catalog**, **Playlists**, and

@@ -27,6 +27,19 @@ implementations to keep in sync for a bar that's the same three controls everywh
 version's win (proper native docking/blur/minimize-on-scroll) doesn't justify the divergence for
 MVP. It remains the obvious upgrade path if iOS polish becomes a priority.
 
+## Follow-on (step 7a implementation, 2026-07-29)
+
+The same reasoning was extended to the **now-playing** and **queue** surfaces during 7a. The plan
+originally sketched them as `player/now-playing.tsx` / `player/queue.tsx` *router modal routes*, but
+`NativeTabs` is mounted directly as the root navigator (no root `Stack`, no `(tabs)` group — a
+deliberate structure), and expo-router can't present a sibling modal route that covers native tabs
+without wrapping them in a root `Stack`. Rather than restructure the already-working tab/auth root
+(untestable on-device here), both are built as full-screen JS overlays driven by `usePlayerUiStore`
+and mounted alongside the MiniPlayer in `_layout.tsx` — the same overlay pattern as the MiniPlayer,
+for the same cross-platform reason. Swipe-to-dismiss and drag-reorder are hand-rolled on
+`Animated` + `PanResponder` (no reanimated dependency). The router-modal approach remains a clean
+upgrade if a root `Stack` is introduced later.
+
 ## Consequences
 
 The overlay has to position itself above a *native* tab bar it doesn't own — the fiddly part
