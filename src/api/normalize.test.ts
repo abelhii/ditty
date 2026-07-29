@@ -12,11 +12,16 @@ describe('normalizeArtist', () => {
   it('maps all fields', () => {
     expect(
       normalizeArtist({ id: 'ar1', name: 'CARNÚN', coverArt: 'ar-1', albumCount: 3 }),
-    ).toEqual({ id: 'ar1', name: 'CARNÚN', albumCount: 3, coverArtId: 'ar-1' });
+    ).toEqual({ id: 'ar1', name: 'CARNÚN', albumCount: 3, coverArtId: 'ar-1', starred: false });
   });
 
   it('defaults albumCount to 0 when missing', () => {
     expect(normalizeArtist({ id: 'ar1', name: 'CARNÚN' }).albumCount).toBe(0);
+  });
+
+  it('marks starred when the raw payload carries a starred timestamp', () => {
+    expect(normalizeArtist({ id: 'ar1', name: 'CARNÚN', starred: '2026-07-29T00:00:00Z' }).starred).toBe(true);
+    expect(normalizeArtist({ id: 'ar1', name: 'CARNÚN' }).starred).toBe(false);
   });
 });
 
@@ -45,12 +50,12 @@ describe('groupArtistIndex', () => {
       { name: 'C', artist: [{ id: 'ar2', name: 'CARNÚN' }, { id: 'ar3', name: 'Cher' }] },
     ];
     expect(groupArtistIndex(index)).toEqual([
-      { letter: 'A', artists: [{ id: 'ar1', name: 'ABBA', albumCount: 0, coverArtId: undefined }] },
+      { letter: 'A', artists: [{ id: 'ar1', name: 'ABBA', albumCount: 0, coverArtId: undefined, starred: false }] },
       {
         letter: 'C',
         artists: [
-          { id: 'ar2', name: 'CARNÚN', albumCount: 0, coverArtId: undefined },
-          { id: 'ar3', name: 'Cher', albumCount: 0, coverArtId: undefined },
+          { id: 'ar2', name: 'CARNÚN', albumCount: 0, coverArtId: undefined, starred: false },
+          { id: 'ar3', name: 'Cher', albumCount: 0, coverArtId: undefined, starred: false },
         ],
       },
     ]);
@@ -89,6 +94,7 @@ describe('normalizeAlbum', () => {
       year: 1997,
       genre: 'Electronic',
       coverArtId: 'al-1',
+      starred: false,
     });
   });
 
@@ -117,6 +123,7 @@ describe('normalizeTrack', () => {
       albumId: 'al-1',
       duration: 429,
       coverArtId: 'al-1',
+      starred: false,
     });
   });
 
@@ -128,7 +135,12 @@ describe('normalizeTrack', () => {
       album: '',
       duration: 0,
       coverArtId: undefined,
+      starred: false,
     });
+  });
+
+  it('marks starred when the raw song carries a starred timestamp', () => {
+    expect(normalizeTrack({ id: 's1', title: 'x', starred: '2026-07-29T00:00:00Z' }).starred).toBe(true);
   });
 });
 

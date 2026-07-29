@@ -11,6 +11,8 @@ export type Track = {
   /** Seconds. */
   duration: number;
   coverArtId?: string;
+  /** Whether the user has favourited (starred) this track — see CONTEXT.md's Favourite. */
+  starred: boolean;
 };
 
 export type Artist = {
@@ -18,6 +20,7 @@ export type Artist = {
   name: string;
   albumCount: number;
   coverArtId?: string;
+  starred: boolean;
 };
 
 export type Album = {
@@ -31,6 +34,7 @@ export type Album = {
   year?: number;
   genre?: string;
   coverArtId?: string;
+  starred: boolean;
 };
 
 export type Genre = {

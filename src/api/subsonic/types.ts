@@ -33,6 +33,8 @@ export type SubsonicSong = {
   genre?: string;
   coverArt?: string;
   duration?: number;
+  /** ISO timestamp set when the item is starred; absent/undefined when not starred. */
+  starred?: string;
 };
 
 export type SubsonicArtist = {
@@ -41,6 +43,7 @@ export type SubsonicArtist = {
   coverArt?: string;
   albumCount?: number;
   artistImageUrl?: string;
+  starred?: string;
 };
 
 /** The shape returned by getArtist — an artist plus its albums. */
@@ -58,6 +61,7 @@ export type SubsonicAlbum = {
   duration: number;
   year?: number;
   genre?: string;
+  starred?: string;
 };
 
 /** The shape returned by getAlbum — an album plus its songs. */
@@ -113,6 +117,21 @@ export type GetPlaylistsResponse = {
   playlists: {
     playlist?: SubsonicPlaylist[];
   };
+};
+
+/** The shape returned by getPlaylist — a playlist plus its ordered songs (Subsonic calls them
+ *  "entry"). The positional index into `entry` is what updatePlaylist's songIndexToRemove targets. */
+export type SubsonicPlaylistWithSongs = SubsonicPlaylist & {
+  entry?: SubsonicSong[];
+};
+
+export type GetPlaylistResponse = {
+  playlist: SubsonicPlaylistWithSongs;
+};
+
+/** createPlaylist echoes the created playlist back (with its server-assigned id). */
+export type CreatePlaylistResponse = {
+  playlist: SubsonicPlaylist;
 };
 
 export type GetAlbumList2Response = {

@@ -36,7 +36,7 @@ export function ArtistsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ThemedText type="title" style={styles.title}>
-          Library
+          Home
         </ThemedText>
 
         <ThemedView type="backgroundElement" style={styles.segmented}>

@@ -14,6 +14,7 @@ export function normalizeArtist(raw: SubsonicArtist): Artist {
     name: raw.name,
     albumCount: raw.albumCount ?? 0,
     coverArtId: raw.coverArt,
+    starred: raw.starred != null,
   };
 }
 
@@ -42,6 +43,7 @@ export function normalizeAlbum(raw: SubsonicAlbum): Album {
     year: raw.year,
     genre: raw.genre,
     coverArtId: raw.coverArt,
+    starred: raw.starred != null,
   };
 }
 
@@ -54,6 +56,7 @@ export function normalizeTrack(raw: SubsonicSong): Track {
     albumId: raw.albumId,
     duration: raw.duration ?? 0,
     coverArtId: raw.coverArt,
+    starred: raw.starred != null,
   };
 }
 

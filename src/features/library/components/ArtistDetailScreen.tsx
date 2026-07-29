@@ -7,6 +7,7 @@ import type { Album } from '@/api/types';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { AlbumTile } from '@/components/AlbumTile';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { FavouriteButton } from '@/components/FavouriteButton';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -19,7 +20,7 @@ const GRID_GAP = Spacing.four;
 /** The tab stacks that render this screen — the prefix its album drill-down pushes onto, so the
  *  push lands in the current tab's own stack. Kept as literals (not a free-form string) so
  *  expo-router's typed routes still validate the resulting href. */
-type DetailBasePath = '/library' | '/search';
+type DetailBasePath = '/library' | '/search' | '/my-music';
 
 type ArtistDetailScreenProps = {
   artistId: string;
@@ -68,6 +69,7 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
                   <ThemedText type="small" themeColor="textSecondary">
                     {artist.albumCount} {artist.albumCount === 1 ? 'album' : 'albums'}
                   </ThemedText>
+                  <FavouriteButton target={{ kind: 'artist', item: artist }} size={26} />
                 </ThemedView>
               }
               renderItem={({ item }) =>
@@ -80,7 +82,9 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
                       router.push(
                         basePath === '/search'
                           ? `/search/album/${item.id}`
-                          : `/library/album/${item.id}`,
+                          : basePath === '/my-music'
+                            ? `/my-music/album/${item.id}`
+                            : `/library/album/${item.id}`,
                       )
                     }
                   />

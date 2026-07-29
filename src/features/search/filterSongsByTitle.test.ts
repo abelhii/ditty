@@ -2,7 +2,7 @@ import type { Track } from '@/api/types';
 import { filterSongsByTitle, titleMatchesQuery } from '@/features/search/filterSongsByTitle';
 
 function song(id: string, title: string, artist: string): Track {
-  return { id, title, artist, album: 'Album', duration: 180 };
+  return { id, title, artist, album: 'Album', duration: 180, starred: false };
 }
 
 describe('titleMatchesQuery', () => {

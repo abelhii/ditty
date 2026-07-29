@@ -2,7 +2,7 @@ import type { Artist } from '@/api/types';
 import { filterArtistsWithContent } from '@/features/search/filterArtistsWithContent';
 
 function artist(id: string, albumCount: number): Artist {
-  return { id, name: `Artist ${id}`, albumCount };
+  return { id, name: `Artist ${id}`, albumCount, starred: false };
 }
 
 describe('filterArtistsWithContent', () => {

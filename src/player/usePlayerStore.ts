@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 
+import type { Track } from '@/api/types';
 import { createQueueState, type QueueState } from '@/player/QueueManager';
 
 export type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped';
@@ -28,6 +29,10 @@ type PlayerState = {
 
   setStatus: (status: PlaybackStatus) => void;
   setPosition: (position: number) => void;
+
+  /** Flips the `starred` flag on every queued copy of a track — keeps the now-playing/queue
+   *  heart in sync with an optimistic favourite toggle (see features/favourites useStar/useUnstar). */
+  setTrackStarred: (trackId: string, starred: boolean) => void;
 };
 
 export const usePlayerStore = create<PlayerState>((set) => ({
@@ -45,4 +50,16 @@ export const usePlayerStore = create<PlayerState>((set) => ({
 
   setStatus: (status) => set({ status }),
   setPosition: (position) => set({ position }),
+
+  setTrackStarred: (trackId, starred) =>
+    set((state) => {
+      const patch = (track: Track) => (track.id === trackId ? { ...track, starred } : track);
+      return {
+        queue: {
+          ...state.queue,
+          tracks: state.queue.tracks.map(patch),
+          originalOrder: state.queue.originalOrder.map(patch),
+        },
+      };
+    }),
 }));
