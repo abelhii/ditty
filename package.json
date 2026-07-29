@@ -2,6 +2,7 @@
   "name": "music-player",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "packageManager": "pnpm@8.15.7",
   "dependencies": {
     "@expo/ui": "~57.0.7",
     "@tanstack/query-async-storage-persister": "^5.101.4",
