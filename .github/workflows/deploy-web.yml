@@ -1,0 +1,57 @@
+name: Deploy web to GitHub Pages
+
+# Static Expo web export (app.json web.output: "static") published to GitHub Pages as a staging
+# preview. Serves under https://<user>.github.io/ditty/ — the /ditty subpath is baked in via
+# app.json experiments.baseUrl. See docs/dev/remote-testing-setup.md.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a newer deploy supersede an in-progress one; don't cancel a run mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Export web bundle
+        run: pnpm exec expo export --platform web
+
+      # Stop Pages' Jekyll pass from dropping the underscore-prefixed _expo/ asset dir.
+      - run: touch dist/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
