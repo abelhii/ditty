@@ -22,7 +22,8 @@
       "permissions": [
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-      ]
+      ],
+      "package": "com.abelhii.sicmu"
     },
     "web": {
       "output": "static",
@@ -46,6 +47,12 @@
       "typedRoutes": true,
       "reactCompiler": true,
       "baseUrl": "/ditty"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3d935c14-e709-45c0-95b9-76063293a602"
+      }
     }
   }
 }
