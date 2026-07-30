@@ -1,15 +1,19 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
+import { getItem, removeItem, setItem } from '@/api/kvStorage';
 import type { Track } from '@/api/types';
-import { createQueueState, type QueueState } from '@/player/QueueManager';
+import { createQueueState, restoreQueue, type QueueState } from '@/player/QueueManager';
 
-export type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped';
+const PERSIST_KEY = 'music-player-queue';
+const PERSIST_VERSION = 1;
 
 /**
- * Single source of truth for playback (ADR 0001, docs/adr/0001-player-state-flows-through-store.md).
- * `PlaybackController` only ever writes the "proposed" fields (queue, desiredPlaying,
- * seekRequest); `AudioEngine` is the only thing that writes the "observed" fields (status,
- * position) back, after actually driving the `<Audio>` ref.
+ * The *proposed* half of playback state (ADR 0001). `PlaybackController` only ever writes these
+ * fields (queue, desiredPlaying, seekRequest); the *observed* fields (status, position) live in
+ * `usePlaybackStatusStore` so the ~1/sec position tick during playback never reaches this store's
+ * `persist` middleware. See docs/adr/0001-player-state-flows-through-store.md and
+ * docs/adr/0006-local-only-queue-persistence.md.
  */
 type PlayerState = {
   queue: QueueState;
@@ -18,48 +22,75 @@ type PlayerState = {
    *  AudioEngine once the seek has been issued. */
   seekRequest: number | null;
 
-  status: PlaybackStatus;
-  /** Seconds, as last reported by `<Audio>`'s onPositionChange. */
-  position: number;
-
   setQueue: (queue: QueueState) => void;
   setDesiredPlaying: (desiredPlaying: boolean) => void;
   requestSeek: (seconds: number) => void;
   clearSeekRequest: () => void;
 
-  setStatus: (status: PlaybackStatus) => void;
-  setPosition: (position: number) => void;
-
   /** Flips the `starred` flag on every queued copy of a track — keeps the now-playing/queue
    *  heart in sync with an optimistic favourite toggle (see features/favourites useStar/useUnstar). */
   setTrackStarred: (trackId: string, starred: boolean) => void;
+
+  /** Empties the queue and stops playback — used by logout, which must not leak one account's
+   *  queue (server-specific track ids) into the next. */
+  reset: () => void;
 };
 
-export const usePlayerStore = create<PlayerState>((set) => ({
-  queue: createQueueState([]),
-  desiredPlaying: false,
-  seekRequest: null,
+/** Only the queue is durable across restarts — shuffle/repeat/originalOrder ride inside it.
+ *  desiredPlaying is deliberately *not* persisted: restore is always paused (ADR 0006). */
+type PersistedPlayerState = { queue: QueueState };
 
-  status: 'idle',
-  position: 0,
+/**
+ * `persist` calls `setItem`/`getItem` synchronously against this adapter. kvStorage is a sync
+ * key-value store on every platform, so hydration happens during store creation — no async gate.
+ * A corrupt blob (unparseable JSON) makes hydration throw, which `persist` swallows and leaves
+ * the empty initial queue in place — the same "corrupt storage resets" behaviour as
+ * `useAuthStore.hydrate`.
+ */
+const jsonStorage = createJSONStorage<PersistedPlayerState>(
+  (): StateStorage => ({ getItem, setItem, removeItem }),
+);
 
-  setQueue: (queue) => set({ queue }),
-  setDesiredPlaying: (desiredPlaying) => set({ desiredPlaying }),
-  requestSeek: (seconds) => set({ seekRequest: seconds }),
-  clearSeekRequest: () => set({ seekRequest: null }),
+export const usePlayerStore = create<PlayerState>()(
+  persist(
+    (set) => ({
+      queue: createQueueState([]),
+      desiredPlaying: false,
+      seekRequest: null,
 
-  setStatus: (status) => set({ status }),
-  setPosition: (position) => set({ position }),
+      setQueue: (queue) => set({ queue }),
+      setDesiredPlaying: (desiredPlaying) => set({ desiredPlaying }),
+      requestSeek: (seconds) => set({ seekRequest: seconds }),
+      clearSeekRequest: () => set({ seekRequest: null }),
 
-  setTrackStarred: (trackId, starred) =>
-    set((state) => {
-      const patch = (track: Track) => (track.id === trackId ? { ...track, starred } : track);
-      return {
-        queue: {
-          ...state.queue,
-          tracks: state.queue.tracks.map(patch),
-          originalOrder: state.queue.originalOrder.map(patch),
-        },
-      };
+      setTrackStarred: (trackId, starred) =>
+        set((state) => {
+          const patch = (track: Track) => (track.id === trackId ? { ...track, starred } : track);
+          return {
+            queue: {
+              ...state.queue,
+              tracks: state.queue.tracks.map(patch),
+              originalOrder: state.queue.originalOrder.map(patch),
+            },
+          };
+        }),
+
+      reset: () => set({ queue: createQueueState([]), desiredPlaying: false, seekRequest: null }),
     }),
-}));
+    {
+      name: PERSIST_KEY,
+      version: PERSIST_VERSION,
+      storage: jsonStorage,
+      partialize: (state): PersistedPlayerState => ({ queue: state.queue }),
+      // A version bump (a future Track-shape change) resets to an empty queue rather than
+      // migrating stale data — real migrate() handlers are deferred (ADR 0006).
+      migrate: () => ({ queue: createQueueState([]) }),
+      // Restore paused, from the current track's start: desiredPlaying stays at its initial
+      // `false`, and a queue that finished last session re-cues from its top (index clamp).
+      merge: (persisted, current) => {
+        const saved = (persisted as PersistedPlayerState | undefined)?.queue;
+        return { ...current, queue: saved ? restoreQueue(saved) : current.queue };
+      },
+    },
+  ),
+);

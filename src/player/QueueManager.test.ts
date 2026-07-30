@@ -10,6 +10,7 @@ import {
   previous,
   removeAt,
   reorder,
+  restoreQueue,
   setRepeat,
   setShuffle,
 } from '@/player/QueueManager';
@@ -236,5 +237,37 @@ describe('setShuffle', () => {
   it('is a no-op when already in the requested state', () => {
     const state = createQueueState(tracks, 0);
     expect(setShuffle(state, false)).toBe(state);
+  });
+});
+
+describe('restoreQueue', () => {
+  it('leaves an in-range currentIndex untouched', () => {
+    const state = createQueueState(tracks, 1);
+    expect(restoreQueue(state)).toEqual(state);
+  });
+
+  it('snaps a currentIndex that ran off the end back to 0', () => {
+    // QueueManager.next past the last track leaves currentIndex === tracks.length.
+    const finished = { ...createQueueState(tracks, 2), currentIndex: tracks.length };
+    expect(restoreQueue(finished).currentIndex).toBe(0);
+  });
+
+  it('snaps any other out-of-range index to 0', () => {
+    expect(restoreQueue({ ...createQueueState(tracks), currentIndex: 99 }).currentIndex).toBe(0);
+    expect(restoreQueue({ ...createQueueState(tracks), currentIndex: -5 }).currentIndex).toBe(0);
+  });
+
+  it('restores an empty queue verbatim (currentIndex stays -1)', () => {
+    const empty = createQueueState([]);
+    expect(restoreQueue(empty)).toEqual(empty);
+    expect(restoreQueue(empty).currentIndex).toBe(-1);
+  });
+
+  it('preserves shuffle, repeat, and originalOrder', () => {
+    const shuffled = setRepeat(setShuffle(createQueueState(tracks, 1), true, () => 0), 'all');
+    const restored = restoreQueue(shuffled);
+    expect(restored.shuffle).toBe(true);
+    expect(restored.repeat).toBe('all');
+    expect(restored.originalOrder.map((t) => t.id)).toEqual(['a', 'b', 'c']);
   });
 });

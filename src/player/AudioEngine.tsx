@@ -7,6 +7,7 @@ import { getStreamUrl } from '@/api/subsonic/endpoints/media';
 import { useAuthStore } from '@/auth/useAuthStore';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
+import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 
 /**
@@ -47,9 +48,9 @@ export function AudioEngine() {
       // <Audio> is about to unmount below — the next track will get a fresh native instance.
       hasRoutedGraph.current = false;
       loadedTrackId.current = undefined;
-      usePlayerStore.getState().setStatus('idle');
+      usePlaybackStatusStore.getState().setStatus('idle');
     } else if (currentTrack.id !== loadedTrackId.current) {
-      usePlayerStore.getState().setStatus('loading');
+      usePlaybackStatusStore.getState().setStatus('loading');
     }
   }, [currentTrack]);
 
@@ -98,14 +99,14 @@ export function AudioEngine() {
         if (usePlayerStore.getState().desiredPlaying) {
           audioRef.current?.play();
         } else {
-          usePlayerStore.getState().setStatus('paused');
+          usePlaybackStatusStore.getState().setStatus('paused');
         }
       }}
-      onError={() => usePlayerStore.getState().setStatus('stopped')}
-      onPlay={() => usePlayerStore.getState().setStatus('playing')}
-      onPause={() => usePlayerStore.getState().setStatus('paused')}
+      onError={() => usePlaybackStatusStore.getState().setStatus('stopped')}
+      onPlay={() => usePlaybackStatusStore.getState().setStatus('playing')}
+      onPause={() => usePlaybackStatusStore.getState().setStatus('paused')}
       onEnded={() => PlaybackController.handleTrackEnded()}
-      onPositionChange={(seconds) => usePlayerStore.getState().setPosition(seconds)}
+      onPositionChange={(seconds) => usePlaybackStatusStore.getState().setPosition(seconds)}
     />
   );
 }

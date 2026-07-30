@@ -1,4 +1,5 @@
 import { getCurrentTrack } from '@/player/QueueManager';
+import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 
 export type Progress = {
@@ -14,7 +15,7 @@ export type Progress = {
  *  track. Position is the only value that ticks frequently, so subscribing here (rather than
  *  reading the whole store) keeps re-renders scoped to the scrubber. */
 export function useProgress(): Progress {
-  const position = usePlayerStore((state) => state.position);
+  const position = usePlaybackStatusStore((state) => state.position);
   const duration = usePlayerStore((state) => getCurrentTrack(state.queue)?.duration ?? 0);
 
   const fraction = duration > 0 ? Math.min(1, Math.max(0, position / duration)) : 0;
