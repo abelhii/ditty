@@ -102,18 +102,28 @@ src/
     favourites/               # step 7b
       hooks/ (useFavourites over getStarred2, useStar, useUnstar)
       components/FavouritesScreen.tsx  # segmented Songs | Albums | Artists
+    home/                     # step 9: Home/discover shelves
+      shelves.ts              # pure homeShelves(currentYear) shelf config (unit tested)
+      hooks/useAlbumShelf.ts  # one getAlbumList2 shelf, keyed by ShelfId
+      components/ (HomeScreen — vertical scroll of carousels + Artists/Genres links; AlbumShelf — one horizontal carousel)
 
   auth/
-    useAuthStore.ts            # server URL, salt/token (no password persisted); logout() clears the query cache too
+    useAuthStore.ts            # server URL, salt/token (no password persisted); logout() clears the query cache too;
+                               #   step 8b adds sessionExpired()/reauthenticate() for in-place re-auth (ADR 0007)
     ServerConfigScreen.tsx
+    ReauthModal.tsx            # step 8b: blocking, password-only re-authentication prompt
 
   components/                 # shared UI — declarative, no data-fetching/store access (local UI-only
                                # state like open/closed is fine, e.g. Collapsible, AnimatedSplashOverlay)
                                # atoms: CoverArtImage, QueryState (loading/offline-empty/error+retry/pull-to-refresh)
                                # molecules: ArtistRow, AlbumTile, TrackRow, GenreRow, MiniPlayer
                                #   (step 7a overlay), TrackActionsMenu (step 7b shared overflow)...
+                               # step 8b: Notice (transient toast) + useNoticeStore (ADR 0007)
+  api/
+    mutationErrorNotice.ts     # step 8b: pure wording for a failed-mutation Notice (unit tested)
   utils/
-    network.ts                # connectivity awareness
+    network.ts                # step 8b: expo-network connectivity probe (isOffline), used reactively
+                               #   to flavour error messages — not the re-auth gate (ADR 0007)
 ```
 
 ---
@@ -371,7 +381,7 @@ src/
      `originalOrder` ride inside the persisted queue (the server can't store them — *why* local
      persistence was mandatory). `currentIndex` clamped to 0 on restore; `logout()` clears the
      persisted queue.
-   - **8b — error states (`docs/adr/0007-error-states.md`):** one slice, sequenced internally —
+   - **8b — error states (done, 2026-07-30, `docs/adr/0007-error-states.md`):** one slice, sequenced internally —
      two foundations, then three consumers. **Foundations:** a hand-rolled **`Notice`** primitive
      (transient, auto-dismissing, non-blocking; one store mounted at root, MiniPlayer layering;
      reserved for surface-less actions) and a **`utils/network.ts`** connectivity probe over
@@ -387,7 +397,39 @@ src/
      a `Notice` centrally from `MutationCache.onError` via per-mutation `meta: { action }`, worded by
      error class, no Retry, suppressed on auth errors. **Out of scope:** proactive offline banner,
      playback auto-skip, intra-track resume, cross-device sync, mutation auto-replay.
-9. Home / discover shelves (split out of step 6 during the 2026-07-28 grilling session) — the real content for `index.tsx`, replacing the build-order-step-4 smoke-test placeholder. Client-side grouping of `getAlbumList2` shelves: **Recently Added** (`type=newest`, by date added to the server's scan/import), **New Releases** (by the album's own release/original date — OpenSubsonic `originalReleaseDate`/`releaseDate`, distinct from date-added), **Explore** (`random`/`recent`/`frequent`). These are faceted *browse*, no text query — deliberately kept separate from Search. If genre/year *attribute* filtering is ever wanted, it belongs here (`getAlbumList2 byGenre/byYear`), not bolted onto the search box.
+9. Home / discover shelves (done, 2026-07-30; split out of step 6 during the 2026-07-28 grilling
+   session) — the real content for the Home tab, replacing step 7b's redirect-into-the-Artists-list
+   placeholder. No ADR; design finalised during implementation and captured here. Client-side
+   grouping of `getAlbumList2` shelves, rendered as horizontal carousels down a vertical scroll:
+
+   - **Three shelves** (`features/home/shelves.ts`, a pure `homeShelves(currentYear)` config, unit
+     tested): **Recently Added** (`type=newest`, by date added to the server's scan/import), **New
+     Releases** (`type=byYear` with a `fromYear > toYear` window — the current year back 5 years,
+     newest-first; the closest `getAlbumList2` ordering to the album's own release date, distinct
+     from date-added — year granularity is enough for MVP; OpenSubsonic `originalReleaseDate` is a
+     later refinement), and **Explore** (`type=random`; `recent`/`frequent` are the same mechanism
+     and the obvious follow-up shelves). These are faceted *browse*, no text query — deliberately
+     kept separate from Search. If genre/year *attribute* filtering is ever wanted, it belongs here
+     (`getAlbumList2 byGenre/byYear`), not bolted onto the search box.
+   - **Routing restructure.** The Home tab (internal route name still `library`) now renders the new
+     `HomeScreen` at `/library`; the full sectioned **Artists/Genres catalog list** moved one level
+     down to a pushed `/library/artists` route (`ArtistsScreen`, retitled "Library", gains an
+     `initialView` prop so Home's **Genres** quick link opens straight on the Genres toggle via
+     `?view=genres`). Home shows two quick links (Artists / Genres) above the shelves — the "See all
+     into the full lists" the step 7b note anticipated. The album/artist/genre **detail routes are
+     unchanged** (still under `/library/...`).
+   - **Data.** New generic `getAlbumList2(serverUrl, auth, params)` in `endpoints/browsing.ts`
+     (single unpaginated page; the existing paginated `getAlbumsByGenre` stays the `byGenre`
+     variant), a `useAlbumShelf(shelf)` hook keyed by `queryKeys.albumShelf(id)`, and the three
+     shelves added to `prefetchLibrary` so Home is instant after login. Shelves **persist** in the
+     query cache like other library data (offline Home shows cached shelves; the `random` set may
+     look stale — acceptable). A shelf that errors or comes back empty **renders nothing**, so Home
+     degrades to just the shelves with content rather than showing per-shelf error blocks.
+   - **New/changed code**: `features/home/` (`shelves.ts` + test, `hooks/useAlbumShelf.ts`,
+     `components/HomeScreen.tsx` + `AlbumShelf.tsx`); `getAlbumList2` + `AlbumListType`/`AlbumListParams`
+     in `browsing.ts`; `queryKeys.albumShelf`; `app/library/index.tsx` now renders `HomeScreen`,
+     new `app/library/artists.tsx` route + `_layout.tsx` registration; `ArtistsScreen` `initialView`
+     prop + retitle; `prefetchLibrary` prefetches the shelves.
 10. Future features, in order: Auto DJ (cheapest, uses existing Navidrome endpoint) → scrobbling → discovery → listening stats → social/jam → gapless playback → EQ (lowest priority)
 
 ---

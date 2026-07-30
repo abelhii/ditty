@@ -20,6 +20,30 @@ import type { Album, Artist, ArtistSection, Genre, Track } from '@/api/types';
 /** Subsonic's max page size for getAlbumList2 — also the trigger for "there's another page". */
 export const ALBUM_LIST_PAGE_SIZE = 500;
 
+/** The getAlbumList2 orderings the Home/discover shelves use (Build Order step 9). `byYear` also
+ *  needs `fromYear`/`toYear`; the others take just `type` + `size`. */
+export type AlbumListType = 'newest' | 'random' | 'recent' | 'frequent' | 'byYear';
+
+export type AlbumListParams = {
+  type: AlbumListType;
+  size: number;
+  offset?: number;
+  /** Required (and, with `fromYear > toYear`, gives newest-first) when `type: 'byYear'`. */
+  fromYear?: number;
+  toYear?: number;
+};
+
+/** A single unpaginated getAlbumList2 page — the primitive behind the Home shelves. Contrast
+ *  {@link getAlbumsByGenre}, which is the paginated `byGenre` variant the genre grid uses. */
+export async function getAlbumList2(
+  serverUrl: string,
+  auth: SubsonicAuth,
+  params: AlbumListParams,
+): Promise<Album[]> {
+  const { albumList2 } = await request<GetAlbumList2Response>(serverUrl, 'getAlbumList2', params, auth);
+  return (albumList2.album ?? []).map(normalizeAlbum);
+}
+
 export async function getArtists(serverUrl: string, auth: SubsonicAuth): Promise<Artist[]> {
   const { artists } = await request<GetArtistsResponse>(serverUrl, 'getArtists', {}, auth);
   return flattenArtistIndex(artists.index ?? []);

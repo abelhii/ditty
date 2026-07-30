@@ -19,6 +19,7 @@ export function useUpdatePlaylist() {
   const credentials = useAuthStore((state) => state.credentials);
 
   return useMutation<void, unknown, UpdateVariables, UpdateContext>({
+    meta: { action: 'update the playlist' },
     mutationFn: ({ id, name, isPublic }) => {
       if (!credentials) throw new Error('Not authenticated.');
       return updatePlaylist(credentials.serverUrl, credentials, id, { name, isPublic });

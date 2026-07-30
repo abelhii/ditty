@@ -12,6 +12,7 @@ export default function LibraryStackLayout() {
   return (
     <Stack>
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="artists" options={detailOptions} />
       <Stack.Screen name="artist/[id]" options={detailOptions} />
       <Stack.Screen name="album/[id]" options={detailOptions} />
       <Stack.Screen name="genre/[name]" options={detailOptions} />

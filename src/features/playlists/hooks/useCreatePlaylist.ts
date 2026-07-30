@@ -15,6 +15,7 @@ export function useCreatePlaylist() {
   const credentials = useAuthStore((state) => state.credentials);
 
   return useMutation<Playlist, unknown, string>({
+    meta: { action: 'create the playlist' },
     mutationFn: (name) => {
       if (!credentials) throw new Error('Not authenticated.');
       return createPlaylist(credentials.serverUrl, credentials, name);

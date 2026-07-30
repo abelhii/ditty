@@ -17,13 +17,14 @@ import { useGenres } from '@/features/library/hooks/useGenres';
 
 type LibraryView = 'artists' | 'genres';
 
-/** The Library tab's Artists screen — a sectioned (A-Z) artist list, with a Genres view
- *  reachable via a segmented toggle (Build Order step 5). */
-export function ArtistsScreen() {
+/** The catalog list — a sectioned (A-Z) artist list, with a Genres view reachable via a segmented
+ *  toggle (Build Order step 5). Pushed from Home at `/library/artists`; `initialView` lets Home's
+ *  Genres quick link open straight on the Genres tab (Build Order step 9). */
+export function ArtistsScreen({ initialView = 'artists' }: { initialView?: LibraryView } = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const credentials = useAuthStore((state) => state.credentials);
-  const [view, setView] = useState<LibraryView>('artists');
+  const [view, setView] = useState<LibraryView>(initialView);
 
   const artistSectionsQuery = useArtistSections();
   const genresQuery = useGenres();
@@ -36,7 +37,7 @@ export function ArtistsScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ThemedText type="title" style={styles.title}>
-          Home
+          Library
         </ThemedText>
 
         <ThemedView type="backgroundElement" style={styles.segmented}>

@@ -3,6 +3,7 @@ import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/useAuthStore';
 import * as QueueManager from '@/player/QueueManager';
 import type { RepeatMode } from '@/player/QueueManager';
+import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 
 /**
@@ -98,6 +99,16 @@ export function skipPrevious(): void {
 
 export function seekTo(seconds: number): void {
   usePlayerStore.getState().requestSeek(seconds);
+}
+
+/** Retries the current track after a playback error (see the transport's Retry affordance, ADR
+ *  0007). Forces AudioEngine to re-fetch the same stream and resume, moving `status` off `'error'`
+ *  back to `'loading'`. */
+export function retry(): void {
+  if (!QueueManager.getCurrentTrack(currentQueue())) return;
+  usePlaybackStatusStore.getState().setStatus('loading');
+  usePlayerStore.getState().requestReload();
+  usePlayerStore.setState({ desiredPlaying: true });
 }
 
 export function setShuffle(enabled: boolean): void {
