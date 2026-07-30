@@ -7,6 +7,7 @@ import {
   readPersistedCredentials,
   writePersistedCredentials,
 } from '@/auth/credentialStorage';
+import { usePlayerStore } from '@/player/usePlayerStore';
 
 /** Everything needed to sign future requests. The plaintext password is never part of this. */
 type StoredCredentials = {
@@ -77,6 +78,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Cache keys aren't scoped by server/user, so a second account would otherwise see the
     // first account's cached library until every query happened to refetch.
     queryClient.clear();
+    // The persisted queue holds server-specific track ids (ADR 0006) — drop it (and stop
+    // playback) so the next account never inherits this one's queue.
+    usePlayerStore.getState().reset();
+    usePlayerStore.persist.clearStorage();
     set({ status: 'unauthenticated', credentials: null, error: null });
   },
 }));

@@ -32,6 +32,19 @@ export function getCurrentTrack(state: QueueState): Track | undefined {
   return state.tracks[state.currentIndex];
 }
 
+/**
+ * Normalises a queue rehydrated from local storage (ADR 0006). A queue that ran to completion
+ * last session was saved with `currentIndex === tracks.length` (see `next`), which would restore
+ * to a dead player; snap any out-of-range index on a non-empty queue back to 0 so "reopen → hit
+ * play" works. An empty queue keeps its sentinel `currentIndex` (-1). shuffle/repeat/originalOrder
+ * ride along untouched.
+ */
+export function restoreQueue(state: QueueState): QueueState {
+  if (state.tracks.length === 0) return state;
+  const inRange = state.currentIndex >= 0 && state.currentIndex < state.tracks.length;
+  return inRange ? state : { ...state, currentIndex: 0 };
+}
+
 export function next(state: QueueState): QueueState {
   if (state.tracks.length === 0) return state;
   if (state.repeat === 'one') return state;

@@ -4,6 +4,7 @@ import { PlaybackNotificationManager, type PlaybackControlName } from 'react-nat
 
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
+import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 
 const ENABLED_CONTROLS: PlaybackControlName[] = ['play', 'pause', 'nextTrack', 'previousTrack', 'seekTo'];
@@ -18,8 +19,8 @@ const DISABLED_CONTROLS: PlaybackControlName[] = ['stop', 'skipForward', 'skipBa
  */
 export function NotificationBridge() {
   const queue = usePlayerStore((state) => state.queue);
-  const status = usePlayerStore((state) => state.status);
-  const position = usePlayerStore((state) => state.position);
+  const status = usePlaybackStatusStore((state) => state.status);
+  const position = usePlaybackStatusStore((state) => state.position);
 
   const currentTrack = getCurrentTrack(queue);
   const hasEnabledControls = useRef(false);

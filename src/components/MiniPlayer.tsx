@@ -12,6 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
 import { useProgress } from '@/player/hooks/useProgress';
+import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 import { usePlayerUiStore } from '@/player/usePlayerUiStore';
 
@@ -64,7 +65,7 @@ export function MiniPlayer() {
  *  reflecting the observed playback status. */
 export function PlayPauseButton({ size = 26 }: { size?: number }) {
   const theme = useTheme();
-  const status = usePlayerStore((state) => state.status);
+  const status = usePlaybackStatusStore((state) => state.status);
 
   if (status === 'loading') {
     return <ActivityIndicator style={styles.control} color={theme.text} />;
