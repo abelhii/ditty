@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 
-export type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped';
+export type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'stopped' | 'error';
+
+/** Message wording for a halted (`status: 'error'`) track, flavoured by the connectivity probe.
+ *  `null` while the async probe is still in flight — treated as a generic failure until it resolves. */
+export function playbackErrorMessage(errorOffline: boolean | null): string {
+  return errorOffline ? "You're offline" : "Couldn't play this track";
+}
 
 /**
  * The *observed* half of playback state, split out of `usePlayerStore` (ADR 0006,
@@ -14,15 +20,24 @@ type PlaybackStatusState = {
   status: PlaybackStatus;
   /** Seconds, as last reported by `<Audio>`'s onPositionChange. */
   position: number;
+  /** When `status === 'error'`, whether the stream failed because the device is offline. `null`
+   *  until the async connectivity probe in AudioEngine's onError resolves a beat later (ADR 0007). */
+  errorOffline: boolean | null;
 
   setStatus: (status: PlaybackStatus) => void;
   setPosition: (position: number) => void;
+  /** Halt the current track: `status: 'error'`, reason unknown until {@link setErrorOffline}. */
+  reportError: () => void;
+  setErrorOffline: (offline: boolean) => void;
 };
 
 export const usePlaybackStatusStore = create<PlaybackStatusState>((set) => ({
   status: 'idle',
   position: 0,
+  errorOffline: null,
 
   setStatus: (status) => set({ status }),
   setPosition: (position) => set({ position }),
+  reportError: () => set({ status: 'error', errorOffline: null }),
+  setErrorOffline: (offline) => set({ errorOffline: offline }),
 }));

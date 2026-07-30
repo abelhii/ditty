@@ -7,6 +7,8 @@ export const queryKeys = {
   album: (id: string) => ['album', id] as const,
   genres: () => ['genres'] as const,
   albumsByGenre: (genre: string) => ['albumsByGenre', genre] as const,
+  /** A Home/discover shelf, keyed by its stable ShelfId (Build Order step 9). */
+  albumShelf: (id: string) => ['albumShelf', id] as const,
   playlists: () => ['playlists'] as const,
   playlist: (id: string) => ['playlist', id] as const,
   starred: () => ['starred'] as const,

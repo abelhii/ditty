@@ -9,6 +9,7 @@ import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
+import { isOffline } from '@/utils/network';
 
 /**
  * The only module that touches the `<Audio>` ref / AudioContext graph directly. Mount once,
@@ -21,6 +22,7 @@ export function AudioEngine() {
   const queue = usePlayerStore((state) => state.queue);
   const desiredPlaying = usePlayerStore((state) => state.desiredPlaying);
   const seekRequest = usePlayerStore((state) => state.seekRequest);
+  const retryNonce = usePlayerStore((state) => state.retryNonce);
 
   const [audioContext] = useState(() => new AudioContext());
   const audioRef = useRef<AudioTagHandle>(null);
@@ -76,7 +78,10 @@ export function AudioEngine() {
     return null;
   }
 
-  const source = getStreamUrl(credentials.serverUrl, currentTrack.id, credentials);
+  // A retry re-fetches the *same* track: appending the nonce changes the source string so `<Audio>`
+  // reloads without remounting (a remount would rebuild the native AudioContext graph — see onLoad).
+  const streamUrl = getStreamUrl(credentials.serverUrl, currentTrack.id, credentials);
+  const source = retryNonce > 0 ? `${streamUrl}&_retry=${retryNonce}` : streamUrl;
 
   return (
     <Audio
@@ -102,7 +107,14 @@ export function AudioEngine() {
           usePlaybackStatusStore.getState().setStatus('paused');
         }
       }}
-      onError={() => usePlaybackStatusStore.getState().setStatus('stopped')}
+      onError={() => {
+        // Halt on the current track rather than silently stopping or auto-advancing (offline, every
+        // track fails, so auto-skip would blast through the queue — ADR 0007). The <Audio> onError
+        // is opaque (no code/class), so a connectivity probe is the only way to word it offline vs.
+        // a genuinely bad stream; it's async, so the reason lands a beat after the halt.
+        usePlaybackStatusStore.getState().reportError();
+        isOffline().then((offline) => usePlaybackStatusStore.getState().setErrorOffline(offline));
+      }}
       onPlay={() => usePlaybackStatusStore.getState().setStatus('playing')}
       onPause={() => usePlaybackStatusStore.getState().setStatus('paused')}
       onEnded={() => PlaybackController.handleTrackEnded()}

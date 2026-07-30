@@ -12,7 +12,7 @@ import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
 import { useProgress } from '@/player/hooks/useProgress';
-import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
+import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 import { usePlayerUiStore } from '@/player/usePlayerUiStore';
 
@@ -30,6 +30,8 @@ export function MiniPlayer() {
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
   const nowPlayingOpen = usePlayerUiStore((state) => state.nowPlayingOpen);
   const openNowPlaying = usePlayerUiStore((state) => state.openNowPlaying);
+  const status = usePlaybackStatusStore((state) => state.status);
+  const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
   const { fraction } = useProgress();
 
   if (!currentTrack || nowPlayingOpen) return null;
@@ -45,9 +47,15 @@ export function MiniPlayer() {
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={18} />
           <View style={styles.text}>
             <ThemedText numberOfLines={1}>{currentTrack.title}</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-              {currentTrack.artist}
-            </ThemedText>
+            {status === 'error' ? (
+              <ThemedText type="small" numberOfLines={1} style={styles.error}>
+                {playbackErrorMessage(errorOffline)}
+              </ThemedText>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                {currentTrack.artist}
+              </ThemedText>
+            )}
           </View>
           <PlayPauseButton />
         </ThemedView>
@@ -61,14 +69,30 @@ export function MiniPlayer() {
   );
 }
 
-/** Shared play/pause control — a spinner while the track is loading, otherwise a play/pause glyph
- *  reflecting the observed playback status. */
+/** Shared play/pause control — a spinner while the track is loading, a Retry glyph when the track
+ *  has halted on an error (ADR 0007), otherwise a play/pause glyph reflecting the observed status. */
 export function PlayPauseButton({ size = 26 }: { size?: number }) {
   const theme = useTheme();
   const status = usePlaybackStatusStore((state) => state.status);
 
   if (status === 'loading') {
     return <ActivityIndicator style={styles.control} color={theme.text} />;
+  }
+
+  if (status === 'error') {
+    return (
+      <Pressable
+        hitSlop={12}
+        accessibilityLabel="Retry"
+        style={styles.control}
+        onPress={() => PlaybackController.retry()}>
+        <SymbolView
+          name={{ ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' }}
+          size={size}
+          tintColor={theme.text}
+        />
+      </Pressable>
+    );
   }
 
   return (
@@ -113,6 +137,9 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     gap: Spacing.half,
+  },
+  error: {
+    color: '#e5484d',
   },
   control: {
     width: 32,

@@ -37,6 +37,13 @@ The app's UI surface grouping the user's *personal* collections — their Playli
 Favourites. A navigation grouping, not a distinct domain entity, and deliberately not called
 "Library" (which is the server catalog).
 
+**Shelf**:
+A horizontal, side-scrolling carousel of albums on the Home screen, each a client-side facet over
+the Subsonic `getAlbumList2` endpoint — **Recently Added** (by date added to the server), **New
+Releases** (by the album's own release year), **Explore** (random). Faceted *browse*, with no text
+query — distinct from Search (which is text-only and has no attribute facets). A UI grouping, not a
+domain entity. Introduced in step 9.
+
 **Notice**:
 A transient, auto-dismissing, non-blocking message shown to the user when a background action
 fails without a surface of its own to report into — e.g. a failed star or playlist edit. One

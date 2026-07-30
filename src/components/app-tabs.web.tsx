@@ -23,8 +23,8 @@ export default function AppTabs() {
     <Tabs>
       <TabList asChild>
         <CustomTabList>
-          {/* Home points at the catalog browse stack (`/library`); `/` redirects there. Step 7b
-              dropped the standalone Library tab in favour of My Music. */}
+          {/* Home points at `/library`, whose index is the step-9 discover shelves; the full
+              Artists/Genres catalog list is pushed at `/library/artists`. */}
           <TabTrigger name="home" href="/library" asChild>
             <TabButton>Home</TabButton>
           </TabTrigger>

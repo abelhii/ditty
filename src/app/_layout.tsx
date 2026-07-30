@@ -6,11 +6,13 @@ import { useColorScheme } from 'react-native';
 
 import { persistOptions, queryClient } from '@/api/queryClient';
 import { prefetchLibrary } from '@/api/prefetchLibrary';
+import { ReauthModal } from '@/auth/ReauthModal';
 import { ServerConfigScreen } from '@/auth/ServerConfigScreen';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { MiniPlayer } from '@/components/MiniPlayer';
+import { Notice } from '@/components/Notice';
 import { ThemedView } from '@/components/themed-view';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
@@ -48,6 +50,8 @@ export default function TabLayout() {
             <QueueScreen />
             <AudioEngine />
             <NotificationBridge />
+            <Notice />
+            <ReauthModal />
           </>
         )}
         {status === 'unauthenticated' && <ServerConfigScreen />}

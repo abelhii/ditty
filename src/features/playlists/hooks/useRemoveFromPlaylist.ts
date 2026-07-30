@@ -22,6 +22,7 @@ export function useRemoveFromPlaylist() {
   const credentials = useAuthStore((state) => state.credentials);
 
   return useMutation<void, unknown, RemoveVariables, RemoveContext>({
+    meta: { action: 'remove from the playlist' },
     mutationFn: ({ playlistId, index }) => {
       if (!credentials) throw new Error('Not authenticated.');
       return updatePlaylist(credentials.serverUrl, credentials, playlistId, { songIndexToRemove: index });

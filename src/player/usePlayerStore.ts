@@ -21,11 +21,16 @@ type PlayerState = {
   /** One-shot seek target in seconds. Set by PlaybackController, consumed and cleared by
    *  AudioEngine once the seek has been issued. */
   seekRequest: number | null;
+  /** Bumped by `PlaybackController.retry()` to force AudioEngine to re-fetch the *same* track's
+   *  stream after a playback error — the source string changes, so `<Audio>` reloads it without
+   *  remounting (which would break the native AudioContext graph). Not persisted. */
+  retryNonce: number;
 
   setQueue: (queue: QueueState) => void;
   setDesiredPlaying: (desiredPlaying: boolean) => void;
   requestSeek: (seconds: number) => void;
   clearSeekRequest: () => void;
+  requestReload: () => void;
 
   /** Flips the `starred` flag on every queued copy of a track — keeps the now-playing/queue
    *  heart in sync with an optimistic favourite toggle (see features/favourites useStar/useUnstar). */
@@ -57,11 +62,13 @@ export const usePlayerStore = create<PlayerState>()(
       queue: createQueueState([]),
       desiredPlaying: false,
       seekRequest: null,
+      retryNonce: 0,
 
       setQueue: (queue) => set({ queue }),
       setDesiredPlaying: (desiredPlaying) => set({ desiredPlaying }),
       requestSeek: (seconds) => set({ seekRequest: seconds }),
       clearSeekRequest: () => set({ seekRequest: null }),
+      requestReload: () => set((state) => ({ retryNonce: state.retryNonce + 1 })),
 
       setTrackStarred: (trackId, starred) =>
         set((state) => {

@@ -13,6 +13,7 @@ export function useDeletePlaylist() {
   const credentials = useAuthStore((state) => state.credentials);
 
   return useMutation<void, unknown, string, DeleteContext>({
+    meta: { action: 'delete the playlist' },
     mutationFn: (id) => {
       if (!credentials) throw new Error('Not authenticated.');
       return deletePlaylist(credentials.serverUrl, credentials, id);

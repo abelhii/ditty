@@ -18,6 +18,7 @@ import { Scrubber } from '@/features/player/components/Scrubber';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
 import { useProgress } from '@/player/hooks/useProgress';
+import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
 import { usePlayerStore } from '@/player/usePlayerStore';
 import { usePlayerUiStore } from '@/player/usePlayerUiStore';
 
@@ -42,6 +43,8 @@ export function NowPlayingScreen() {
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
   const shuffle = usePlayerStore((state) => state.queue.shuffle);
   const repeat = usePlayerStore((state) => state.queue.repeat);
+  const status = usePlaybackStatusStore((state) => state.status);
+  const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
   const progress = useProgress();
 
   const [addToPlaylistTrack, setAddToPlaylistTrack] = useState<Track | null>(null);
@@ -128,6 +131,12 @@ export function NowPlayingScreen() {
             </View>
 
             <Scrubber {...progress} onSeek={PlaybackController.seekTo} />
+
+            {status === 'error' && (
+              <ThemedText type="small" style={styles.error}>
+                {playbackErrorMessage(errorOffline)}
+              </ThemedText>
+            )}
 
             <View style={styles.transport}>
               <IconButton
@@ -269,5 +278,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.6,
+  },
+  error: {
+    color: '#e5484d',
+    textAlign: 'center',
   },
 });

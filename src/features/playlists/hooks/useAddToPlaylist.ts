@@ -20,6 +20,7 @@ export function useAddToPlaylist() {
   const credentials = useAuthStore((state) => state.credentials);
 
   return useMutation<void, unknown, AddVariables, AddContext>({
+    meta: { action: 'add to the playlist' },
     mutationFn: ({ playlistId, track }) => {
       if (!credentials) throw new Error('Not authenticated.');
       return updatePlaylist(credentials.serverUrl, credentials, playlistId, { songIdToAdd: track.id });

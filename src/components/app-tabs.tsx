@@ -12,9 +12,9 @@ export default function AppTabs() {
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
       labelStyle={{ selected: { color: colors.text } }}>
-      {/* Home is the catalog browse stack (Artists + Genres), which lives under the `library` route.
-          The `index` route just redirects `/` into it. Step 7b dropped the standalone Library tab
-          and folded Artists/Genres into Home; step 9 will give Home real discover shelves. */}
+      {/* Home lives under the `library` route: its index is the step-9 discover shelves, with the
+          full Artists/Genres catalog list pushed one level down at `/library/artists`. The tab keeps
+          the internal name `library` (its stack owns the album/artist/genre detail routes). */}
       <NativeTabs.Trigger name="library">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
