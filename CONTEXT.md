@@ -36,3 +36,19 @@ _Avoid_: Catalog. Do **not** use "Library" for the user's personal collection (s
 The app's UI surface grouping the user's *personal* collections — their Playlists and their
 Favourites. A navigation grouping, not a distinct domain entity, and deliberately not called
 "Library" (which is the server catalog).
+
+**Notice**:
+A transient, auto-dismissing, non-blocking message shown to the user when a background action
+fails without a surface of its own to report into — e.g. a failed star or playlist edit. One
+app-level primitive, driven by a small store, mounted once near the root (same layering as the
+MiniPlayer). Distinct from `QueryState`'s error state (full-surface, for a screen that has
+nothing to show yet) and from Re-authentication (blocking, for a rejected session). Introduced
+in step 8b.
+
+**Re-authentication**:
+Recovering a session that the server rejected mid-use (token no longer valid — password changed
+server-side, user revoked) *in place*: a blocking, password-only prompt (server + username are
+already known) that recomputes the token and lets playback, the Queue, and the cached Library
+carry on untouched. Distinct from **Login** (cold start, no prior credentials) and **Logout**
+(deliberate teardown that clears the Queue and cache). Triggered only by a Subsonic auth error
+(code 40/41) on a fetch-layer request — never by a connectivity failure. Introduced in step 8b.

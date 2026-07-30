@@ -22,8 +22,10 @@ clean follow-ups, deferred out of 8a.
   `savePlayQueue`/`getPlayQueue`, no cross-device, no intra-track resume.
 - **Offline recovery is a free property, not a feature.** Local restore never touches the network,
   so there is nothing to "recover from" offline. The connectivity seam (`utils/network.ts`) is
-  deferred to 8b, where mid-session auth rejection genuinely needs to tell "token rejected" from
-  "just offline."
+  deferred to 8b. _(Correction, step 8b — see `docs/adr/0007-error-states.md`: the seam is **not**
+  needed to tell "token rejected" from "just offline" for re-login, as this bullet originally
+  claimed — the error class already does that, `SubsonicApiError` code 40/41 vs `SubsonicNetworkError`.
+  The probe earns its place instead for opaque `<Audio>` playback errors and honest query messaging.)_
 - **Keep zustand `persist`; split the store.** `usePlayerStore` is wrapped in `persist` with
   `partialize: (s) => ({ queue: s.queue })`. The observed fields `status` + `position` move into a
   new `usePlaybackStatusStore` so the ~1/sec `setPosition` tick during playback never triggers a

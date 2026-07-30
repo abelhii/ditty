@@ -360,7 +360,33 @@ src/
      (`useFavourites` over `getStarred2`, `useStar`/`useUnstar`; Favourites screen); the shared
      `components/TrackActionsMenu.tsx`; `playlist/[id].tsx` route; `app-tabs.tsx` + `app-tabs.web.tsx`
      updated to `Home | Search | My Music | Settings`.
-8. Polish: persistence, offline queue recovery, error states
+8. Polish: persistence, offline queue recovery, error states. Split into **8a** (persistence) and
+   **8b** (error states), mirroring step 7's split.
+   - **8a — queue persistence (done, 2026-07-30, `docs/adr/0006-local-only-queue-persistence.md`):**
+     local-only durable Queue restored **paused, from position 0** on launch (no
+     `savePlayQueue`/`getPlayQueue`, no cross-device, no intra-track resume). `usePlayerStore`
+     wrapped in zustand `persist` (`partialize` → queue only, `version: 1`, reset-to-empty on
+     corrupt/version-mismatch); observed `status`+`position` split into a new
+     `usePlaybackStatusStore` so the ~1/sec position tick never triggers a write. `shuffle`/`repeat`/
+     `originalOrder` ride inside the persisted queue (the server can't store them — *why* local
+     persistence was mandatory). `currentIndex` clamped to 0 on restore; `logout()` clears the
+     persisted queue.
+   - **8b — error states (`docs/adr/0007-error-states.md`):** one slice, sequenced internally —
+     two foundations, then three consumers. **Foundations:** a hand-rolled **`Notice`** primitive
+     (transient, auto-dismissing, non-blocking; one store mounted at root, MiniPlayer layering;
+     reserved for surface-less actions) and a **`utils/network.ts`** connectivity probe over
+     `expo-network` (used *reactively* to flavour messages — **not** for the re-login gate, which
+     keys off error class; this corrects ADR 0006's stated rationale). **Consumers:** (1) **playback
+     failure halts** on the current track with a new `'error'` `PlaybackStatus`, surfaced inline in
+     MiniPlayer/now-playing, play button as Retry — *no* auto-advance (offline would runaway-skip
+     the whole queue); (2) **mid-session token rejection** (code 40/41, caught in a global
+     `QueryCache`/`MutationCache` `onError`) triggers in-place **Re-authentication** — one idempotent
+     `sessionExpired()` flag → a blocking password-only modal that recomputes the token and preserves
+     Queue + cache + nav, with an inline error on re-reject and a "Sign out" escape to full
+     `logout()`; queries refetch, failed mutations are *not* replayed; (3) **failed mutations** fire
+     a `Notice` centrally from `MutationCache.onError` via per-mutation `meta: { action }`, worded by
+     error class, no Retry, suppressed on auth errors. **Out of scope:** proactive offline banner,
+     playback auto-skip, intra-track resume, cross-device sync, mutation auto-replay.
 9. Home / discover shelves (split out of step 6 during the 2026-07-28 grilling session) — the real content for `index.tsx`, replacing the build-order-step-4 smoke-test placeholder. Client-side grouping of `getAlbumList2` shelves: **Recently Added** (`type=newest`, by date added to the server's scan/import), **New Releases** (by the album's own release/original date — OpenSubsonic `originalReleaseDate`/`releaseDate`, distinct from date-added), **Explore** (`random`/`recent`/`frequent`). These are faceted *browse*, no text query — deliberately kept separate from Search. If genre/year *attribute* filtering is ever wanted, it belongs here (`getAlbumList2 byGenre/byYear`), not bolted onto the search box.
 10. Future features, in order: Auto DJ (cheapest, uses existing Navidrome endpoint) → scrobbling → discovery → listening stats → social/jam → gapless playback → EQ (lowest priority)
 
