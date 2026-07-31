@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useRef } from 'react';
 
-import { Audio, AudioContext, AudioManager, type AudioTagHandle } from 'react-native-audio-api';
+import { Audio, AudioManager, type AudioTagHandle } from 'react-native-audio-api';
 
 import { getStreamUrl } from '@/api/subsonic/endpoints/media';
 import { useAuthStore } from '@/auth/useAuthStore';
@@ -12,10 +11,23 @@ import { usePlayerStore } from '@/player/usePlayerStore';
 import { isOffline } from '@/utils/network';
 
 /**
- * The only module that touches the `<Audio>` ref / AudioContext graph directly. Mount once,
- * persistently, for the life of an authenticated session (see app/_layout.tsx). Subscribes to
- * `usePlayerStore`'s proposed state and writes observed facts back — see
- * docs/adr/0001-player-state-flows-through-store.md for the reactive-vs-imperative rationale.
+ * The only module that touches the `<Audio>` ref directly. Mount once, persistently, for the life
+ * of an authenticated session (see app/_layout.tsx). Subscribes to `usePlayerStore`'s proposed
+ * state and writes observed facts back — see docs/adr/0001-player-state-flows-through-store.md for
+ * the reactive-vs-imperative rationale.
+ *
+ * Two non-obvious decisions, both forced by react-native-audio-api 0.13's Audio tag:
+ *
+ * 1. The element plays on its own native output — we deliberately do *not* route it through an
+ *    AudioContext graph (`createMediaElementSource` → gain → destination), which is silent on
+ *    Android. Standalone playback is the library's documented default and plays every format the OS
+ *    decodes, FLAC included. (A future EQ will need a different insertion point; see PLAN.md.)
+ *
+ * 2. The `key` on `<Audio>` is load-bearing. `<Audio>`'s *source-change* teardown disposes the old
+ *    file source but never pauses it (its *unmount* teardown does), so swapping the `source` prop
+ *    alone leaves the previous track audibly playing and stacks overlapping streams on every skip.
+ *    Keying by track forces a full unmount/remount per switch, running the teardown that *does*
+ *    pause — so exactly one stream plays at a time.
  */
 export function AudioEngine() {
   const credentials = useAuthStore((state) => state.credentials);
@@ -24,9 +36,7 @@ export function AudioEngine() {
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const retryNonce = usePlayerStore((state) => state.retryNonce);
 
-  const [audioContext] = useState(() => new AudioContext());
   const audioRef = useRef<AudioTagHandle>(null);
-  const hasRoutedGraph = useRef(false);
   // The track id `<Audio>` has actually finished loading — as opposed to `currentTrack`,
   // which flips the instant PlaybackController proposes a new one.
   const loadedTrackId = useRef<string | undefined>(undefined);
@@ -47,8 +57,6 @@ export function AudioEngine() {
 
   useEffect(() => {
     if (!currentTrack) {
-      // <Audio> is about to unmount below — the next track will get a fresh native instance.
-      hasRoutedGraph.current = false;
       loadedTrackId.current = undefined;
       usePlaybackStatusStore.getState().setStatus('idle');
     } else if (currentTrack.id !== loadedTrackId.current) {
@@ -57,22 +65,16 @@ export function AudioEngine() {
   }, [currentTrack]);
 
   useEffect(() => {
-    // A track switch is handled by onLoad below, once the new source has actually finished
-    // loading — this effect only reacts to play/pause toggles on an already-loaded track.
+    // A track switch is handled by onLoad below, once the freshly-mounted <Audio> has loaded — this
+    // effect only reacts to play/pause toggles on the already-loaded current track.
     if (!currentTrack || loadedTrackId.current !== currentTrack.id) return;
 
     if (desiredPlaying) {
-      // Android constructs the AudioContext *suspended*, which mutes the whole graph
-      // (source → gain → destination): the element loads and play() fires but no sound reaches
-      // the speakers. resume() is a no-op once the context is running (iOS, and the graph
-      // validated in PLAN.md step 0), so it's safe to call before every play; fire-and-forget so
-      // the element starts regardless of when the resume promise settles.
-      void audioContext.resume();
       audioRef.current?.play();
     } else {
       audioRef.current?.pause();
     }
-  }, [desiredPlaying, currentTrack, audioContext]);
+  }, [desiredPlaying, currentTrack]);
 
   useEffect(() => {
     if (seekRequest === null) return;
@@ -84,32 +86,19 @@ export function AudioEngine() {
     return null;
   }
 
-  // A retry re-fetches the *same* track: appending the nonce changes the source string so `<Audio>`
-  // reloads without remounting (a remount would rebuild the native AudioContext graph — see onLoad).
-  const streamUrl = getStreamUrl(credentials.serverUrl, currentTrack.id, credentials);
-  const source = retryNonce > 0 ? `${streamUrl}&_retry=${retryNonce}` : streamUrl;
+  const source = getStreamUrl(credentials.serverUrl, currentTrack.id, credentials);
 
   return (
     <Audio
+      // Remount per track (and per retry) so the previous source is *paused*, not just disposed —
+      // see the component doc above. `retryNonce` bumps on PlaybackController.retry() to force a
+      // fresh reload of the same track after a playback error (ADR 0007).
+      key={`${currentTrack.id}:${retryNonce}`}
       ref={audioRef}
       source={source}
-      context={audioContext}
       onLoad={() => {
-        // Web's <Audio> ref is a plain {play, pause, ...} facade, not the real <audio> element
-        // underneath — there's no way to route it through an AudioContext graph on web with
-        // this library version (the `context` prop is accepted but unused there). Native only.
-        if (!hasRoutedGraph.current && audioRef.current && Platform.OS !== 'web') {
-          const sourceNode = audioContext.createMediaElementSource(audioRef.current);
-          const gain = audioContext.createGain();
-          sourceNode.connect(gain);
-          gain.connect(audioContext.destination);
-          hasRoutedGraph.current = true;
-        }
-
         loadedTrackId.current = currentTrack.id;
         if (usePlayerStore.getState().desiredPlaying) {
-          // Resume a suspended (Android) AudioContext before playing — see the desiredPlaying effect.
-          void audioContext.resume();
           audioRef.current?.play();
         } else {
           usePlaybackStatusStore.getState().setStatus('paused');

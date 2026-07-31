@@ -188,7 +188,17 @@ src/
 - **Smart playlist / Auto DJ** — use Navidrome's built-in `getSimilarSongs2` endpoint (no external API needed)
 - **Listening stats** — local playback event logging + aggregation, or leaning on ListenBrainz's stats API if already scrobbling there
 - **Social features (activity feed, jam/shared sessions)** — no native Subsonic/Navidrome concept; requires a separate realtime backend (e.g. WebSocket relay) — scope as its own project
-- **Built-in equalizer** *(still lowest priority)* — cheaper than it would've been on RNTP since `BiquadFilterNode`/`WorkletNode` are already part of the audio graph. No separate native EQ module needed — insert filter nodes between source and destination when you get to it.
+- **Built-in equalizer** *(still lowest priority)* — was going to reuse the `MediaElementAudioSourceNode` → `GainNode` graph, but that graph is **silent on Android** and has been removed (playback now uses the standalone `<Audio>` element — see Playback edge cases and `src/player/AudioEngine.tsx`). A future EQ therefore needs a different insertion point, or a native-backed engine (ExoPlayer/Media3), not the "insert `BiquadFilterNode` between source and destination" approach originally assumed.
+
+---
+
+### Known issues / polish backlog (from on-device testing, 2026-08-01)
+
+Surfaced once native playback started working (see `docs/adr/0008-transcode-stream-to-mp3.md`):
+
+- **Native media controls (lock screen / notification), Android + iOS** — `NotificationBridge` shows **no artwork** (cover art isn't loaded into the control), and on **Next** the reported position is **stale** (the control shows the *previous* track's seek value instead of resetting for the new track). Fix artwork loading and position/metadata sync on track change.
+- **Login screen keyboard overlap** — the on-screen keyboard covers the input fields. Wrap the form in `KeyboardAvoidingView` (and/or make it scrollable) so the focused field stays visible.
+- **Android hardware Back on the full player** — pressing the device Back button while the full Now Playing screen is open should **collapse it to the MiniPlayer**, not pop the navigation stack / leave the screen. Intercept the back action on the Now Playing route to dismiss it.
 
 ---
 
@@ -204,6 +214,7 @@ src/
 **Playback**
 
 - **Validated** (2026-07-26, build order step 0): the `<Audio>` tag component routed through `MediaElementAudioSourceNode` — not `StreamerNode`, which is HLS-oriented and still experimental for general use — is the correct primitive for a plain progressive-HTTP MP3 URL. FFmpeg (needed for proper HTTP byte-range streaming rather than a full-file download before playback starts) ships bundled and enabled by default. Confirmed working on a real device build (RN 0.86 / Expo 57, New Architecture default): play/pause/seek all functioned against a hardcoded remote MP3 in `src/app/index.tsx`. `<Audio>` also routes cleanly through `GainNode` before the destination, validating the graph-based approach the future EQ depends on.
+- **Superseded (2026-08-01), full end-to-end playback debugging on device**: three corrections to the above, all in `src/player/AudioEngine.tsx`. (1) The `MediaElementAudioSourceNode` → `GainNode` graph is **silent on Android** in `react-native-audio-api` 0.13 — the element loads and reports playing but no audio reaches the output; playback now uses the **standalone** `<Audio>` element (no AudioContext graph), which is also the library's documented default. (2) The library's *source-swap* teardown disposes but never **pauses** the old source (its unmount teardown does), so switching tracks left the previous song audibly playing; fixed with a `key`-per-track remount. (3) 24-bit FLAC decodes but outputs **silence** on Android, so `getStreamUrl` transcodes to MP3 on native (web streams raw — the browser decodes FLAC) — see `docs/adr/0008-transcode-stream-to-mp3.md`.
 - Transcoding/bitrate settings and server-driven format changes
 - **Audio focus interruptions — decided (2026-07-26, step 3 grilling session)**: `AudioEngine` subscribes to `react-native-audio-api`'s `AudioManager` `interruption` event (calls, other apps taking focus) and auto-pauses on interruption start, resuming only if the OS signals `shouldResume`. Built in step 3. Bluetooth/other device route changes (`routeChange` event) are a separate, still-undecided event — not handled by this decision, left for a later pass.
 - Notification/lock-screen control state staying in sync with actual playback state across OS-level kills — `NotificationBridge` and `AudioEngine` both follow the same reactive pattern (see Build Order step 3 and `docs/adr/0001-player-state-flows-through-store.md`): neither owns state independently, both subscribe to `usePlayerStore` and stay correct by construction rather than manual syncing
