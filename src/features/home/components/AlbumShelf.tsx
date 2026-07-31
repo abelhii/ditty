@@ -17,9 +17,9 @@ import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Album } from '@/api/types';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { AlbumTile } from '@/components/AlbumTile';
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 import { useAlbumShelf } from '@/features/home/hooks/useAlbumShelf';
 import type { Shelf } from '@/features/home/shelves';
 

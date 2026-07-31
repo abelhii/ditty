@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, TextInput } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 
 type TextPromptModalProps = {
   visible: boolean;

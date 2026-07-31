@@ -3,8 +3,8 @@ import { SymbolView } from 'expo-symbols';
 import type { StyleProp } from 'react-native';
 import { StyleSheet } from 'react-native';
 
-import { ThemedView } from '@/components/themed-view';
-import { useTheme } from '@/hooks/use-theme';
+import { ThemedView } from '@/components/ThemedView';
+import { useTheme } from '@/hooks/useTheme';
 
 type CoverArtImageProps = {
   /** A pre-signed cover art URL, already sized via `getCoverArtUrl`

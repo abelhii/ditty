@@ -2,8 +2,8 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import type { Artist } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
 
 const THUMBNAIL_SIZE = 48;

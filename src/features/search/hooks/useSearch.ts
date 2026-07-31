@@ -6,7 +6,7 @@ import { search3, type SearchResults } from '@/api/subsonic/endpoints/search';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { filterArtistsWithContent } from '@/features/search/filterArtistsWithContent';
 import { filterSongsByTitle } from '@/features/search/filterSongsByTitle';
-import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 /** Fire a search only once the box holds a real term — a single character matches almost
  *  everything and isn't worth a round-trip. */

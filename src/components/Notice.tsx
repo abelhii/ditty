@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Animated, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useNoticeStore } from '@/components/useNoticeStore';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 

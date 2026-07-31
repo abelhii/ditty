@@ -3,12 +3,12 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet } from 'react-native';
 
 import type { Track } from '@/api/types';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
 import { useStar, useUnstar } from '@/features/favourites/hooks/useStar';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 import * as PlaybackController from '@/player/PlaybackController';
 
 type TrackActionsMenuProps = {

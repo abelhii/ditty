@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
 
 import type { Track } from '@/api/types';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
 import { useAddToPlaylist } from '@/features/playlists/hooks/useAddToPlaylist';
 import { useCreatePlaylist } from '@/features/playlists/hooks/useCreatePlaylist';
 import { usePlaylists } from '@/features/playlists/hooks/usePlaylists';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 
 type AddToPlaylistSheetProps = {
   /** The track to add; `null` hides the sheet. Single-track only (bulk add is deferred). */

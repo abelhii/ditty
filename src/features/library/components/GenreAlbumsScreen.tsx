@@ -7,8 +7,8 @@ import type { Album } from '@/api/types';
 import { useAuthStore } from '@/auth/useAuthStore';
 import { AlbumTile } from '@/components/AlbumTile';
 import { QueryState } from '@/components/QueryState';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbumsByGenre } from '@/features/library/hooks/useAlbumsByGenre';
 

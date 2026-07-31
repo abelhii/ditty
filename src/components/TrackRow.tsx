@@ -3,10 +3,10 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 
 const THUMBNAIL_SIZE = 40;
 

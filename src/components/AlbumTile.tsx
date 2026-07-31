@@ -2,7 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import type { Album } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
-import { ThemedText } from '@/components/themed-text';
+import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
 
 type AlbumTileProps = {

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { useStar, useUnstar } from '@/features/favourites/hooks/useStar';
 import type { StarTarget } from '@/features/favourites/starredCache';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 
 type FavouriteButtonProps = {
   /** The item to favourite, plus its kind — carries the current `starred` state used to render

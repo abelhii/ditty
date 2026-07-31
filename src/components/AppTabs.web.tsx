@@ -8,8 +8,8 @@ import {
 } from "expo-router/ui";
 import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
 
-import { ThemedText } from "./themed-text";
-import { ThemedView } from "./themed-view";
+import { ThemedText } from "./ThemedText";
+import { ThemedView } from "./ThemedView";
 
 import { Colors, MaxContentWidth, Spacing } from "@/constants/theme";
 

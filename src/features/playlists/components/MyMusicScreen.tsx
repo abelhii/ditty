@@ -10,12 +10,12 @@ import { useAuthStore } from '@/auth/useAuthStore';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useCreatePlaylist } from '@/features/playlists/hooks/useCreatePlaylist';
 import { usePlaylists } from '@/features/playlists/hooks/usePlaylists';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme } from '@/hooks/useTheme';
 
 /** The My Music tab (Build Order step 7b): the user's playlists as a vertical list with a pinned
  *  Favourites shortcut at the top. Deliberately *not* named "Library" — see CONTEXT.md. */
