@@ -192,6 +192,35 @@ src/
 
 ---
 
+### ⭐ High-priority spike: evaluate expo-audio as the audio backend (2026-08-01)
+
+**Goal:** decide whether to replace `react-native-audio-api` with **expo-audio** (SDK 57's first-party audio module) so we can play **lossless FLAC directly and drop the MP3 transcode** (`docs/adr/0008-transcode-stream-to-mp3.md`). The transcode is lossy and adds per-track server latency ("the app feels slow").
+
+**Why it's on the table now:** `react-native-audio-api` was chosen for its Web Audio node graph as a future-EQ foundation — but that graph is silent on Android and has already been removed (see the Built-in equalizer note above and the Playback edge cases). The main reason to stay no longer holds.
+
+**Verified from the SDK 57 docs** (https://docs.expo.dev/versions/v57.0.0/sdk/audio/):
+- Plays **remote HTTP URLs** (streaming) via `useAudioPlayer`.
+- Native players: **ExoPlayer/Media3** on Android, **AVPlayer/AVFoundation** on iOS.
+- Built-in **background audio + lock-screen / Now Playing controls**: `setActiveForLockScreen(active, metadata, options)` accepts title / artist / **album art** — may also resolve the "native media controls" polish item below.
+- Imperative player API (`player.replace()/play()/pause()/seekTo()`), which fits the reactive store architecture (ADR 0001: `PlaybackController` writes proposed state, `AudioEngine` drives the player and reports observed state) and would remove the `key`-per-track remount workaround currently in `AudioEngine`.
+- `AudioQuality` is a **recording** option, not a playback fidelity knob (playback fidelity = the source file).
+
+**NOT yet verified — the point of the spike (test on a real device):**
+- That ExoPlayer/Media3 actually decodes our **24-bit FLAC** on the target Android hardware (Media3 generally supports it, but the expo docs don't list FLAC explicitly and device decoders vary); likewise AVFoundation on iOS.
+- Lock-screen controls render artwork and a **correct per-track position**.
+- Interruption / audio-focus behaviour (ADR 0007 halt-on-error, auto-pause on focus loss) can be reproduced on the new backend.
+- (Gapless remains out of scope — still parked.)
+
+**Migration shape if the spike passes** (contained — two files):
+- Rewrite `src/player/AudioEngine.tsx` onto `useAudioPlayer` (imperative `replace` on track change, `play`/`pause`, `seekTo`; subscribe to player status for observed position/status/ended).
+- Rewrite/replace `NotificationBridge` onto expo-audio's lock-screen API.
+- Revert `getStreamUrl` to stream **raw** (keep `format=mp3` only as an optional data-saver fallback), superseding `docs/adr/0008`.
+- Add `expo-audio`, remove `react-native-audio-api`, then `expo prebuild --clean` + rebuild.
+
+**Trade-off:** loses the Web Audio EQ graph (already lost on Android anyway); a future EQ would then need a native-backed approach.
+
+---
+
 ### Known issues / polish backlog (from on-device testing, 2026-08-01)
 
 Surfaced once native playback started working (see `docs/adr/0008-transcode-stream-to-mp3.md`):
