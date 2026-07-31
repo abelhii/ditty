@@ -62,11 +62,17 @@ export function AudioEngine() {
     if (!currentTrack || loadedTrackId.current !== currentTrack.id) return;
 
     if (desiredPlaying) {
+      // Android constructs the AudioContext *suspended*, which mutes the whole graph
+      // (source → gain → destination): the element loads and play() fires but no sound reaches
+      // the speakers. resume() is a no-op once the context is running (iOS, and the graph
+      // validated in PLAN.md step 0), so it's safe to call before every play; fire-and-forget so
+      // the element starts regardless of when the resume promise settles.
+      void audioContext.resume();
       audioRef.current?.play();
     } else {
       audioRef.current?.pause();
     }
-  }, [desiredPlaying, currentTrack]);
+  }, [desiredPlaying, currentTrack, audioContext]);
 
   useEffect(() => {
     if (seekRequest === null) return;
@@ -102,6 +108,8 @@ export function AudioEngine() {
 
         loadedTrackId.current = currentTrack.id;
         if (usePlayerStore.getState().desiredPlaying) {
+          // Resume a suspended (Android) AudioContext before playing — see the desiredPlaying effect.
+          void audioContext.resume();
           audioRef.current?.play();
         } else {
           usePlaybackStatusStore.getState().setStatus('paused');
