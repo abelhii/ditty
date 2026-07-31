@@ -194,6 +194,22 @@ src/
 
 ### ⭐ High-priority spike: evaluate expo-audio as the audio backend (2026-08-01)
 
+> **Spike implemented (2026-08-01, branch `spike/expo-audio-lossless`; `docs/adr/0009-expo-audio-lossless.md`).**
+> Migration done code-side and green on typecheck + tests: `AudioEngine.tsx` rewritten onto
+> `useAudioPlayer` (create-once + `player.replace()`), native lock-screen moved into `AudioEngine`
+> (`NotificationBridge` is now a native no-op; web Media Session bridge unchanged), `getStreamUrl`
+> reverted to `format=raw` on all platforms, `react-native-audio-api` removed. **Still needs an
+> on-device build (`expo prebuild --clean` + run) to confirm** 24-bit FLAC actually decodes and the
+> lock screen renders — see ADR 0009 "Open questions".
+>
+> **Key finding — the trade-off:** expo-audio's lock-screen controls are **play / pause / seek only**;
+> both iOS and Android *remove* next/previous-track and handle the rest **natively with no JS event**,
+> so the MVP-decided `nextTrack`/`previousTrack` lock-screen buttons (Build Order step 3) are **not
+> available** on this backend. It *does* fix the artwork + stale-position polish bugs for free. Whether
+> that trade is acceptable — or justifies a small custom media session — is the open call to make on
+> device. (Bonus: native lock-screen play/pause now bypasses `PlaybackController`, so `AudioEngine`
+> reconciles `desiredPlaying` from observed status; interruption auto-resume is also dropped.)
+
 **Goal:** decide whether to replace `react-native-audio-api` with **expo-audio** (SDK 57's first-party audio module) so we can play **lossless FLAC directly and drop the MP3 transcode** (`docs/adr/0008-transcode-stream-to-mp3.md`). The transcode is lossy and adds per-track server latency ("the app feels slow").
 
 **Why it's on the table now:** `react-native-audio-api` was chosen for its Web Audio node graph as a future-EQ foundation — but that graph is silent on Android and has already been removed (see the Built-in equalizer note above and the Playback edge cases). The main reason to stay no longer holds.

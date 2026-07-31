@@ -20,6 +20,9 @@ dependencies:
   expo:
     specifier: ~57.0.9
     version: 57.0.9(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.8)(expo-router@57.0.9)(react-dom@19.2.3)(react-native-web@0.21.2)(react-native-worklets@0.10.1)(react-native@0.86.2)(react@19.2.3)(typescript@6.0.3)
+  expo-audio:
+    specifier: ~57.0.3
+    version: 57.0.3(expo-asset@57.0.8)(expo@57.0.9)(react-native@0.86.2)(react@19.2.3)
   expo-constants:
     specifier: ~57.0.8
     version: 57.0.8(expo@57.0.9)(react-native@0.86.2)
@@ -80,9 +83,6 @@ dependencies:
   react-native:
     specifier: 0.86.2
     version: 0.86.2(@babel/core@7.29.7)(@react-native/jest-preset@0.86.2)(@react-native/metro-config@0.86.1)(@types/react@19.2.17)(react@19.2.3)
-  react-native-audio-api:
-    specifier: ^0.13.2
-    version: 0.13.2(react-native-worklets@0.10.1)(react-native@0.86.2)(react@19.2.3)
   react-native-gesture-handler:
     specifier: ~2.32.0
     version: 2.32.0(react-native@0.86.2)(react@19.2.3)
@@ -4592,6 +4592,20 @@ packages:
       - supports-color
       - typescript
 
+  /expo-audio@57.0.3(expo-asset@57.0.8)(expo@57.0.9)(react-native@0.86.2)(react@19.2.3):
+    resolution: {integrity: sha512-FzO0gnVmlrKmNoox7xc/795uNiuuqnYBovo2kgnNICDKJ0kDi1Y5UJjqX+NATxCelZcNv5BtWs3POkKJADhNCA==}
+    peerDependencies:
+      expo: '*'
+      expo-asset: '*'
+      react: '*'
+      react-native: '*'
+    dependencies:
+      expo: 57.0.9(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(@expo/metro-runtime@57.0.8)(expo-router@57.0.9)(react-dom@19.2.3)(react-native-web@0.21.2)(react-native-worklets@0.10.1)(react-native@0.86.2)(react@19.2.3)(typescript@6.0.3)
+      expo-asset: 57.0.8(expo@57.0.9)(react-native@0.86.2)(react@19.2.3)(typescript@6.0.3)
+      react: 19.2.3
+      react-native: 0.86.2(@babel/core@7.29.7)(@react-native/jest-preset@0.86.2)(@react-native/metro-config@0.86.1)(@types/react@19.2.17)(react@19.2.3)
+    dev: false
+
   /expo-constants@57.0.8(expo@57.0.9)(react-native@0.86.2):
     resolution: {integrity: sha512-ts+B7E5076BtkblrKGy7+Sm/R2obHfTwqhmYQVYbWRtilv3+C/xNwHZhyNEnAvzM/JjKqx7UdaITUBYaeFreZw==}
     peerDependencies:
@@ -7395,23 +7409,6 @@ packages:
 
   /react-is@19.2.8:
     resolution: {integrity: sha512-s5un28nYxKJw5gvUHyW5PCC28CvBqLu9r3cWgzHT4Vo/5fqqkFcdRYsGcKf50WMPpjjFZS5d76fn3YCo2njKwQ==}
-
-  /react-native-audio-api@0.13.2(react-native-worklets@0.10.1)(react-native@0.86.2)(react@19.2.3):
-    resolution: {integrity: sha512-xwJyj43uB2vxqHoSWQgdWL6/XO3Six8Dh1HIikidZiz3njeLuBYGzzFvZ7kg4ruhu0vSJO4ubgJQZcKBMm781w==}
-    hasBin: true
-    peerDependencies:
-      react: '*'
-      react-native: '*'
-      react-native-worklets: '>= 0.6.0'
-    peerDependenciesMeta:
-      react-native-worklets:
-        optional: true
-    dependencies:
-      react: 19.2.3
-      react-native: 0.86.2(@babel/core@7.29.7)(@react-native/jest-preset@0.86.2)(@react-native/metro-config@0.86.1)(@types/react@19.2.17)(react@19.2.3)
-      react-native-worklets: 0.10.1(@babel/core@7.29.7)(@react-native/metro-config@0.86.1)(react-native@0.86.2)(react@19.2.3)
-      semver: 7.8.5
-    dev: false
 
   /react-native-drawer-layout@4.2.9(react-native-gesture-handler@2.32.0)(react-native-reanimated@4.5.1)(react-native@0.86.2)(react@19.2.3):
     resolution: {integrity: sha512-ETOxvlhhb4LmuuG3RN7A3qwt9jr9AZ2it+1G2kNE4g2fTyxxay7QQkPm1HfKi/JzmMSWC5+YTepGSgZNpJIDGg==}

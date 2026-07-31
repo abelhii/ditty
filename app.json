@@ -39,7 +39,13 @@
           "imageWidth": 76
         }
       ],
-      "react-native-audio-api",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-secure-store",
       "expo-sqlite"
     ],

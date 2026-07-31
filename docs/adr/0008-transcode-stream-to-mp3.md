@@ -1,7 +1,11 @@
 # 0008 — Transcode streams to MP3 (work around 24-bit silent playback)
 
-**Status**: accepted (bug fix — on-device playback). Relates to `docs/adr/0001-player-state-flows-through-store.md`
-(the `AudioEngine` that consumes the stream URL).
+**Status**: **superseded by `docs/adr/0009-expo-audio-lossless.md`** (2026-08-01). The transcode existed
+only to work around `react-native-audio-api`'s 24-bit silence on Android; moving playback to
+expo-audio removes that constraint, so `getStreamUrl` now streams `format=raw` (bit-perfect) on every
+platform and this workaround is gone. Kept for history. Originally: accepted (bug fix — on-device
+playback), relating to `docs/adr/0001-player-state-flows-through-store.md` (the `AudioEngine` that
+consumes the stream URL).
 
 ## Context
 

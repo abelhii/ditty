@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
-import { Audio, AudioManager, type AudioTagHandle } from 'react-native-audio-api';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
-import { getStreamUrl } from '@/api/subsonic/endpoints/media';
+import { CoverArtSize, getCoverArtUrl, getStreamUrl } from '@/api/subsonic/endpoints/media';
 import { useAuthStore } from '@/auth/useAuthStore';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -11,23 +12,34 @@ import { usePlayerStore } from '@/player/usePlayerStore';
 import { isOffline } from '@/utils/network';
 
 /**
- * The only module that touches the `<Audio>` ref directly. Mount once, persistently, for the life
- * of an authenticated session (see app/_layout.tsx). Subscribes to `usePlayerStore`'s proposed
- * state and writes observed facts back — see docs/adr/0001-player-state-flows-through-store.md for
- * the reactive-vs-imperative rationale.
+ * The only module that touches the audio player directly. Mount once, persistently, for the life of
+ * an authenticated session (see app/_layout.tsx). Subscribes to `usePlayerStore`'s proposed state,
+ * drives expo-audio imperatively, and writes observed facts back — the reactive-vs-imperative
+ * contract in docs/adr/0001-player-state-flows-through-store.md, now on expo-audio (ExoPlayer/Media3
+ * on Android, AVFoundation on iOS, `<audio>` on web) instead of react-native-audio-api. See
+ * docs/adr/0009-expo-audio-lossless.md for why (bit-perfect FLAC, no MP3 transcode) and the
+ * lock-screen trade-off this backend forces.
  *
- * Two non-obvious decisions, both forced by react-native-audio-api 0.13's Audio tag:
+ * Non-obvious points forced by expo-audio's API:
  *
- * 1. The element plays on its own native output — we deliberately do *not* route it through an
- *    AudioContext graph (`createMediaElementSource` → gain → destination), which is silent on
- *    Android. Standalone playback is the library's documented default and plays every format the OS
- *    decodes, FLAC included. (A future EQ will need a different insertion point; see PLAN.md.)
+ * 1. The player is created **once** with a `null` source and driven by `player.replace()` on track
+ *    change. `useAudioPlayer(source)` recreates the underlying native player whenever the source
+ *    changes, which would churn the lock-screen registration and native buffers on every skip.
  *
- * 2. The `key` on `<Audio>` is load-bearing. `<Audio>`'s *source-change* teardown disposes the old
- *    file source but never pauses it (its *unmount* teardown does), so swapping the `source` prop
- *    alone leaves the previous track audibly playing and stacks overlapping streams on every skip.
- *    Keying by track forces a full unmount/remount per switch, running the teardown that *does*
- *    pause — so exactly one stream plays at a time.
+ * 2. **Lock-screen controls live here on native**, not in NotificationBridge (which is a no-op on
+ *    native — see that file). expo-audio owns the OS controls through the *player instance*
+ *    (`setActiveForLockScreen`), handling play/pause/seek natively without a JS round-trip. It does
+ *    **not** expose next/previous-track on the lock screen (both platforms remove those commands);
+ *    that's the documented trade-off in ADR 0009. Web keeps its Media Session bridge
+ *    (NotificationBridge.web.tsx), so we skip expo-audio's lock-screen API there.
+ *
+ * 3. Because native lock-screen play/pause bypasses PlaybackController, the status subscription
+ *    **reconciles** `desiredPlaying` to what the player actually reports once it's settled (loaded,
+ *    not buffering) — otherwise a lock-screen pause would leave `desiredPlaying` stuck `true` and the
+ *    in-app play/pause toggle a beat out of phase.
+ *
+ * 4. Repeat-one uses the player's native `loop` rather than re-cueing on end — gapless, and it
+ *    sidesteps `next()` returning the same track index for repeat-one (QueueManager.next).
  */
 export function AudioEngine() {
   const credentials = useAuthStore((state) => state.credentials);
@@ -36,86 +48,114 @@ export function AudioEngine() {
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const retryNonce = usePlayerStore((state) => state.retryNonce);
 
-  const audioRef = useRef<AudioTagHandle>(null);
-  // The track id `<Audio>` has actually finished loading — as opposed to `currentTrack`,
-  // which flips the instant PlaybackController proposes a new one.
-  const loadedTrackId = useRef<string | undefined>(undefined);
+  const player = useAudioPlayer(null, { updateInterval: 1000 });
+  const status = useAudioPlayerStatus(player);
 
   const currentTrack = getCurrentTrack(queue);
+  // The track we've already routed `didJustFinish` through, so a run of end-of-track status ticks
+  // advances the queue exactly once.
+  const endedTrackId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    AudioManager.observeAudioInterruptions(true);
-    const subscription = AudioManager.addSystemEventListener('interruption', (event) => {
-      if (event.type === 'began') {
-        PlaybackController.pause();
-      } else if (event.shouldResume) {
-        PlaybackController.resume();
-      }
+    // `doNotMix` is required for the lock-screen controls to bind to our player; background playback
+    // keeps audio alive when the app is backgrounded / the screen locks.
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      interruptionMode: 'doNotMix',
     });
-    return () => subscription?.remove();
   }, []);
 
+  // Load the current track (and re-load on retry). expo-audio's play() is tolerant of being called
+  // before the source finishes buffering, so we start playback here rather than waiting on a load
+  // callback; the status effect below reports the real 'loading' → 'playing'/'paused' transitions.
   useEffect(() => {
-    if (!currentTrack) {
-      loadedTrackId.current = undefined;
+    endedTrackId.current = undefined;
+
+    if (!currentTrack || !credentials) {
+      player.replace(null);
+      if (Platform.OS !== 'web') player.clearLockScreenControls();
       usePlaybackStatusStore.getState().setStatus('idle');
-    } else if (currentTrack.id !== loadedTrackId.current) {
-      usePlaybackStatusStore.getState().setStatus('loading');
+      return;
     }
-  }, [currentTrack]);
+
+    usePlaybackStatusStore.getState().setStatus('loading');
+    player.replace({ uri: getStreamUrl(credentials.serverUrl, currentTrack.id, credentials) });
+
+    if (Platform.OS !== 'web') {
+      player.setActiveForLockScreen(true, {
+        title: currentTrack.title,
+        artist: currentTrack.artist,
+        albumTitle: currentTrack.album,
+        artworkUrl: getCoverArtUrl(
+          credentials.serverUrl,
+          currentTrack.coverArtId,
+          credentials,
+          CoverArtSize.detail,
+        ),
+      });
+    }
+
+    if (usePlayerStore.getState().desiredPlaying) player.play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by track identity, not the whole object
+  }, [player, currentTrack?.id, retryNonce, credentials]);
 
   useEffect(() => {
-    // A track switch is handled by onLoad below, once the freshly-mounted <Audio> has loaded — this
-    // effect only reacts to play/pause toggles on the already-loaded current track.
-    if (!currentTrack || loadedTrackId.current !== currentTrack.id) return;
-
+    if (!currentTrack) return;
     if (desiredPlaying) {
-      audioRef.current?.play();
+      player.play();
     } else {
-      audioRef.current?.pause();
+      player.pause();
     }
-  }, [desiredPlaying, currentTrack]);
+  }, [player, desiredPlaying, currentTrack]);
+
+  useEffect(() => {
+    // expo-audio players are mutable native handles; assigning `loop` is the documented API for
+    // native gapless repeat-one (the React Compiler lint can't see through the SharedObject).
+    // eslint-disable-next-line react-hooks/immutability
+    player.loop = queue.repeat === 'one';
+  }, [player, queue.repeat]);
 
   useEffect(() => {
     if (seekRequest === null) return;
-    audioRef.current?.seekToTime(seekRequest);
+    player.seekTo(seekRequest);
     usePlayerStore.getState().clearSeekRequest();
-  }, [seekRequest]);
+  }, [player, seekRequest]);
 
-  if (!currentTrack || !credentials) {
-    return null;
-  }
+  // The sole writer of observed playback facts back into the stores.
+  useEffect(() => {
+    if (!currentTrack) return;
 
-  const source = getStreamUrl(credentials.serverUrl, currentTrack.id, credentials);
+    if (status.error) {
+      // Halt on the current track rather than auto-advancing (offline, every track fails, so
+      // auto-skip would blast through the queue — ADR 0007). The connectivity probe is async, so
+      // the offline/bad-stream wording lands a beat after the halt.
+      usePlaybackStatusStore.getState().reportError();
+      isOffline().then((offline) => usePlaybackStatusStore.getState().setErrorOffline(offline));
+      return;
+    }
 
-  return (
-    <Audio
-      // Remount per track (and per retry) so the previous source is *paused*, not just disposed —
-      // see the component doc above. `retryNonce` bumps on PlaybackController.retry() to force a
-      // fresh reload of the same track after a playback error (ADR 0007).
-      key={`${currentTrack.id}:${retryNonce}`}
-      ref={audioRef}
-      source={source}
-      onLoad={() => {
-        loadedTrackId.current = currentTrack.id;
-        if (usePlayerStore.getState().desiredPlaying) {
-          audioRef.current?.play();
-        } else {
-          usePlaybackStatusStore.getState().setStatus('paused');
-        }
-      }}
-      onError={() => {
-        // Halt on the current track rather than silently stopping or auto-advancing (offline, every
-        // track fails, so auto-skip would blast through the queue — ADR 0007). The <Audio> onError
-        // is opaque (no code/class), so a connectivity probe is the only way to word it offline vs.
-        // a genuinely bad stream; it's async, so the reason lands a beat after the halt.
-        usePlaybackStatusStore.getState().reportError();
-        isOffline().then((offline) => usePlaybackStatusStore.getState().setErrorOffline(offline));
-      }}
-      onPlay={() => usePlaybackStatusStore.getState().setStatus('playing')}
-      onPause={() => usePlaybackStatusStore.getState().setStatus('paused')}
-      onEnded={() => PlaybackController.handleTrackEnded()}
-      onPositionChange={(seconds) => usePlaybackStatusStore.getState().setPosition(seconds)}
-    />
-  );
+    if (status.didJustFinish && endedTrackId.current !== currentTrack.id) {
+      endedTrackId.current = currentTrack.id;
+      PlaybackController.handleTrackEnded();
+      return;
+    }
+
+    if (!status.isLoaded || status.isBuffering) {
+      usePlaybackStatusStore.getState().setStatus('loading');
+      return;
+    }
+
+    usePlaybackStatusStore.getState().setPosition(status.currentTime);
+    usePlaybackStatusStore.getState().setStatus(status.playing ? 'playing' : 'paused');
+
+    // Mirror a lock-screen (or OS-interruption) play/pause that bypassed PlaybackController back into
+    // the proposed state, so the in-app transport stays in phase. Safe from a feedback loop: the
+    // play/pause effect only issues idempotent calls against the already-current native state.
+    if (status.playing !== usePlayerStore.getState().desiredPlaying) {
+      usePlayerStore.setState({ desiredPlaying: status.playing });
+    }
+  }, [status, currentTrack]);
+
+  return null;
 }
