@@ -35,8 +35,17 @@ layer; the store-driven architecture (ADR 0001: `PlaybackController` writes prop
   `seekTo` from `seekRequest`. Observed status comes from `useAudioPlayerStatus` and is written into
   `usePlaybackStatusStore`.
 - **Lock-screen controls move into `AudioEngine`** (native only), because expo-audio exposes them on
-  the *player instance* (`setActiveForLockScreen(active, metadata)`), not as a standalone module. This
-  fixes both polish bugs for free: expo-audio loads `artworkUrl` and resets position per source.
+  the *player instance* (`setActiveForLockScreen(active, metadata, options)`), not as a standalone
+  module. This fixes both polish bugs for free: expo-audio loads `artworkUrl` and resets position per
+  source.
+- **Next/previous-track on the lock screen is restored via a local patch.** Stock expo-audio's OS
+  controls are play/pause/seek only — both platforms strip track navigation. We carry a
+  `pnpm patch` (`patches/expo-audio@57.0.3.patch`, adapted from the workaround in
+  [expo/expo#43538](https://github.com/expo/expo/issues/43538), which targets v55) that adds
+  `showNextTrack`/`showPreviousTrack` to `AudioLockScreenOptions` and emits
+  `onRemoteNextTrack`/`onRemotePreviousTrack` on the player. `AudioEngine` enables both and forwards
+  the events into `PlaybackController.skipNext/skipPrevious`. If the patch is ever dropped, the
+  buttons just stop appearing — nothing else breaks.
 - **`NotificationBridge` becomes a native no-op.** Its web counterpart (`NotificationBridge.web.tsx`,
   the browser Media Session bridge) is unchanged and still mounted; only native lock-screen handling
   moved into `AudioEngine`.
@@ -54,16 +63,15 @@ layer; the store-driven architecture (ADR 0001: `PlaybackController` writes prop
 
 - **Lossless.** Native plays the original FLAC bit-perfect; no server transcode, so no per-track
   transcode latency.
-- **Lock-screen next/previous is lost on native — the real trade-off.** expo-audio's OS controls
-  support only **play / pause / seek** (+ optional 10s skip-forward/back). Both platforms explicitly
-  *remove* the next/previous-track commands (iOS `MediaController` wires no `nextTrackCommand`;
-  Android `AudioMediaSessionCallback` removes `COMMAND_SEEK_TO_NEXT/PREVIOUS_MEDIA_ITEM`), and the
-  commands are handled **natively without a JS round-trip**, so there's no event to forward them into
-  `PlaybackController`. This contradicts the MVP-decided control set
-  (play/pause/**nextTrack/previousTrack**/seekTo, PLAN.md Build Order step 3). Accepted for the spike;
-  the escape hatch if next/previous on the lock screen is a hard requirement is a small custom media
-  session (or `react-native-track-player`), which is a larger change. Web keeps next/previous via its
-  own Media Session bridge.
+- **Lock-screen next/previous requires carrying a patch.** Stock expo-audio supports only
+  **play / pause / seek** (+ optional 10s skip); both platforms strip next/previous (iOS wires no
+  `nextTrackCommand`; Android `AudioMediaSessionCallback` removes `COMMAND_SEEK_TO_NEXT/PREVIOUS…`).
+  The MVP control set (play/pause/**nextTrack/previousTrack**/seekTo, PLAN.md Build Order step 3)
+  needs them, so we carry `patches/expo-audio@57.0.3.patch` (see the Decision). **Cost:** a native
+  (Kotlin + Swift) patch against a first-party module, which can break on any expo-audio upgrade and
+  must be re-verified then — the recurring tax for keeping the first-party backend *and* full
+  controls. The clean exit is Expo shipping this upstream (the issue is assigned); drop the patch when
+  they do. Web keeps next/previous via its own Media Session bridge.
 - **Lock-screen play/pause bypasses `PlaybackController`.** Because the OS controls drive the native
   player directly, `AudioEngine`'s status subscription **reconciles** `desiredPlaying` to the player's
   observed `playing` once settled (loaded, not buffering), keeping the in-app transport in phase.
@@ -82,8 +90,10 @@ layer; the store-driven architecture (ADR 0001: `PlaybackController` writes prop
   AVFoundation on iOS (Media3 generally supports it, but device decoders vary).
 - Lock-screen renders artwork and a correct per-track position on the new backend.
 - Interruption / audio-focus behaviour is acceptable without the explicit auto-resume.
-- Whether losing next/previous on the lock screen is tolerable, or justifies the custom-media-session
-  escape hatch above.
+- **The next/previous patch actually compiles and works on device** — the patch was hand-ported to
+  v57's diverged source and can't be verified without a native build (Kotlin/Swift don't run in CI
+  here). If it fails to build or the buttons don't fire, park it (remove the patch entry from
+  `package.json` + `patches/`) and revisit when Expo ships #43538 upstream.
 
 ## Related
 

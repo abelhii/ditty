@@ -202,13 +202,22 @@ src/
 > on-device build (`expo prebuild --clean` + run) to confirm** 24-bit FLAC actually decodes and the
 > lock screen renders — see ADR 0009 "Open questions".
 >
-> **Key finding — the trade-off:** expo-audio's lock-screen controls are **play / pause / seek only**;
-> both iOS and Android *remove* next/previous-track and handle the rest **natively with no JS event**,
-> so the MVP-decided `nextTrack`/`previousTrack` lock-screen buttons (Build Order step 3) are **not
-> available** on this backend. It *does* fix the artwork + stale-position polish bugs for free. Whether
-> that trade is acceptable — or justifies a small custom media session — is the open call to make on
-> device. (Bonus: native lock-screen play/pause now bypasses `PlaybackController`, so `AudioEngine`
-> reconciles `desiredPlaying` from observed status; interruption auto-resume is also dropped.)
+> **Key finding — the trade-off:** stock expo-audio's lock-screen controls are **play / pause / seek
+> only**; both iOS and Android *strip* next/previous-track. Since the MVP control set (Build Order
+> step 3) needs them, we now **carry a `pnpm patch`** (`patches/expo-audio@57.0.3.patch`, ported from
+> [expo/expo#43538](https://github.com/expo/expo/issues/43538)) that adds `showNextTrack`/
+> `showPreviousTrack` + `onRemoteNextTrack`/`onRemotePreviousTrack` events, wired into
+> `PlaybackController` from `AudioEngine`. **Cost:** a native (Kotlin+Swift) patch on a first-party
+> module — re-verify on every expo-audio upgrade; drop it when Expo ships the fix upstream (issue is
+> assigned). The patch is **hand-ported to v57 and unverified without a device build** — if it doesn't
+> compile/work, park it (remove the patch) and fall back to play/pause/seek. It *also* fixes the
+> artwork + stale-position polish bugs for free. (Bonus: native lock-screen play/pause bypasses
+> `PlaybackController`, so `AudioEngine` reconciles `desiredPlaying` from observed status; interruption
+> auto-resume is dropped.)
+>
+> **Service-binding errors seen on first run were a stale native build** — `android/`/`ios/` are
+> gitignored/prebuild-generated and predated the expo-audio config plugin, so the `AudioControlsService`
+> wasn't in the manifest. Fixed by `expo prebuild --clean` + a fresh `expo run:` build.
 
 **Goal:** decide whether to replace `react-native-audio-api` with **expo-audio** (SDK 57's first-party audio module) so we can play **lossless FLAC directly and drop the MP3 transcode** (`docs/adr/0008-transcode-stream-to-mp3.md`). The transcode is lossy and adds per-track server latency ("the app feels slow").
 
