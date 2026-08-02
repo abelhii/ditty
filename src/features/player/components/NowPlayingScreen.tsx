@@ -15,6 +15,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/useTheme';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { Scrubber } from '@/features/player/components/Scrubber';
+import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
 import { useProgress } from '@/player/hooks/useProgress';
@@ -88,6 +89,7 @@ export function NowPlayingScreen() {
   const coverArtUri =
     credentials &&
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.detail);
+  const audioLabel = formatTrackAudioLabel(currentTrack);
 
   return (
     <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]}>
@@ -113,6 +115,11 @@ export function NowPlayingScreen() {
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                 {currentTrack.album}
               </ThemedText>
+              {audioLabel !== '' && (
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {audioLabel}
+                </ThemedText>
+              )}
             </View>
 
             <View style={styles.secondaryActions}>

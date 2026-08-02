@@ -11,6 +11,14 @@ export type Track = {
   /** Seconds. */
   duration: number;
   coverArtId?: string;
+  /** Original file extension, e.g. "flac", "mp3" — shown as a format hint. */
+  suffix?: string;
+  /** Bitrate in kbps, when the server reports it. */
+  bitRate?: number;
+  /** Bits per sample (16/24), when the server reports it (OpenSubsonic extension). */
+  bitDepth?: number;
+  /** Sample rate in Hz, e.g. 44100, when the server reports it (OpenSubsonic extension). */
+  samplingRate?: number;
   /** Whether the user has favourited (starred) this track — see CONTEXT.md's Favourite. */
   starred: boolean;
 };

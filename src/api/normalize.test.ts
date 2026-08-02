@@ -114,6 +114,10 @@ describe('normalizeTrack', () => {
         artist: 'Daft Punk',
         coverArt: 'al-1',
         duration: 429,
+        suffix: 'flac',
+        bitRate: 1411,
+        bitDepth: 24,
+        samplingRate: 44100,
       }),
     ).toEqual({
       id: 's1',
@@ -123,6 +127,10 @@ describe('normalizeTrack', () => {
       albumId: 'al-1',
       duration: 429,
       coverArtId: 'al-1',
+      suffix: 'flac',
+      bitRate: 1411,
+      bitDepth: 24,
+      samplingRate: 44100,
       starred: false,
     });
   });
@@ -135,6 +143,10 @@ describe('normalizeTrack', () => {
       album: '',
       duration: 0,
       coverArtId: undefined,
+      suffix: undefined,
+      bitRate: undefined,
+      bitDepth: undefined,
+      samplingRate: undefined,
       starred: false,
     });
   });

@@ -1,31 +1,21 @@
-import { Platform } from 'react-native';
-
 import { buildRequestUrl } from '@/api/subsonic/client';
 import type { SubsonicAuth } from '@/api/subsonic/types';
 
-/** Near-transparent MP3 ceiling for on-the-fly transcoding — see {@link getStreamUrl}. */
-const STREAM_MAX_BITRATE = 320;
-
 /**
- * Builds a signed streaming URL.
+ * Builds a signed streaming URL for bit-perfect, untranscoded playback on every platform.
  *
- * On **web** we stream the original file untouched: the browser's `<audio>` decodes FLAC (incl.
- * 24-bit) natively and losslessly — the same reason Feishin's web player needs no transcoding.
+ * `format=raw` tells Subsonic/Navidrome to serve the original bytes and skip any per-player
+ * transcoding it might otherwise apply. Web already relied on the browser's native FLAC decode; now
+ * native does the same through `react-native-audio-api`'s streaming `<Audio>` tag, so a lossless
+ * library streams lossless rather than as 320 kbps MP3.
  *
- * On **native** we ask the server to transcode to MP3. `react-native-audio-api` 0.13 decodes 24-bit
- * sources (common in FLAC libraries) but outputs *silence* on Android — it plays 16-bit formats like
- * MP3 fine. Rather than gamble on each file's bit depth, transcode to MP3 (inherently 16-bit);
- * `maxBitRate` keeps it near-transparent. Trade-off: lossy playback on native. Revisit per platform
- * as the library's format support firms up (then stream `format=raw` for bit-perfect FLAC).
- * See docs/adr/0008-transcode-stream-to-mp3.md.
+ * This supersedes the unconditional MP3 transcode of ADR 0008, which existed only to dodge a
+ * 24-bit-FLAC-silent-on-Android bug in the library's `<Audio>` output. We're validating on-device
+ * whether that bug still bites at 0.13.2 (and on which files) before deciding any per-platform
+ * fallback — see docs/adr/0008-transcode-stream-to-mp3.md.
  */
 export function getStreamUrl(serverUrl: string, trackId: string, auth: SubsonicAuth): string {
-  const params: Record<string, string | number> = { id: trackId };
-  if (Platform.OS !== 'web') {
-    params.format = 'mp3';
-    params.maxBitRate = STREAM_MAX_BITRATE;
-  }
-  return buildRequestUrl(serverUrl, 'stream', params, auth).toString();
+  return buildRequestUrl(serverUrl, 'stream', { id: trackId, format: 'raw' }, auth).toString();
 }
 
 /** Fixed cover art sizes, shared by every call site — see docs/adr/0003-cover-art-sizing-and-caching.md. */

@@ -33,6 +33,14 @@ export type SubsonicSong = {
   genre?: string;
   coverArt?: string;
   duration?: number;
+  /** Original file extension, e.g. "flac", "mp3". */
+  suffix?: string;
+  /** Bitrate in kbps. */
+  bitRate?: number;
+  /** Bits per sample, e.g. 16 or 24. OpenSubsonic extension — not every server reports it. */
+  bitDepth?: number;
+  /** Sample rate in Hz, e.g. 44100. OpenSubsonic extension — not every server reports it. */
+  samplingRate?: number;
   /** ISO timestamp set when the item is starred; absent/undefined when not starred. */
   starred?: string;
 };

@@ -56,6 +56,10 @@ export function normalizeTrack(raw: SubsonicSong): Track {
     albumId: raw.albumId,
     duration: raw.duration ?? 0,
     coverArtId: raw.coverArt,
+    suffix: raw.suffix,
+    bitRate: raw.bitRate,
+    bitDepth: raw.bitDepth,
+    samplingRate: raw.samplingRate,
     starred: raw.starred != null,
   };
 }
