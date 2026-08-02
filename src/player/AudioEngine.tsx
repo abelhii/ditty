@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 
@@ -66,6 +66,15 @@ export function AudioEngine() {
       shouldPlayInBackground: true,
       interruptionMode: 'doNotMix',
     });
+
+    // Android 13+ (API 33) suppresses the media notification unless POST_NOTIFICATIONS is granted —
+    // and on Android that notification *is* the lock-screen + shade transport. expo-audio's service
+    // runs regardless, but its controls stay hidden without this. Request once on mount; a prior
+    // grant resolves without prompting. No-op on iOS (lock-screen controls there don't need it) and
+    // on API < 33 (the permission is install-time / auto-granted).
+    if (Platform.OS === 'android' && Number(Platform.Version) >= 33) {
+      PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS);
+    }
   }, []);
 
   // Forward the patched-in next/previous lock-screen presses into the queue (expo/expo#43538 — see
@@ -89,7 +98,11 @@ export function AudioEngine() {
     endedTrackId.current = undefined;
 
     if (!currentTrack || !credentials) {
-      player.replace(null);
+      // No `replace(null)` here: expo-audio's native `replace` binds a non-nullable AudioSource and
+      // rejects null on Android ("Cannot assign null to not nullable type"). There's no unload/stop in
+      // the API, so we pause — the last source stays loaded but silent, which is the intended state
+      // when the queue empties.
+      player.pause();
       if (Platform.OS !== 'web') player.clearLockScreenControls();
       usePlaybackStatusStore.getState().setStatus('idle');
       return;
