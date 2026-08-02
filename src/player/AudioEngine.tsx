@@ -29,10 +29,8 @@ import { isOffline } from '@/utils/network';
  * 2. **Lock-screen controls live here on native**, not in NotificationBridge (which is a no-op on
  *    native — see that file). expo-audio owns the OS controls through the *player instance*
  *    (`setActiveForLockScreen`): play/pause/seek are handled natively without a JS round-trip.
- *    Stock expo-audio drops next/previous-track; we restore them via a local patch (expo/expo#43538,
- *    see patches/expo-audio+57.0.3.patch and ADR 0009), which emits `onRemoteNextTrack`/
- *    `onRemotePreviousTrack` on the player — forwarded into PlaybackController below. If that patch
- *    is ever dropped, the buttons simply stop appearing; nothing else breaks. Web keeps its own
+ *    Stock expo-audio does not surface next/previous-track buttons on the lock screen, and no
+ *    reliable way to add them was found (see ADR 0009), so they're absent for now. Web keeps its own
  *    Media Session bridge (NotificationBridge.web.tsx), so we skip expo-audio's lock-screen API there.
  *
  * 3. Because native lock-screen play/pause bypasses PlaybackController, the status subscription
@@ -77,20 +75,6 @@ export function AudioEngine() {
     }
   }, []);
 
-  // Forward the patched-in next/previous lock-screen presses into the queue (expo/expo#43538 — see
-  // the component doc). These event names aren't in expo-audio's typed AudioEvents, so we reach the
-  // SharedObject's `addListener` through a narrow cast; on web (unpatched) they simply never fire.
-  useEffect(() => {
-    const remote = player as unknown as {
-      addListener: (event: string, listener: () => void) => { remove: () => void };
-    };
-    const subscriptions = [
-      remote.addListener('onRemoteNextTrack', () => PlaybackController.skipNext()),
-      remote.addListener('onRemotePreviousTrack', () => PlaybackController.skipPrevious()),
-    ];
-    return () => subscriptions.forEach((subscription) => subscription.remove());
-  }, [player]);
-
   // Load the current track (and re-load on retry). expo-audio's play() is tolerant of being called
   // before the source finishes buffering, so we start playback here rather than waiting on a load
   // callback; the status effect below reports the real 'loading' → 'playing'/'paused' transitions.
@@ -125,8 +109,6 @@ export function AudioEngine() {
             CoverArtSize.detail,
           ),
         },
-        // Patched-in next/previous buttons (see the component doc + patches/).
-        { showNextTrack: true, showPreviousTrack: true },
       );
     }
 

@@ -61,10 +61,5 @@
   "private": true,
   "jest": {
     "preset": "jest-expo"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "expo-audio@57.0.3": "patches/expo-audio@57.0.3.patch"
-    }
   }
 }
