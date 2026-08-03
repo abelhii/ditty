@@ -6,16 +6,16 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Playlist } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useCreatePlaylist } from '@/features/playlists/hooks/useCreatePlaylist';
-import { usePlaylists } from '@/features/playlists/hooks/usePlaylists';
-import { useTheme } from '@/hooks/useTheme';
+import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
+import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
+import { useTheme } from '@/hooks/use-theme';
 
 /** The My Music tab (Build Order step 7b): the user's playlists as a vertical list with a pinned
  *  Favourites shortcut at the top. Deliberately *not* named "Library" — see CONTEXT.md. */

@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
-import { usePlayerStore } from '@/player/usePlayerStore';
+import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { usePlayerStore } from '@/player/use-player-store';
 
 /**
  * The web counterpart of {@link NotificationBridge} — Metro resolves this `.web.tsx` over the

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useNoticeStore } from '@/components/useNoticeStore';
+import { useNoticeStore } from '@/components/use-notice-store';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
 /** How long a notice stays up before auto-dismissing. */

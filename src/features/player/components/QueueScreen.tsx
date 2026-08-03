@@ -5,15 +5,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
-import { usePlayerStore } from '@/player/usePlayerStore';
-import { usePlayerUiStore } from '@/player/usePlayerUiStore';
+import { usePlayerStore } from '@/player/use-player-store';
+import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 const ROW_HEIGHT = 64;
 const REMOVE_THRESHOLD = 80;

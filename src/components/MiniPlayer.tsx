@@ -3,18 +3,18 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
-import { useProgress } from '@/player/hooks/useProgress';
-import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
-import { usePlayerStore } from '@/player/usePlayerStore';
-import { usePlayerUiStore } from '@/player/usePlayerUiStore';
+import { useProgress } from '@/player/hooks/use-progress';
+import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { usePlayerStore } from '@/player/use-player-store';
+import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 /**
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform

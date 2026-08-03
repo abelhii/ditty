@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Album, Artist, Track } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { AlbumTile } from '@/components/AlbumTile';
 import { ArtistRow } from '@/components/ArtistRow';
 import { QueryState } from '@/components/QueryState';
@@ -14,10 +14,10 @@ import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useFavourites } from '@/features/favourites/hooks/useFavourites';
+import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/usePlayerStore';
+import { usePlayerStore } from '@/player/use-player-store';
 
 type FavouritesView = 'songs' | 'albums' | 'artists';
 

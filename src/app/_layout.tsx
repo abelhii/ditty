@@ -4,11 +4,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { persistOptions, queryClient } from '@/api/queryClient';
-import { prefetchLibrary } from '@/api/prefetchLibrary';
+import { persistOptions, queryClient } from '@/api/query-client';
+import { prefetchLibrary } from '@/api/prefetch-library';
 import { ReauthModal } from '@/auth/ReauthModal';
 import { ServerConfigScreen } from '@/auth/ServerConfigScreen';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { AnimatedSplashOverlay } from '@/components/AnimatedIcon';
 import AppTabs from '@/components/AppTabs';
 import { MiniPlayer } from '@/components/MiniPlayer';

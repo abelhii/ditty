@@ -1,10 +1,10 @@
 import { getAlbum } from '@/api/subsonic/endpoints/browsing';
 import type { Track } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import * as QueueManager from '@/player/QueueManager';
 import type { RepeatMode } from '@/player/QueueManager';
-import { usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
-import { usePlayerStore } from '@/player/usePlayerStore';
+import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { usePlayerStore } from '@/player/use-player-store';
 
 /**
  * The public API for playback — called by the UI and by NotificationBridge, never by

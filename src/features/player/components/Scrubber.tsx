@@ -3,8 +3,8 @@ import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native'
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
-import { formatTime } from '@/player/hooks/useProgress';
+import { useTheme } from '@/hooks/use-theme';
+import { formatTime } from '@/player/hooks/use-progress';
 
 type ScrubberProps = {
   position: number;

@@ -72,8 +72,8 @@ src/
     types.ts                    # normalized app-level models (Track, Artist, Album, Genre, ArtistSection...);
                                  #   step 7b adds a `starred` flag to Track/Artist/Album
     normalize.ts               # pure functions: raw Subsonic shapes -> normalized models (unit tested)
-    kvStorage.ts               # platform-branched sync KV adapter: expo-sqlite/kv-store (native) / localStorage (web)
-    queryClient.ts             # QueryClient + persister setup, built on kvStorage.ts (see Build Order step 4)
+    kv-storage.ts               # platform-branched sync KV adapter: expo-sqlite/kv-store (native) / localStorage (web)
+    query-client.ts             # QueryClient + persister setup, built on kv-storage.ts (see Build Order step 4)
 
   player/
     AudioEngine.ts             # AudioContext lifecycle, source node setup, connects to destination
@@ -81,10 +81,10 @@ src/
     QueueManager.ts           # queue state, next/prev logic, shuffle algorithm, repeat modes (unit tested)
     NotificationBridge.ts     # wraps PlaybackNotificationManager, syncs OS controls <-> playback state
     streamSource.ts           # builds the correct source node for a Subsonic stream URL
-    usePlayerStore.ts         # zustand store: queue, shuffle, repeat, position, playback status
+    use-player-store.ts         # zustand store: queue, shuffle, repeat, position, playback status
     hooks/
       usePlaybackState.ts
-      useProgress.ts
+      use-progress.ts
 
   features/
     library/                  # step 5
@@ -104,11 +104,11 @@ src/
       components/FavouritesScreen.tsx  # segmented Songs | Albums | Artists
     home/                     # step 9: Home/discover shelves
       shelves.ts              # pure homeShelves(currentYear) shelf config (unit tested)
-      hooks/useAlbumShelf.ts  # one getAlbumList2 shelf, keyed by ShelfId
+      hooks/use-album-shelf.ts  # one getAlbumList2 shelf, keyed by ShelfId
       components/ (HomeScreen — vertical scroll of carousels + Artists/Genres links; AlbumShelf — one horizontal carousel)
 
   auth/
-    useAuthStore.ts            # server URL, salt/token (no password persisted); logout() clears the query cache too;
+    use-auth-store.ts            # server URL, salt/token (no password persisted); logout() clears the query cache too;
                                #   step 8b adds sessionExpired()/reauthenticate() for in-place re-auth (ADR 0007)
     ServerConfigScreen.tsx
     ReauthModal.tsx            # step 8b: blocking, password-only re-authentication prompt
@@ -120,7 +120,7 @@ src/
                                #   (step 7a overlay), TrackActionsMenu (step 7b shared overflow)...
                                # step 8b: Notice (transient toast) + useNoticeStore (ADR 0007)
   api/
-    mutationErrorNotice.ts     # step 8b: pure wording for a failed-mutation Notice (unit tested)
+    mutation-error-notice.ts     # step 8b: pure wording for a failed-mutation Notice (unit tested)
   utils/
     network.ts                # step 8b: expo-network connectivity probe (isOffline), used reactively
                                #   to flavour error messages — not the re-auth gate (ADR 0007)
@@ -324,14 +324,14 @@ Surfaced once native playback started working (see `docs/adr/0008-transcode-stre
 4. Local data layer: `QueryClient` + persister setup, browsing endpoints, and response normalization (+ unit tests). Architecture decided via grilling session, 2026-07-26 (full rationale: `docs/adr/0002-no-local-library-mirror.md`):
 
    - **No local database mirror.** The original plan called for a full SQLite schema (artists/albums/tracks/genres/playlists) as source of truth, synced incrementally from the Subsonic API. Dropped after two findings: the API has no incremental-fetch primitive for ID3 data (see Key Edge Cases → Library), and a real Subsonic client (tempus, a fork of Tempo) doesn't mirror the catalog locally at all — its local database only holds things that need genuine local durability (downloads, favourites, playlists, queue, recent searches), and artist/album/song browsing hits the network live per screen. Spotify's public offline behavior follows the same shape: opportunistic browsing cache, wholly separate explicit-download mechanism for audio.
-   - **TanStack Query's cache is the local library cache**, persisted via `@tanstack/react-query-persist-client` + `createAsyncStoragePersister`, backed by a platform-branched key-value adapter in `api/queryClient.ts` — `expo-sqlite/kv-store` on native, `localStorage` on web (mirrors the native/web split already used for secrets — see Tech Stack).
+   - **TanStack Query's cache is the local library cache**, persisted via `@tanstack/react-query-persist-client` + `createAsyncStoragePersister`, backed by a platform-branched key-value adapter in `api/query-client.ts` — `expo-sqlite/kv-store` on native, `localStorage` on web (mirrors the native/web split already used for secrets — see Tech Stack).
    - **Prefetch on login**: `getArtists`, `getGenres`, `getPlaylists`, `getStarred2` — cheap, single calls each, so top-level screens feel instant. Everything else (an artist's albums, an album's tracks) is fetched lazily on navigation.
    - **`api/normalize.ts` is the new unit-tested seam**, replacing the old `db/sync.ts` diff/merge logic: pure functions mapping raw Subsonic shapes (`ArtistID3`, `AlbumID3`, `Child`) to the app's normalized `Track`/`Artist`/`Album`/`Genre` types in `api/types.ts`.
    - **`api/subsonic/endpoints/browsing.ts`** gets `getArtists`/`getArtist`/`getAlbum`/`getGenres`/`getPlaylists` now; the hooks/UI that consume them (`features/library/hooks/*`) are step 5, same split as originally planned.
 5. Library browsing (artists/albums/genres) with pagination, backed by the persisted TanStack Query cache. Architecture decided via grilling session, 2026-07-27:
 
    - **Tabs**: drop the scaffold `explore` tab; add `library` (wired to this step) and `settings` (a logout button, calling the existing `useAuthStore.logout()` — see below). `index` (home/discover) is left as the build-order-step-4 smoke-test screen for now; its real "home/discover" content isn't part of this step.
-   - **Logout also clears the query cache**: `useAuthStore.logout()` now calls `queryClient.clear()` in addition to clearing persisted credentials. Cache keys aren't scoped by server/user (`queryKeys.ts` is just `['artists']`, etc.), so without this a second account/server would see the first account's cached library until every query happened to refetch.
+   - **Logout also clears the query cache**: `useAuthStore.logout()` now calls `queryClient.clear()` in addition to clearing persisted credentials. Cache keys aren't scoped by server/user (`query-keys.ts` is just `['artists']`, etc.), so without this a second account/server would see the first account's cached library until every query happened to refetch.
    - **Artists list gets A-Z section headers, preserving the server's own grouping.** `getArtists` already returns artists grouped into alphabetical sections (`SubsonicIndex[]`), with server-side rules (e.g. `ignoredArticles`) already applied. `normalize.ts`'s `flattenArtistIndex` discards this; a new function preserves it (`{ letter, artists }[]`) for the Artists screen instead of re-deriving groups client-side.
    - **Genre → albums is the one real pagination surface.** Tapping a genre drills into a paginated album grid via a new `getAlbumList2` call (`type=byGenre`), fetched via `useInfiniteQuery`, 500/page (Subsonic's max). Every other list in this step (artists, genres, playlists, an artist's albums, an album's tracks) comes back in one unpaginated call.
    - **Cover art** (full rationale: `docs/adr/0003-cover-art-sizing-and-caching.md`): new `getCoverArtUrl(serverUrl, coverArtId, auth, size)` builder alongside `getStreamUrl` in `api/subsonic/endpoints/media.ts`. Rendered via `expo-image` (disk+memory cached out of the box) rather than the query cache — cover art never becomes react-query state, it's a signed URL passed straight to `<Image>`. Two fixed sizes for now: `150` for list rows, `600` for detail headers — a third, larger size for tablet/web is deliberately deferred, not overlooked (no tablet/web layout exists yet to size it for). `utils/cache.ts` stays unbuilt/deferred — `expo-image`'s cache covers the documented need.
@@ -381,7 +381,7 @@ Surfaced once native playback started working (see `docs/adr/0008-transcode-stre
      a unit test alongside the other `QueueManager` functions.
    - **New/changed code (7a):** `QueueManager.jumpTo` (+ test) and `PlaybackController.jumpTo`;
      `components/MiniPlayer.tsx` (the overlay, exports the shared `PlayPauseButton`) mounted in
-     `_layout.tsx`; `player/usePlayerUiStore.ts` (overlay open/close state); `player/hooks/useProgress.ts`
+     `_layout.tsx`; `player/use-player-ui-store.ts` (overlay open/close state); `player/hooks/use-progress.ts`
      (+ `formatTime`) for the scrubber; `features/player/components/` — `NowPlayingScreen`, `QueueScreen`,
      and `Scrubber` — all JS overlays mounted in `_layout.tsx` rather than `player/now-playing.tsx` /
      `player/queue.tsx` router routes (NativeTabs-at-root can't host modal routes without a root Stack;
@@ -490,7 +490,7 @@ Surfaced once native playback started working (see `docs/adr/0008-transcode-stre
      query cache like other library data (offline Home shows cached shelves; the `random` set may
      look stale — acceptable). A shelf that errors or comes back empty **renders nothing**, so Home
      degrades to just the shelves with content rather than showing per-shelf error blocks.
-   - **New/changed code**: `features/home/` (`shelves.ts` + test, `hooks/useAlbumShelf.ts`,
+   - **New/changed code**: `features/home/` (`shelves.ts` + test, `hooks/use-album-shelf.ts`,
      `components/HomeScreen.tsx` + `AlbumShelf.tsx`); `getAlbumList2` + `AlbumListType`/`AlbumListParams`
      in `browsing.ts`; `queryKeys.albumShelf`; `app/library/index.tsx` now renders `HomeScreen`,
      new `app/library/artists.tsx` route + `_layout.tsx` registration; `ArtistsScreen` `initialView`

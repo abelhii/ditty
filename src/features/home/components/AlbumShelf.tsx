@@ -15,12 +15,12 @@ import {
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Album } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { AlbumTile } from '@/components/AlbumTile';
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
-import { useAlbumShelf } from '@/features/home/hooks/useAlbumShelf';
+import { useTheme } from '@/hooks/use-theme';
+import { useAlbumShelf } from '@/features/home/hooks/use-album-shelf';
 import type { Shelf } from '@/features/home/shelves';
 
 /** Fixed tile width for the horizontal carousel — narrower than the genre grid's two-up tiles. */

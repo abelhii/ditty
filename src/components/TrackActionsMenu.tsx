@@ -6,9 +6,9 @@ import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
-import { useStar, useUnstar } from '@/features/favourites/hooks/useStar';
+import { useStar, useUnstar } from '@/features/favourites/hooks/use-star';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 
 type TrackActionsMenuProps = {
