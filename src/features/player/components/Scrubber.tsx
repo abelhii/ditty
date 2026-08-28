@@ -1,10 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
-import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
+import { LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from 'react-native';
 
-import { ThemedText } from '@/components/ThemedText';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { Colors, Fonts, Spacing } from '@/constants/theme';
 import { formatTime } from '@/player/hooks/use-progress';
+
+/** Colors fixed to the full player's dark surface (NowPlayingScreen), independent of light/dark
+ *  scheme — see that component's doc comment. Scrubber has no other consumer. */
+const TRACK_BG = 'rgba(243,242,238,.25)';
+const TIME_COLOR = 'rgba(243,242,238,.55)';
+const THUMB_COLOR = '#f3f2ee';
 
 type ScrubberProps = {
   position: number;
@@ -20,7 +24,6 @@ type ScrubberProps = {
  *  doesn't fight the finger. Built on PanResponder (no reanimated dependency), so it behaves
  *  the same on iOS/Android/web. */
 export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps) {
-  const theme = useTheme();
   const widthRef = useRef(0);
   const [dragFraction, setDragFraction] = useState<number | null>(null);
 
@@ -53,22 +56,16 @@ export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps
       <View style={styles.track} onLayout={onLayout} {...responder.panHandlers}>
         <View style={styles.trackBackground} />
         <View
-          style={[styles.fill, { backgroundColor: theme.text, width: `${shownFraction * 100}%` }]}
-        />
-        <View
           style={[
-            styles.thumb,
-            { backgroundColor: theme.text, left: `${shownFraction * 100}%` },
+            styles.fill,
+            { backgroundColor: Colors.light.accent, width: `${shownFraction * 100}%` },
           ]}
         />
+        <View style={[styles.thumb, { left: `${shownFraction * 100}%` }]} />
       </View>
       <View style={styles.times}>
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatTime(shownPosition)}
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          {formatTime(duration)}
-        </ThemedText>
+        <Text style={styles.time}>{formatTime(shownPosition)}</Text>
+        <Text style={styles.time}>{formatTime(duration)}</Text>
       </View>
     </View>
   );
@@ -88,7 +85,7 @@ const styles = StyleSheet.create({
   trackBackground: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(128,128,128,0.3)',
+    backgroundColor: TRACK_BG,
   },
   fill: {
     position: 'absolute',
@@ -101,9 +98,16 @@ const styles = StyleSheet.create({
     height: THUMB,
     borderRadius: THUMB / 2,
     marginLeft: -THUMB / 2,
+    backgroundColor: THUMB_COLOR,
   },
   times: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  time: {
+    fontFamily: Fonts.sans,
+    fontSize: 14,
+    lineHeight: 20,
+    color: TIME_COLOR,
   },
 });

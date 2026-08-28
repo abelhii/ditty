@@ -399,11 +399,17 @@ Surfaced once native playback started working (see `docs/adr/0008-transcode-stre
      all" into the full lists. `My Music` (see `CONTEXT.md`) is the new tab grouping the two personal
      collections; it is deliberately *not* named "Library". Dropping the catalog tab freed the slot
      that lets Playlists and Favourites share one tab without crowding.
-   - **My Music** = the user's **Playlists** as a vertical list, with a pinned **Favourites**
-     shortcut row at the top (Spotify's "Liked Songs" shape) that drills into a **Favourites screen**.
-     Favourites are three collections (`getStarred2` → starred songs/albums/artists), shown behind a
-     **segmented control: Songs | Albums | Artists**, each with its own row/tile layout (contrast
-     search's combined scroll — favourites can grow large).
+   - **My Music** = a pinned **Liked Songs** shortcut row at the top (Spotify's "Liked Songs" shape),
+     then the user's **Playlists** / starred **Albums** / starred **Artists** behind one filter-chip
+     row (default: Playlists) — one entity type visible at a time, since favourites can grow large
+     (contrast search's combined scroll). *Amended for the v4 restyle (mockup-v4-restyle branch,
+     2026-08-28): My Music and the standalone Favourites screen merged into this one screen —
+     `MyMusicScreen.tsx` now renders all three (`usePlaylists` for Playlists,
+     `useFavourites`'s albums/artists for the other two chips) instead of Favourites living behind
+     its own segmented-control screen at `/my-music/favourites`. The pinned row's destination is now
+     a dedicated **Liked Songs** screen (`LikedSongsScreen.tsx`, `/my-music/liked-songs`) showing
+     just the starred-songs list that used to be Favourites' Songs segment; starred albums/artists
+     moved to My Music's own chips instead of staying behind Favourites' segmented control.*
    - **Playlist ops:** create, rename, delete, add-track, remove-track (via the positional
      `songIndexToRemove` — a sharp edge for optimistic updates), and a public/private toggle
      (`updatePlaylist`'s `public`). **Track reorder is deferred** — the Subsonic API has no reorder

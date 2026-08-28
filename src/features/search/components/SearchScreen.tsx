@@ -23,7 +23,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from "@/constants/theme";
 import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
 import { useSearch } from "@/features/search/hooks/use-search";
 import { useTheme } from "@/hooks/use-theme";
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.four,
     marginVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.pill,
   },
   input: {
     flex: 1,

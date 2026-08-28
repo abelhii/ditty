@@ -5,7 +5,7 @@ import type { Track } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const THUMBNAIL_SIZE = 40;
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: THUMBNAIL_SIZE,
     height: THUMBNAIL_SIZE,
-    borderRadius: Spacing.one,
+    borderRadius: Radius.sm,
   },
   text: {
     flex: 1,

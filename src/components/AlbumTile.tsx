@@ -3,7 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import type { Album } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
-import { Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 
 type AlbumTileProps = {
   album: Album;
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   cover: {
-    borderRadius: Spacing.two,
+    borderRadius: Radius.sm,
     marginBottom: Spacing.one,
   },
 });

@@ -1,12 +1,14 @@
-import { Button, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/auth/use-auth-store';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function SettingsScreen() {
+  const theme = useTheme();
   const logout = useAuthStore((state) => state.logout);
   const credentials = useAuthStore((state) => state.credentials);
 
@@ -24,7 +26,13 @@ export default function SettingsScreen() {
           </ThemedView>
         )}
 
-        <Button title="Log out" onPress={() => logout()} />
+        <Pressable
+          style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
+          onPress={() => logout()}>
+          <ThemedText type="smallBold" style={{ color: theme.accentDeep }}>
+            Log out
+          </ThemedText>
+        </Pressable>
       </SafeAreaView>
     </ThemedView>
   );
@@ -44,8 +52,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   serverInfo: {
-    borderRadius: Spacing.three,
+    borderRadius: Radius.md,
     padding: Spacing.three,
     gap: Spacing.one,
+  },
+  logOutRow: {
+    paddingVertical: Spacing.two,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });

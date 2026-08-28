@@ -1,4 +1,5 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { Figtree_400Regular, Figtree_700Bold, useFonts } from '@expo-google-fonts/figtree';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -26,6 +27,7 @@ export default function TabLayout() {
   const status = useAuthStore((state) => state.status);
   const hydrate = useAuthStore((state) => state.hydrate);
   const credentials = useAuthStore((state) => state.credentials);
+  const [fontsLoaded] = useFonts({ Figtree_400Regular, Figtree_700Bold });
 
   useEffect(() => {
     hydrate();
@@ -36,6 +38,10 @@ export default function TabLayout() {
       prefetchLibrary(credentials.serverUrl, credentials);
     }
   }, [credentials]);
+
+  // Keep the native splash screen up (see `SplashScreen.preventAutoHideAsync()` above) until
+  // Figtree is loaded — `AnimatedSplashOverlay` hides it as soon as it mounts.
+  if (!fontsLoaded) return null;
 
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>

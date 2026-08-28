@@ -7,13 +7,25 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/**
+ * Warm-stone palette from "High-Fidelity Mockups v4" (Claude Design project
+ * d2ae5646-f553-4cbc-8772-af147bfb237e). Dark mode has no mockup counterpart, so `dark` keeps its
+ * prior values for the new keys (`accent`/`accentDeep`/`tint`) as an unverified fallback — see
+ * TODO.md "Dark mode" gap.
+ */
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#22201c',
+    background: '#f3f2ee',
+    backgroundElement: '#e9e5de',
+    backgroundSelected: '#dbd6cd',
+    textSecondary: '#787268',
+    /** Sage brand accent — active pills/chips, progress fill, primary buttons. */
+    accent: '#5f7340',
+    /** Pressed/hover state of `accent`. */
+    accentDeep: '#3c4a29',
+    /** Elevated surface above `background` (e.g. the floating mini-player bar). */
+    tint: '#faf8f5',
   },
   dark: {
     text: '#ffffff',
@@ -21,15 +33,28 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    accent: '#5f7340',
+    accentDeep: '#3c4a29',
+    tint: '#212225',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+/** Radius scale from the v4 mockup: pill controls, cards/dialogs, list rows, thumbnails. */
+export const Radius = {
+  pill: 999,
+  lg: 32,
+  md: 16,
+  sm: 10,
+} as const;
+
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
+    /** Figtree Regular (400) — v4 mockup body text. */
+    sans: 'Figtree_400Regular',
+    /** Figtree Bold (700) — v4 mockup headings. */
+    sansBold: 'Figtree_700Bold',
     /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
     /** iOS `UIFontDescriptorSystemDesignRounded` */
@@ -38,13 +63,15 @@ export const Fonts = Platform.select({
     mono: 'ui-monospace',
   },
   default: {
-    sans: 'normal',
+    sans: 'Figtree_400Regular',
+    sansBold: 'Figtree_700Bold',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
   },
   web: {
-    sans: 'var(--font-display)',
+    sans: 'Figtree_400Regular',
+    sansBold: 'Figtree_700Bold',
     serif: 'var(--font-serif)',
     rounded: 'var(--font-rounded)',
     mono: 'var(--font-mono)',

@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { homeShelves } from '@/features/home/shelves';
 
@@ -85,6 +85,6 @@ const styles = StyleSheet.create({
   linkInner: {
     paddingVertical: Spacing.three,
     alignItems: 'center',
-    borderRadius: Spacing.two,
+    borderRadius: Radius.pill,
   },
 });
