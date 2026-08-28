@@ -26,6 +26,8 @@ export const Colors = {
     accentDeep: '#3c4a29',
     /** Elevated surface above `background` (e.g. the floating mini-player bar). */
     tint: '#faf8f5',
+    /** Drop-shadow tint for elevated surfaces (e.g. the floating mini-player bar). */
+    shadow: '#2e2b25',
   },
   dark: {
     text: '#ffffff',
@@ -36,10 +38,22 @@ export const Colors = {
     accent: '#5f7340',
     accentDeep: '#3c4a29',
     tint: '#212225',
+    shadow: '#000000',
   },
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+
+/** The full player's fixed dark surface (NowPlayingScreen + Scrubber) — deliberately independent
+ *  of the light/dark scheme, since the v4 mockup has only one, dark, full-player design (the other
+ *  five screens are light-only). Not part of `Colors` because it never swaps with the scheme. */
+export const PlayerSurface = {
+  background: '#22201c',
+  text: '#f3f2ee',
+  textSecondary: 'rgba(243,242,238,.65)',
+  textMuted: 'rgba(243,242,238,.55)',
+  trackBackground: 'rgba(243,242,238,.25)',
+} as const;
 
 /** Radius scale from the v4 mockup: pill controls, cards/dialogs, list rows, thumbnails. */
 export const Radius = {
@@ -78,6 +92,9 @@ export const Fonts = Platform.select({
   },
 });
 
+/** Unchanged for the v4 restyle — the mockup's own scale (4.4/8.8/13.2/17.6/26.4/35.2) doesn't map
+ *  cleanly onto this one, and reworking every screen's spacing wasn't worth it for a restyle pass
+ *  that's otherwise just colors/radius/font. See TODO.md "Design tokens" gap. */
 export const Spacing = {
   half: 2,
   one: 4,

@@ -43,7 +43,7 @@ export function MiniPlayer() {
   return (
     <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + Spacing.one }]}>
       <Pressable onPress={openNowPlaying}>
-        <ThemedView type="tint" style={styles.bar}>
+        <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <View style={styles.row}>
             <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={18} />
             <View style={styles.text}>
@@ -118,6 +118,8 @@ export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintC
   );
 }
 
+const ART_SIZE = 40;
+
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -130,7 +132,6 @@ const styles = StyleSheet.create({
     paddingRight: Spacing.three,
     paddingVertical: Spacing.two,
     gap: Spacing.one,
-    shadowColor: '#2e2b25',
     shadowOpacity: 0.16,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 10,
@@ -142,9 +143,9 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   art: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: ART_SIZE,
+    height: ART_SIZE,
+    borderRadius: ART_SIZE / 2,
   },
   text: {
     flex: 1,

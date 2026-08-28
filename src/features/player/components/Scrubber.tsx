@@ -1,14 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
-import { LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
 
-import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { ThemedText } from '@/components/ThemedText';
+import { Colors, PlayerSurface, Spacing } from '@/constants/theme';
 import { formatTime } from '@/player/hooks/use-progress';
-
-/** Colors fixed to the full player's dark surface (NowPlayingScreen), independent of light/dark
- *  scheme — see that component's doc comment. Scrubber has no other consumer. */
-const TRACK_BG = 'rgba(243,242,238,.25)';
-const TIME_COLOR = 'rgba(243,242,238,.55)';
-const THUMB_COLOR = '#f3f2ee';
 
 type ScrubberProps = {
   position: number;
@@ -64,8 +59,12 @@ export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps
         <View style={[styles.thumb, { left: `${shownFraction * 100}%` }]} />
       </View>
       <View style={styles.times}>
-        <Text style={styles.time}>{formatTime(shownPosition)}</Text>
-        <Text style={styles.time}>{formatTime(duration)}</Text>
+        <ThemedText type="small" style={styles.time}>
+          {formatTime(shownPosition)}
+        </ThemedText>
+        <ThemedText type="small" style={styles.time}>
+          {formatTime(duration)}
+        </ThemedText>
       </View>
     </View>
   );
@@ -85,7 +84,7 @@ const styles = StyleSheet.create({
   trackBackground: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: TRACK_BG,
+    backgroundColor: PlayerSurface.trackBackground,
   },
   fill: {
     position: 'absolute',
@@ -98,16 +97,13 @@ const styles = StyleSheet.create({
     height: THUMB,
     borderRadius: THUMB / 2,
     marginLeft: -THUMB / 2,
-    backgroundColor: THUMB_COLOR,
+    backgroundColor: PlayerSurface.text,
   },
   times: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   time: {
-    fontFamily: Fonts.sans,
-    fontSize: 14,
-    lineHeight: 20,
-    color: TIME_COLOR,
+    color: PlayerSurface.textMuted,
   },
 });

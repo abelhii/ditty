@@ -5,6 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { EmptyMessage } from '@/components/EmptyMessage';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -65,14 +66,6 @@ export function LikedSongsScreen() {
   );
 }
 
-function EmptyMessage({ text }: { text: string }) {
-  return (
-    <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-      {text}
-    </ThemedText>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -86,9 +79,5 @@ const styles = StyleSheet.create({
   title: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
-  },
-  empty: {
-    textAlign: 'center',
-    paddingVertical: Spacing.four,
   },
 });

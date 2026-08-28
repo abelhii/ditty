@@ -10,6 +10,7 @@ import { useAuthStore } from '@/auth/use-auth-store';
 import { AlbumTile } from '@/components/AlbumTile';
 import { ArtistRow } from '@/components/ArtistRow';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { EmptyMessage } from '@/components/EmptyMessage';
 import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
@@ -180,15 +181,13 @@ export function MyMusicScreen() {
   );
 }
 
-function EmptyMessage({ text }: { text: string }) {
-  return (
-    <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-      {text}
-    </ThemedText>
-  );
-}
+type FilterChipProps = {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+};
 
-function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function FilterChip({ label, active, onPress }: FilterChipProps) {
   const theme = useTheme();
   return (
     <Pressable
@@ -272,10 +271,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: GRID_GAP,
     paddingHorizontal: Spacing.four,
-  },
-  empty: {
-    textAlign: 'center',
-    paddingVertical: Spacing.four,
   },
   pressed: {
     opacity: 0.7,
