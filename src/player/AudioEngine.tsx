@@ -156,9 +156,15 @@ export function AudioEngine() {
       .setStatus(status.playing ? "playing" : "paused");
 
     // Mirror a lock-screen / OS-interruption play/pause that bypassed PlaybackController back into
-    // proposed state, keeping the in-app transport in phase. No feedback loop: the play/pause effect
-    // only issues idempotent calls against the already-current native state.
-    if (status.playing !== usePlayerStore.getState().desiredPlaying) {
+    // proposed state, keeping the in-app transport in phase. Native only: web routes OS media-key
+    // play/pause through PlaybackController already (NotificationBridge.web), so there's no bypass to
+    // catch — and web's status reports `playing: false` transiently at load (currentTime === 0) while
+    // a play() promise is still pending, so mirroring it here would pause() mid-play and throw the
+    // browser's "play() request was interrupted by pause()" AbortError.
+    if (
+      Platform.OS !== "web" &&
+      status.playing !== usePlayerStore.getState().desiredPlaying
+    ) {
       usePlayerStore.setState({ desiredPlaying: status.playing });
     }
   }, [status, currentTrack]);
