@@ -45,7 +45,8 @@
         {
           "microphonePermission": false,
           "recordAudioAndroid": false,
-          "enableBackgroundPlayback": true
+          "enableBackgroundPlayback": true,
+          "enableBackgroundRecording": false
         }
       ],
       "expo-secure-store",
