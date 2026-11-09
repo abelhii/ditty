@@ -1,13 +1,16 @@
 import { Stack } from 'expo-router';
-import { Platform } from 'react-native';
+
+// A detail screen opened straight from its URL (a reload, a shared link, an installed web app) still
+// gets the tab's index underneath it, so its header has a back button.
+export const unstable_settings = { initialRouteName: 'index' };
 
 // The Library tab is its own stack so the artist/album/genre detail screens push on top of the
 // artists list (with a native back button) instead of trying — and failing — to push onto the
 // tab navigator itself. See docs.expo.dev NativeTabs: "nest a native <Stack /> layout inside the
-// native tabs ... to support pushing screens." On web we keep the screens' existing full-bleed
-// look and rely on browser back, so the stack header doesn't collide with the floating web tab bar.
+// native tabs ... to support pushing screens." The header, and its back button, shows on web too:
+// the web tab bar sits above the tab's content, not over it.
 export default function LibraryStackLayout() {
-  const detailOptions = { headerShown: Platform.OS !== 'web', headerTitle: '' } as const;
+  const detailOptions = { headerTitle: '' } as const;
 
   return (
     <Stack>
