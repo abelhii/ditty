@@ -6,12 +6,26 @@ import {
   TabTrigger,
   TabTriggerSlotProps,
 } from "expo-router/ui";
-import { Pressable, StyleSheet, useColorScheme, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  useColorScheme,
+  useWindowDimensions,
+  View,
+} from "react-native";
 
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 
 import { Colors, MaxContentWidth, Spacing } from "@/constants/theme";
+
+// The full bar (brand + four roomy tabs) needs about 525 px; below this width it would overflow and
+// scroll the page sideways, so phones get a compact bar with no brand and tighter padding.
+const CompactTabBarMaxWidth = 600;
+
+function useIsCompactTabBar() {
+  return useWindowDimensions().width < CompactTabBarMaxWidth;
+}
 
 export default function AppTabs() {
   return (
@@ -49,11 +63,13 @@ export function TabButton({
   isFocused,
   ...props
 }: TabTriggerSlotProps) {
+  const compact = useIsCompactTabBar();
+
   return (
     <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
       <ThemedView
         type={isFocused ? "backgroundSelected" : "backgroundElement"}
-        style={styles.tabButtonView}
+        style={[styles.tabButtonView, compact && styles.tabButtonViewCompact]}
       >
         <ThemedText
           type="small"
@@ -69,16 +85,26 @@ export function TabButton({
 export function CustomTabList(props: TabListProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "unspecified" ? "light" : scheme];
+  const compact = useIsCompactTabBar();
 
   return (
     <View
       {...props}
-      style={[styles.tabListContainer, { backgroundColor: colors.background }]}
+      style={[
+        styles.tabListContainer,
+        compact && styles.tabListContainerCompact,
+        { backgroundColor: colors.background },
+      ]}
     >
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Sicmu
-        </ThemedText>
+      <ThemedView
+        type="backgroundElement"
+        style={[styles.innerContainer, compact && styles.innerContainerCompact]}
+      >
+        {!compact && (
+          <ThemedText type="smallBold" style={styles.brandText}>
+            Sicmu
+          </ThemedText>
+        )}
 
         {props.children}
       </ThemedView>
@@ -96,6 +122,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
   },
+  tabListContainerCompact: {
+    padding: Spacing.two,
+  },
   innerContainer: {
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.five,
@@ -105,6 +134,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
+  },
+  innerContainerCompact: {
+    paddingHorizontal: Spacing.two,
+    gap: Spacing.one,
+    justifyContent: "space-between",
   },
   brandText: {
     marginRight: "auto",
@@ -116,6 +150,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.three,
+  },
+  tabButtonViewCompact: {
+    paddingHorizontal: Spacing.two,
   },
   externalPressable: {
     flexDirection: "row",
