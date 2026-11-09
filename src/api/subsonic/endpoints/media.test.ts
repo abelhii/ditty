@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { getStreamUrl } from '@/api/subsonic/endpoints/media';
+import { CoverArtSize, coverArtSizeFor, getStreamUrl } from '@/api/subsonic/endpoints/media';
 
 const auth = { username: 'alice', token: 'abc123', salt: 'xyz789' };
 
@@ -25,5 +25,24 @@ describe('getStreamUrl', () => {
     } finally {
       Platform.OS = originalOS;
     }
+  });
+});
+
+describe('coverArtSizeFor', () => {
+  it('uses the list size when it covers the physical pixels drawn', () => {
+    expect(coverArtSizeFor(48, 3)).toBe(CoverArtSize.list);
+    expect(coverArtSizeFor(150, 1)).toBe(CoverArtSize.list);
+  });
+
+  it('steps up to the grid size for a phone-width tile on a 2x screen', () => {
+    // A ~151pt two-up tile on a 375pt phone draws ~303 physical pixels, more than 150.
+    expect(coverArtSizeFor(151.5, 2)).toBe(CoverArtSize.grid);
+    expect(coverArtSizeFor(170, 2)).toBe(CoverArtSize.grid);
+  });
+
+  it('falls back to the detail size when nothing smaller covers it', () => {
+    expect(coverArtSizeFor(151.5, 3)).toBe(CoverArtSize.detail);
+    expect(coverArtSizeFor(364, 2)).toBe(CoverArtSize.detail);
+    expect(coverArtSizeFor(2000, 3)).toBe(CoverArtSize.detail);
   });
 });

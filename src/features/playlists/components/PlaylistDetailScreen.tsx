@@ -257,6 +257,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   menu: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
     borderTopLeftRadius: Spacing.three,
     borderTopRightRadius: Spacing.three,
     paddingVertical: Spacing.two,

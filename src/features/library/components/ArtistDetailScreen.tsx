@@ -5,6 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Album } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { albumGridLayout, AlbumGridGap } from '@/components/album-grid';
 import { AlbumTile } from '@/components/AlbumTile';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { FavouriteButton } from '@/components/FavouriteButton';
@@ -13,9 +14,6 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useArtist } from '@/features/library/hooks/use-artist';
-
-const GRID_COLUMNS = 2;
-const GRID_GAP = Spacing.four;
 
 /** The tab stacks that render this screen — the prefix its album drill-down pushes onto, so the
  *  push lands in the current tab's own stack. Kept as literals (not a free-form string) so
@@ -32,12 +30,11 @@ type ArtistDetailScreenProps = {
 export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDetailScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const artistQuery = useArtist(artistId);
 
-  const contentWidth = Math.min(width, MaxContentWidth) - Spacing.four * 2;
-  const tileWidth = (contentWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+  const { columns, tileWidth, coverArtSize } = albumGridLayout(width, scale);
 
   return (
     <ThemedView style={styles.container}>
@@ -47,12 +44,14 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
             <FlatList<Album>
               data={albums}
               keyExtractor={(album) => album.id}
-              numColumns={GRID_COLUMNS}
+              // FlatList can't change numColumns in place, so remount when the column count changes.
+              key={columns}
+              numColumns={columns}
               columnWrapperStyle={styles.row}
               contentContainerStyle={{
                 padding: Spacing.four,
                 paddingBottom: insets.bottom + ListBottomInset,
-                gap: GRID_GAP,
+                gap: AlbumGridGap,
               }}
               ListHeaderComponent={
                 <ThemedView style={styles.header}>
@@ -77,7 +76,7 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
                   <AlbumTile
                     album={item}
                     width={tileWidth}
-                    coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
+                    coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, coverArtSize)}
                     onPress={() =>
                       router.push(
                         basePath === '/search'
@@ -120,6 +119,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.two,
   },
   row: {
-    gap: GRID_GAP,
+    gap: AlbumGridGap,
   },
 });

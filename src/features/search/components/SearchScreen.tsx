@@ -16,6 +16,7 @@ import {
 import { CoverArtSize, getCoverArtUrl } from "@/api/subsonic/endpoints/media";
 import type { Album, Artist, Track } from "@/api/types";
 import { useAuthStore } from "@/auth/use-auth-store";
+import { albumGridLayout, AlbumGridGap } from "@/components/album-grid";
 import { AlbumTile } from "@/components/AlbumTile";
 import { ArtistRow } from "@/components/ArtistRow";
 import { QueryState } from "@/components/QueryState";
@@ -31,9 +32,6 @@ import * as PlaybackController from "@/player/PlaybackController";
 import { getCurrentTrack } from "@/player/QueueManager";
 import { usePlayerStore } from "@/player/use-player-store";
 
-const GRID_COLUMNS = 2;
-const GRID_GAP = Spacing.four;
-
 /** The Search tab (Build Order step 6): a debounced text search over `search3`, rendered as one
  *  combined sectioned scroll (artists / albums / songs). An empty box shows Recent Searches; a song
  *  tap plays now without destroying the queue; artist/album taps drill into the shared detail
@@ -42,7 +40,7 @@ export function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-  const { width } = useWindowDimensions();
+  const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const currentTrack = getCurrentTrack(usePlayerStore((state) => state.queue));
 
@@ -51,9 +49,7 @@ export function SearchScreen() {
   const recent = useRecentSearches();
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
-  const contentWidth = Math.min(width, MaxContentWidth) - Spacing.four * 2;
-  const tileWidth =
-    (contentWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+  const { tileWidth, coverArtSize } = albumGridLayout(width, scale);
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
     credentials
@@ -179,10 +175,7 @@ export function SearchScreen() {
                           key={album.id}
                           album={album}
                           width={tileWidth}
-                          coverArtUri={coverUri(
-                            album.coverArtId,
-                            CoverArtSize.list,
-                          )}
+                          coverArtUri={coverUri(album.coverArtId, coverArtSize)}
                           onPress={() => openAlbum(album)}
                         />
                       ))}
@@ -325,7 +318,7 @@ const styles = StyleSheet.create({
   albumGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: GRID_GAP,
+    gap: AlbumGridGap,
     paddingHorizontal: Spacing.four,
   },
   recentHeader: {
