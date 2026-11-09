@@ -74,6 +74,8 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                       )}
                       <ThemedView style={styles.actions}>
                         <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Play album"
                           style={({ pressed }) => pressed && styles.pressed}
                           onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
                           <ThemedView type="backgroundSelected" style={styles.playButtonInner}>

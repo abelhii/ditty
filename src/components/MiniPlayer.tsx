@@ -97,6 +97,7 @@ export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintC
     return (
       <Pressable
         hitSlop={12}
+        accessibilityRole="button"
         accessibilityLabel="Retry"
         style={styles.control}
         onPress={() => PlaybackController.retry()}>
@@ -112,6 +113,8 @@ export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintC
   return (
     <Pressable
       hitSlop={12}
+      accessibilityRole="button"
+      accessibilityLabel={status === 'playing' ? 'Pause' : 'Play'}
       style={styles.control}
       onPress={() => PlaybackController.togglePlayPause()}>
       <SymbolView

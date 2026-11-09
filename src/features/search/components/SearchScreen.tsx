@@ -100,7 +100,12 @@ export function SearchScreen() {
             clearButtonMode="while-editing"
           />
           {input.length > 0 && (
-            <Pressable hitSlop={12} onPress={() => setInput("")}>
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              onPress={() => setInput("")}
+            >
               <SymbolView
                 name={{
                   ios: "xmark.circle.fill",
@@ -259,7 +264,12 @@ function RecentSearches({
           <ThemedText style={styles.recentText} numberOfLines={1}>
             {recentTerm}
           </ThemedText>
-          <Pressable hitSlop={12} onPress={() => onRemove(recentTerm)}>
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${recentTerm} from recent searches`}
+            onPress={() => onRemove(recentTerm)}
+          >
             <SymbolView
               name={{ ios: "xmark", android: "close", web: "close" }}
               size={16}

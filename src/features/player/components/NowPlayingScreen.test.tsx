@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 
 import type { Track } from '@/api/types';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { createQueueState } from '@/player/QueueManager';
+import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
@@ -39,6 +40,7 @@ function isInScrollView(element: { type: unknown; parent: unknown }): boolean {
 beforeEach(() => {
   usePlayerStore.getState().setQueue(createQueueState([track('a')]));
   usePlayerUiStore.setState({ nowPlayingOpen: true, queueOpen: false });
+  usePlaybackStatusStore.setState({ status: 'paused' });
 });
 
 describe('NowPlayingScreen', () => {
@@ -47,5 +49,36 @@ describe('NowPlayingScreen', () => {
 
     expect(isInScrollView(screen.getByText('Track a'))).toBe(true);
     expect(isInScrollView(screen.getByText('Queue'))).toBe(true);
+  });
+
+  it('gives every control a button role and a name', async () => {
+    await render(<NowPlayingScreen />);
+
+    for (const name of ['Close player', 'Add to playlist', 'Previous track', 'Play', 'Next track', 'Open Queue']) {
+      expect(screen.getByRole('button', { name })).toBeTruthy();
+    }
+  });
+
+  it('names play/pause after the action it will take', async () => {
+    await render(<NowPlayingScreen />);
+    await act(async () => usePlaybackStatusStore.setState({ status: 'playing' }));
+
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
+  });
+
+  it('exposes the shuffle and repeat state', async () => {
+    await render(<NowPlayingScreen />);
+
+    expect(screen.getByRole('button', { name: 'Shuffle', selected: false })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Repeat off', selected: false })).toBeTruthy();
+
+    await act(async () => {
+      const { queue } = usePlayerStore.getState();
+      usePlayerStore.getState().setQueue({ ...queue, shuffle: true, repeat: 'one' });
+    });
+
+    expect(screen.getByRole('button', { name: 'Shuffle', selected: true })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Repeat one', selected: true })).toBeTruthy();
   });
 });

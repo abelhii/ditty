@@ -35,4 +35,9 @@ describe('TrackRow', () => {
     expect(colorOf('Song')).toBe(Colors.light.text);
     expect(colorOf('3')).toBe(Colors.light.textSecondary);
   });
+
+  it('names the overflow button after the track', async () => {
+    await renderRow({});
+    expect(screen.getByRole('button', { name: 'More options for Song' })).toBeTruthy();
+  });
 });

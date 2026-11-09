@@ -86,7 +86,12 @@ export function QueueScreen() {
       <ThemedView style={styles.overlay}>
         <View style={[styles.content, { paddingTop: insets.top }]}>
           <View style={styles.header}>
-            <Pressable hitSlop={12} onPress={closeQueue} style={styles.headerButton}>
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Close Queue"
+              onPress={closeQueue}
+              style={styles.headerButton}>
               <SymbolView
                 name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
                 size={26}
@@ -250,7 +255,7 @@ function QueueRow({
         </Pressable>
       </Animated.View>
 
-      <View style={styles.handle} {...drag.panHandlers}>
+      <View style={styles.handle} accessible accessibilityLabel={`Reorder ${track.title}`} {...drag.panHandlers}>
         <SymbolView
           name={{ ios: 'line.3.horizontal', android: 'drag_handle', web: 'drag_handle' }}
           size={22}

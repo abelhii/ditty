@@ -25,6 +25,7 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', one: 'off' };
+const REPEAT_LABEL: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
 /**
  * Full-screen player, shown as a JS overlay above the tab bar (ADR 0005 extends the MiniPlayer's
@@ -96,7 +97,12 @@ export function NowPlayingScreen() {
           <View style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
             <View style={styles.grabberArea} {...grabber.panHandlers}>
               <View style={styles.grabber} />
-              <Pressable hitSlop={12} onPress={dismiss} style={styles.chevron}>
+              <Pressable
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Close player"
+                onPress={dismiss}
+                style={styles.chevron}>
                 <Icon name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={26} />
               </Pressable>
             </View>
@@ -128,6 +134,7 @@ export function NowPlayingScreen() {
                   <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={32} />
                   <Pressable
                     hitSlop={10}
+                    accessibilityRole="button"
                     accessibilityLabel="Add to playlist"
                     onPress={() => setAddToPlaylistTrack(currentTrack)}
                     style={({ pressed }) => pressed && styles.pressed}>
@@ -151,11 +158,14 @@ export function NowPlayingScreen() {
               <View style={styles.transport}>
                 <IconButton
                   name={{ ios: 'shuffle', android: 'shuffle', web: 'shuffle' }}
+                  label="Shuffle"
+                  selected={shuffle}
                   active={shuffle}
                   onPress={() => PlaybackController.setShuffle(!shuffle)}
                 />
                 <IconButton
                   name={{ ios: 'backward.end.fill', android: 'skip_previous', web: 'skip_previous' }}
+                  label="Previous track"
                   size={34}
                   active
                   onPress={PlaybackController.skipPrevious}
@@ -165,6 +175,7 @@ export function NowPlayingScreen() {
                 </View>
                 <IconButton
                   name={{ ios: 'forward.end.fill', android: 'skip_next', web: 'skip_next' }}
+                  label="Next track"
                   size={34}
                   active
                   onPress={PlaybackController.skipNext}
@@ -175,12 +186,16 @@ export function NowPlayingScreen() {
                       ? { ios: 'repeat.1', android: 'repeat_one', web: 'repeat_one' }
                       : { ios: 'repeat', android: 'repeat', web: 'repeat' }
                   }
+                  label={REPEAT_LABEL[repeat]}
+                  selected={repeat !== 'off'}
                   active={repeat !== 'off'}
                   onPress={() => PlaybackController.setRepeat(NEXT_REPEAT[repeat])}
                 />
               </View>
 
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open Queue"
                 style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
                 onPress={openQueue}>
                 <ThemedText type="small" style={styles.textSecondary}>
@@ -203,14 +218,24 @@ function Icon({ name, size = 24 }: { name: SymbolViewProps['name']; size?: numbe
 
 type IconButtonProps = {
   name: SymbolViewProps['name'];
+  /** Accessible name — the glyph alone has none. */
+  label: string;
   size?: number;
   active?: boolean;
+  /** Set for toggles (shuffle, repeat) so assistive tech can announce on/off. */
+  selected?: boolean;
   onPress: () => void;
 };
 
-function IconButton({ name, size = 24, active = false, onPress }: IconButtonProps) {
+function IconButton({ name, label, size = 24, active = false, selected, onPress }: IconButtonProps) {
   return (
-    <Pressable hitSlop={10} onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={selected === undefined ? undefined : { selected }}
+      onPress={onPress}
+      style={({ pressed }) => pressed && styles.pressed}>
       <SymbolView name={name} size={size} tintColor={active ? PlayerSurface.text : PlayerSurface.textMuted} />
     </Pressable>
   );

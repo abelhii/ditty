@@ -82,6 +82,8 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                     </ThemedText>
                     <ThemedView style={styles.actions}>
                       <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Play Playlist"
                         style={({ pressed }) => pressed && styles.pressed}
                         onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
                         <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
@@ -90,6 +92,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                       </Pressable>
                       <Pressable
                         hitSlop={12}
+                        accessibilityRole="button"
                         accessibilityLabel="Playlist options"
                         onPress={() => setPlaylistMenuOpen(true)}
                         style={({ pressed }) => pressed && styles.pressed}>

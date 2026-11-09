@@ -68,3 +68,17 @@ describe('QueueScreen rows', () => {
     expect(rowBackground('Track b')).toBe(Colors.light.backgroundSelected);
   });
 });
+
+describe('QueueScreen controls', () => {
+  it('names the close button', async () => {
+    await render(<QueueScreen />);
+
+    expect(screen.getByRole('button', { name: 'Close Queue' })).toBeTruthy();
+  });
+
+  it('labels each drag handle with its track', async () => {
+    await render(<QueueScreen />);
+
+    expect(screen.getByLabelText('Reorder Track a')).toBeTruthy();
+  });
+});

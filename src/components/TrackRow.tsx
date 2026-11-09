@@ -56,7 +56,12 @@ export function TrackRow({
       <ThemedText type="small" themeColor="textSecondary">
         {formatDuration(track.duration)}
       </ThemedText>
-      <Pressable hitSlop={12} onPress={onOverflowPress} style={styles.overflow}>
+      <Pressable
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={`More options for ${track.title}`}
+        onPress={onOverflowPress}
+        style={styles.overflow}>
         <SymbolView
           name={{ ios: 'ellipsis', android: 'more_horiz', web: 'more_horiz' }}
           size={18}

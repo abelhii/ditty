@@ -53,6 +53,7 @@ export function MyMusicScreen() {
           <ThemedText type="title">My Music</ThemedText>
           <Pressable
             hitSlop={12}
+            accessibilityRole="button"
             accessibilityLabel="New playlist"
             onPress={() => setCreating(true)}
             style={({ pressed }) => pressed && styles.pressed}>
@@ -188,6 +189,8 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
   const theme = useTheme();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       style={[
         styles.chip,
         active
