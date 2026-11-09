@@ -222,16 +222,19 @@ function QueueRow({
         />
       </View>
 
+      {/* Opaque, so the remove layer underneath only shows where a swipe has slid this aside. */}
       <Animated.View
-        style={[styles.swipeLayer, { transform: [{ translateX }] }]}
+        style={[
+          styles.swipeLayer,
+          {
+            backgroundColor: isCurrent ? theme.backgroundSelected : theme.background,
+            transform: [{ translateX }],
+          },
+        ]}
         {...swipe.panHandlers}>
         <Pressable
           onPress={() => onJump(index)}
-          style={({ pressed }) => [
-            styles.rowInner,
-            isCurrent && { backgroundColor: theme.backgroundSelected },
-            pressed && styles.pressed,
-          ]}>
+          style={({ pressed }) => [styles.rowInner, pressed && styles.pressed]}>
           <CoverArtImage uri={coverArtUri} style={[styles.thumbnail, isPlayed && styles.dimmed]} />
           <View style={[styles.text, isPlayed && styles.dimmed]}>
             <ThemedText numberOfLines={1} themeColor={isCurrent ? 'text' : undefined}>
