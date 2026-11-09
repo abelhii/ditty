@@ -10,6 +10,7 @@ import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { usePlayerStore } from '@/player/use-player-store';
@@ -81,50 +82,52 @@ export function QueueScreen() {
   if (!queueOpen) return null;
 
   return (
-    <ThemedView style={styles.overlay}>
-      <View style={[styles.content, { paddingTop: insets.top }]}>
-        <View style={styles.header}>
-          <Pressable hitSlop={12} onPress={closeQueue} style={styles.headerButton}>
-            <SymbolView
-              name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
-              size={26}
-              tintColor={theme.text}
-            />
-          </Pressable>
-          <ThemedText type="smallBold">Queue</ThemedText>
-          <View style={styles.headerButton} />
-        </View>
+    <PlayerOverlay onRequestClose={closeQueue}>
+      <ThemedView style={styles.overlay}>
+        <View style={[styles.content, { paddingTop: insets.top }]}>
+          <View style={styles.header}>
+            <Pressable hitSlop={12} onPress={closeQueue} style={styles.headerButton}>
+              <SymbolView
+                name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
+                size={26}
+                tintColor={theme.text}
+              />
+            </Pressable>
+            <ThemedText type="smallBold">Queue</ThemedText>
+            <View style={styles.headerButton} />
+          </View>
 
-        <ScrollView
-          scrollEnabled={draggingIndex === null}
-          contentContainerStyle={{
-            height: tracks.length * ROW_HEIGHT + insets.bottom + Spacing.four,
-          }}>
-          {tracks.map((track, index) => (
-            <QueueRow
-              key={`${track.id}-${index}`}
-              track={track}
-              index={index}
-              coverArtUri={
-                (credentials &&
-                  getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)) ||
-                undefined
-              }
-              isCurrent={index === currentIndex}
-              isPlayed={index < currentIndex}
-              isDragging={index === draggingIndex}
-              shift={shiftFor(index, draggingIndex, hoverIndex)}
-              dragY={dragY}
-              onJump={onJump}
-              onRemove={onRemove}
-              onDragStart={onDragStart}
-              onDragMove={onDragMove}
-              onDragEnd={onDragEnd}
-            />
-          ))}
-        </ScrollView>
-      </View>
-    </ThemedView>
+          <ScrollView
+            scrollEnabled={draggingIndex === null}
+            contentContainerStyle={{
+              height: tracks.length * ROW_HEIGHT + insets.bottom + Spacing.four,
+            }}>
+            {tracks.map((track, index) => (
+              <QueueRow
+                key={`${track.id}-${index}`}
+                track={track}
+                index={index}
+                coverArtUri={
+                  (credentials &&
+                    getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)) ||
+                  undefined
+                }
+                isCurrent={index === currentIndex}
+                isPlayed={index < currentIndex}
+                isDragging={index === draggingIndex}
+                shift={shiftFor(index, draggingIndex, hoverIndex)}
+                dragY={dragY}
+                onJump={onJump}
+                onRemove={onRemove}
+                onDragStart={onDragStart}
+                onDragMove={onDragMove}
+                onDragEnd={onDragEnd}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      </ThemedView>
+    </PlayerOverlay>
   );
 }
 
@@ -222,16 +225,19 @@ function QueueRow({
         />
       </View>
 
+      {/* Opaque, so the remove layer underneath only shows where a swipe has slid this aside. */}
       <Animated.View
-        style={[styles.swipeLayer, { transform: [{ translateX }] }]}
+        style={[
+          styles.swipeLayer,
+          {
+            backgroundColor: isCurrent ? theme.backgroundSelected : theme.background,
+            transform: [{ translateX }],
+          },
+        ]}
         {...swipe.panHandlers}>
         <Pressable
           onPress={() => onJump(index)}
-          style={({ pressed }) => [
-            styles.rowInner,
-            isCurrent && { backgroundColor: theme.backgroundSelected },
-            pressed && styles.pressed,
-          ]}>
+          style={({ pressed }) => [styles.rowInner, pressed && styles.pressed]}>
           <CoverArtImage uri={coverArtUri} style={[styles.thumbnail, isPlayed && styles.dimmed]} />
           <View style={[styles.text, isPlayed && styles.dimmed]}>
             <ThemedText numberOfLines={1} themeColor={isCurrent ? 'text' : undefined}>

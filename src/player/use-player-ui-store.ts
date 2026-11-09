@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 
+import { getCurrentTrack } from '@/player/QueueManager';
+import { usePlayerStore } from '@/player/use-player-store';
+
 /**
  * Visibility of the two full-screen player-shell overlays (now-playing + queue). Kept separate
  * from `usePlayerStore` (which owns actual playback state) — this is pure presentation state, and
@@ -24,3 +27,12 @@ export const usePlayerUiStore = create<PlayerUiState>((set) => ({
   openQueue: () => set({ queueOpen: true }),
   closeQueue: () => set({ queueOpen: false }),
 }));
+
+// The full player has nothing to show once there is no current track (the Queue ran out, was
+// emptied, or was reset on logout). Close it then, rather than leaving `nowPlayingOpen` set: a
+// stale flag would hide the MiniPlayer and pop the full player open on the next track.
+usePlayerStore.subscribe((state) => {
+  if (!getCurrentTrack(state.queue) && usePlayerUiStore.getState().nowPlayingOpen) {
+    usePlayerUiStore.getState().closeNowPlaying();
+  }
+});

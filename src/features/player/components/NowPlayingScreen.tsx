@@ -1,6 +1,6 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -12,6 +12,7 @@ import { PlayPauseButton } from '@/components/MiniPlayer';
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, MaxContentWidth, PlayerSurface, Radius, Spacing } from '@/constants/theme';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
+import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
 import * as PlaybackController from '@/player/PlaybackController';
@@ -89,106 +90,110 @@ export function NowPlayingScreen() {
   const audioLabel = formatTrackAudioLabel(currentTrack);
 
   return (
-    <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]}>
-      <View style={styles.fill}>
-        <View style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-          <View style={styles.grabberArea} {...grabber.panHandlers}>
-            <View style={styles.grabber} />
-            <Pressable hitSlop={12} onPress={dismiss} style={styles.chevron}>
-              <Icon name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={26} />
-            </Pressable>
-          </View>
+    <PlayerOverlay onRequestClose={dismiss}>
+      <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]}>
+        <View style={styles.fill}>
+          <View style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+            <View style={styles.grabberArea} {...grabber.panHandlers}>
+              <View style={styles.grabber} />
+              <Pressable hitSlop={12} onPress={dismiss} style={styles.chevron}>
+                <Icon name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={26} />
+              </Pressable>
+            </View>
 
-          <View style={styles.body}>
-            <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={64} />
+            {/* Scrolls when the content is taller than the viewport (e.g. a landscape phone), so
+                the transport and Queue button stay reachable; centred when it fits. */}
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
+              <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={64} />
 
-            <View style={styles.titleRow}>
-              <View style={styles.meta}>
-                <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
-                  {currentTrack.title}
-                </ThemedText>
-                <ThemedText type="default" numberOfLines={1} style={styles.textSecondary}>
-                  {currentTrack.artist}
-                </ThemedText>
-                <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
-                  {currentTrack.album}
-                </ThemedText>
-                {audioLabel !== '' && (
-                  <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
-                    {audioLabel}
+              <View style={styles.titleRow}>
+                <View style={styles.meta}>
+                  <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
+                    {currentTrack.title}
                   </ThemedText>
-                )}
+                  <ThemedText type="default" numberOfLines={1} style={styles.textSecondary}>
+                    {currentTrack.artist}
+                  </ThemedText>
+                  <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                    {currentTrack.album}
+                  </ThemedText>
+                  {audioLabel !== '' && (
+                    <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                      {audioLabel}
+                    </ThemedText>
+                  )}
+                </View>
+
+                <View style={styles.secondaryActions}>
+                  <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={32} />
+                  <Pressable
+                    hitSlop={10}
+                    accessibilityLabel="Add to playlist"
+                    onPress={() => setAddToPlaylistTrack(currentTrack)}
+                    style={({ pressed }) => pressed && styles.pressed}>
+                    <SymbolView
+                      name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
+                      size={32}
+                      tintColor={PlayerSurface.text}
+                    />
+                  </Pressable>
+                </View>
               </View>
 
-              <View style={styles.secondaryActions}>
-                <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={32} />
-                <Pressable
-                  hitSlop={10}
-                  accessibilityLabel="Add to playlist"
-                  onPress={() => setAddToPlaylistTrack(currentTrack)}
-                  style={({ pressed }) => pressed && styles.pressed}>
-                  <SymbolView
-                    name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
-                    size={32}
-                    tintColor={PlayerSurface.text}
-                  />
-                </Pressable>
+              <Scrubber {...progress} onSeek={PlaybackController.seekTo} />
+
+              {status === 'error' && (
+                <ThemedText type="small" style={[styles.center, styles.error]}>
+                  {playbackErrorMessage(errorOffline)}
+                </ThemedText>
+              )}
+
+              <View style={styles.transport}>
+                <IconButton
+                  name={{ ios: 'shuffle', android: 'shuffle', web: 'shuffle' }}
+                  active={shuffle}
+                  onPress={() => PlaybackController.setShuffle(!shuffle)}
+                />
+                <IconButton
+                  name={{ ios: 'backward.end.fill', android: 'skip_previous', web: 'skip_previous' }}
+                  size={34}
+                  active
+                  onPress={PlaybackController.skipPrevious}
+                />
+                <View style={styles.playButton}>
+                  <PlayPauseButton size={26} tintColor={PlayerSurface.text} />
+                </View>
+                <IconButton
+                  name={{ ios: 'forward.end.fill', android: 'skip_next', web: 'skip_next' }}
+                  size={34}
+                  active
+                  onPress={PlaybackController.skipNext}
+                />
+                <IconButton
+                  name={
+                    repeat === 'one'
+                      ? { ios: 'repeat.1', android: 'repeat_one', web: 'repeat_one' }
+                      : { ios: 'repeat', android: 'repeat', web: 'repeat' }
+                  }
+                  active={repeat !== 'off'}
+                  onPress={() => PlaybackController.setRepeat(NEXT_REPEAT[repeat])}
+                />
               </View>
-            </View>
 
-            <Scrubber {...progress} onSeek={PlaybackController.seekTo} />
-
-            {status === 'error' && (
-              <ThemedText type="small" style={[styles.center, styles.error]}>
-                {playbackErrorMessage(errorOffline)}
-              </ThemedText>
-            )}
-
-            <View style={styles.transport}>
-              <IconButton
-                name={{ ios: 'shuffle', android: 'shuffle', web: 'shuffle' }}
-                active={shuffle}
-                onPress={() => PlaybackController.setShuffle(!shuffle)}
-              />
-              <IconButton
-                name={{ ios: 'backward.end.fill', android: 'skip_previous', web: 'skip_previous' }}
-                size={34}
-                active
-                onPress={PlaybackController.skipPrevious}
-              />
-              <View style={styles.playButton}>
-                <PlayPauseButton size={26} tintColor={PlayerSurface.text} />
-              </View>
-              <IconButton
-                name={{ ios: 'forward.end.fill', android: 'skip_next', web: 'skip_next' }}
-                size={34}
-                active
-                onPress={PlaybackController.skipNext}
-              />
-              <IconButton
-                name={
-                  repeat === 'one'
-                    ? { ios: 'repeat.1', android: 'repeat_one', web: 'repeat_one' }
-                    : { ios: 'repeat', android: 'repeat', web: 'repeat' }
-                }
-                active={repeat !== 'off'}
-                onPress={() => PlaybackController.setRepeat(NEXT_REPEAT[repeat])}
-              />
-            </View>
-
-            <Pressable
-              style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
-              onPress={openQueue}>
-              <ThemedText type="small" style={styles.textSecondary}>
-                Queue
-              </ThemedText>
-            </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
+                onPress={openQueue}>
+                <ThemedText type="small" style={styles.textSecondary}>
+                  Queue
+                </ThemedText>
+              </Pressable>
+            </ScrollView>
           </View>
         </View>
-      </View>
 
-      <AddToPlaylistSheet track={addToPlaylistTrack} onClose={() => setAddToPlaylistTrack(null)} />
-    </Animated.View>
+        <AddToPlaylistSheet track={addToPlaylistTrack} onClose={() => setAddToPlaylistTrack(null)} />
+      </Animated.View>
+    </PlayerOverlay>
   );
 }
 
@@ -244,12 +249,16 @@ const styles = StyleSheet.create({
     left: Spacing.four,
     top: Spacing.one,
   },
-  body: {
+  scroll: {
     flex: 1,
+  },
+  body: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.four,
     paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.four,
   },
   art: {
     width: '70%',
