@@ -7,7 +7,16 @@ import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, ProgressBarHeight, Radius, Shadow, Spacing } from '@/constants/theme';
+import {
+  BottomTabInset,
+  MaxContentWidth,
+  MiniPlayerHeight,
+  MiniPlayerOffset,
+  ProgressBarHeight,
+  Radius,
+  Shadow,
+  Spacing,
+} from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -41,8 +50,8 @@ export function MiniPlayer() {
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.list);
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + Spacing.one }]}>
-      <Pressable onPress={openNowPlaying}>
+    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
+      <Pressable style={styles.pressable} onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
           <View style={styles.text}>
@@ -123,10 +132,20 @@ const ART_SIZE = 40;
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: Spacing.four,
-    right: Spacing.four,
+    left: 0,
+    right: 0,
+    paddingHorizontal: Spacing.four,
+    alignItems: 'center',
+    // Spans the window so the bar can centre; only the bar itself takes touches.
+    pointerEvents: 'box-none',
+  },
+  pressable: {
+    width: '100%',
+    // Line up with the content column's rows, which sit Spacing.four inside MaxContentWidth.
+    maxWidth: MaxContentWidth - Spacing.four * 2,
   },
   bar: {
+    height: MiniPlayerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,

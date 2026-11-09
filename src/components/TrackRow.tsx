@@ -38,7 +38,7 @@ export function TrackRow({
       {position !== undefined ? (
         <ThemedText
           type="small"
-          themeColor={isPlaying ? 'text' : 'textSecondary'}
+          themeColor={isPlaying ? 'accent' : 'textSecondary'}
           style={styles.position}>
           {position}
         </ThemedText>
@@ -46,7 +46,7 @@ export function TrackRow({
         <CoverArtImage uri={coverArtUri} style={styles.thumbnail} />
       )}
       <ThemedView style={styles.text}>
-        <ThemedText type="defaultBold" numberOfLines={1} themeColor={isPlaying ? 'text' : undefined}>
+        <ThemedText type="defaultBold" numberOfLines={1} themeColor={isPlaying ? 'accent' : undefined}>
           {track.title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>

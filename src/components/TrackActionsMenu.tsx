@@ -5,7 +5,7 @@ import { Modal, Pressable, StyleSheet } from 'react-native';
 import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useStar, useUnstar } from '@/features/favourites/hooks/use-star';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { useTheme } from '@/hooks/use-theme';
@@ -123,6 +123,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
   menu: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
     borderTopLeftRadius: Spacing.three,
     borderTopRightRadius: Spacing.three,
     paddingVertical: Spacing.two,

@@ -23,7 +23,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
-import { BottomTabInset, MaxContentWidth, Radius, Spacing } from "@/constants/theme";
+import { ListBottomInset, MaxContentWidth, Radius, Spacing } from "@/constants/theme";
 import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
 import { useSearch } from "@/features/search/hooks/use-search";
 import { useTheme } from "@/hooks/use-theme";
@@ -61,7 +61,7 @@ export function SearchScreen() {
       : undefined;
 
   const contentPadding = {
-    paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+    paddingBottom: insets.bottom + ListBottomInset,
   };
 
   // Recent searches are saved on result tap (not per keystroke), so we only ever persist terms the

@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { homeShelves } from '@/features/home/shelves';
 
@@ -27,7 +27,7 @@ export function HomeScreen() {
         <ScrollView
           contentContainerStyle={{
             paddingTop: Spacing.three,
-            paddingBottom: insets.bottom + BottomTabInset + Spacing.four,
+            paddingBottom: insets.bottom + ListBottomInset,
             gap: Spacing.five,
           }}>
           <ThemedText type="title" style={styles.title}>

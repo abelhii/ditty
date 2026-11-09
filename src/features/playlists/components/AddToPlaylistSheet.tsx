@@ -5,7 +5,7 @@ import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput 
 import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAddToPlaylist } from '@/features/playlists/hooks/use-add-to-playlist';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
@@ -120,13 +120,18 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    // The cap lives here, not on `sheet`: a percentage resolves against the parent, and the
+    // backdrop is full-screen, whereas this wrapper is only as tall as the sheet itself.
+    maxHeight: '70%',
   },
   sheet: {
+    flexShrink: 1,
     borderTopLeftRadius: Spacing.three,
     borderTopRightRadius: Spacing.three,
     paddingTop: Spacing.three,
     paddingBottom: Spacing.six,
-    maxHeight: '70%',
   },
   heading: {
     paddingHorizontal: Spacing.four,

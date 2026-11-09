@@ -13,7 +13,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbum } from '@/features/library/hooks/use-album';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -48,7 +48,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                   data={tracks}
                   keyExtractor={(track) => track.id}
                   contentContainerStyle={{
-                    paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+                    paddingBottom: insets.bottom + ListBottomInset,
                   }}
                   ListHeaderComponent={
                     <ThemedView style={styles.header}>

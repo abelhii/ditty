@@ -11,7 +11,7 @@ import { GenreRow } from '@/components/GenreRow';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
 import { useGenres } from '@/features/library/hooks/use-genres';
 
@@ -30,7 +30,7 @@ export function ArtistsScreen({ initialView = 'artists' }: { initialView?: Libra
   const genresQuery = useGenres();
 
   const listContentStyle = {
-    paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+    paddingBottom: insets.bottom + ListBottomInset,
   };
 
   return (

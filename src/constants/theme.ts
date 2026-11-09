@@ -131,3 +131,12 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+/** Height of the floating mini-player bar. The bar is sized to this, so screens can reserve room
+ *  for it without measuring. */
+export const MiniPlayerHeight = 72;
+/** Gap between the tab bar (or, on web, the window's bottom edge) and the mini player. */
+export const MiniPlayerOffset = Spacing.one;
+/** Bottom padding for scrollable screens, added to the bottom safe-area inset: clears the tab bar
+ *  and the floating mini player so the last row can scroll fully into view. */
+export const ListBottomInset = BottomTabInset + MiniPlayerOffset + MiniPlayerHeight + Spacing.three;
