@@ -54,8 +54,11 @@ export function AudioEngine() {
   const status = useAudioPlayerStatus(player);
 
   const currentTrack = getCurrentTrack(queue);
-  // Track whose `didJustFinish` we've already handled, so a run of end-of-track ticks advances once.
-  const endedTrackId = useRef<string | undefined>(undefined);
+  // True once the current `didJustFinish` pulse has been handled. Only a status that reports
+  // `didJustFinish: false` rearms it. It must not reset on a track change: the player keeps the old
+  // media's `didJustFinish: true` until the new source loads, and a reset there would skip again for
+  // every track (issue #6).
+  const finishHandled = useRef(false);
 
   useEffect(() => {
     // `doNotMix` lets the lock-screen controls bind to our player; background playback keeps audio
@@ -70,8 +73,6 @@ export function AudioEngine() {
   // Load the current track (and re-load on retry). play() tolerates being called before buffering
   // finishes, so start here; the status effect below reports the real loading → playing/paused states.
   useEffect(() => {
-    endedTrackId.current = undefined;
-
     if (!currentTrack || !credentials) {
       // No `replace(null)`: expo-audio's `replace` rejects null on Android, and the API has no
       // unload/stop, so pause instead — the last source stays loaded but silent when the queue empties.
@@ -139,8 +140,10 @@ export function AudioEngine() {
       return;
     }
 
-    if (status.didJustFinish && endedTrackId.current !== currentTrack.id) {
-      endedTrackId.current = currentTrack.id;
+    if (!status.didJustFinish) {
+      finishHandled.current = false;
+    } else if (!finishHandled.current) {
+      finishHandled.current = true;
       PlaybackController.handleTrackEnded();
       return;
     }
