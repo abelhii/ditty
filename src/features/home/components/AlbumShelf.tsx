@@ -39,7 +39,13 @@ const PAGE_FRACTION = 0.8;
  * that errored or came back empty renders **nothing** — Home degrades to just the shelves that have
  * content (e.g. only cached shelves when offline) rather than showing per-shelf error blocks.
  */
-export function AlbumShelf({ shelf }: { shelf: Shelf }) {
+type AlbumShelfProps = {
+  shelf: Shelf;
+  /** Shows a "See all" link in the header (mobile Home design). */
+  onSeeAll?: () => void;
+};
+
+export function AlbumShelf({ shelf, onSeeAll }: AlbumShelfProps) {
   const router = useRouter();
   const credentials = useAuthStore((state) => state.credentials);
   const { data, isLoading } = useAlbumShelf(shelf);
@@ -98,6 +104,13 @@ export function AlbumShelf({ shelf }: { shelf: Shelf }) {
   return (
     <View style={styles.section}>
       <ShelfHeader title={shelf.title}>
+        {onSeeAll && (
+          <Pressable accessibilityRole="link" onPress={onSeeAll} style={({ pressed }) => pressed && styles.pressed}>
+            <ThemedText type="smallBold" themeColor="accent">
+              See all
+            </ThemedText>
+          </Pressable>
+        )}
         {IS_WEB && (
           <View style={styles.controls}>
             <ScrollButton
@@ -127,7 +140,7 @@ export function AlbumShelf({ shelf }: { shelf: Shelf }) {
               album={item}
               width={TILE_WIDTH}
               coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
-              onPress={() => router.push(`/library/album/${item.id}`)}
+              onPress={() => router.push(`/home/album/${item.id}`)}
             />
           ) : null
         }

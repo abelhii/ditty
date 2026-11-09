@@ -129,7 +129,9 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+/** Web's narrow-width bottom tab bar height (AppTabs.web); the wide-width top bar ignores it. */
+export const WebBottomBarHeight = 64;
+export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: WebBottomBarHeight }) ?? 0;
 export const MaxContentWidth = 800;
 
 /** Height of the floating mini-player bar. The bar is sized to this, so screens can reserve room

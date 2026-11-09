@@ -30,7 +30,7 @@ export type Shelf = {
  */
 export function homeShelves(currentYear: number): Shelf[] {
   return [
-    { id: 'recentlyAdded', title: 'Recently Added', params: { type: 'newest', size: SHELF_SIZE } },
+    { id: 'recentlyAdded', title: 'Recently added', params: { type: 'newest', size: SHELF_SIZE } },
     {
       id: 'newReleases',
       title: 'New Releases',

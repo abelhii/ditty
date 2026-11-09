@@ -13,15 +13,18 @@ export default function AppTabs() {
       indicatorColor={colors.backgroundElement}
       iconColor={{ selected: colors.accent }}
       labelStyle={{ selected: { color: colors.accent } }}>
-      {/* Home lives under the `library` route: its index is the step-9 discover shelves, with the
-          full Artists/Genres catalog list pushed one level down at `/library/artists`. The tab keeps
-          the internal name `library` (its stack owns the album/artist/genre detail routes). */}
-      <NativeTabs.Trigger name="library">
+      <NativeTabs.Trigger name="home">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
           src={require('@/assets/images/tabIcons/home.png')}
           renderingMode="template"
         />
+      </NativeTabs.Trigger>
+
+      {/* The Library tab is the server catalog (Artists/Genres). */}
+      <NativeTabs.Trigger name="library">
+        <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="books.vertical" md="library_books" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="search">
@@ -31,11 +34,9 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="my-music">
-        <NativeTabs.Trigger.Label>My Music</NativeTabs.Trigger.Label>
-        {/* No My Music PNG in the icon set — use the platform's built-in playlist glyph. */}
-        <NativeTabs.Trigger.Icon sf="music.note.list" md="library_music" />
-      </NativeTabs.Trigger>
+      {/* My Music (playlists + Favourites) is no longer a tab: Home's Your Likes and playlist cards
+          reach it. The route stays so those links resolve. */}
+      <NativeTabs.Trigger name="my-music" hidden />
 
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>

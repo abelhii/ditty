@@ -17,25 +17,25 @@ async function renderTabBar(width: number) {
   await render(
     <CustomTabList>
       <TabButton isFocused>Home</TabButton>
+      <TabButton>Library</TabButton>
       <TabButton>Search</TabButton>
-      <TabButton>My Music</TabButton>
       <TabButton>Settings</TabButton>
     </CustomTabList>,
   );
 }
 
 describe('web tab bar', () => {
-  // At 375 wide the full bar (brand + four tabs with wide padding) measured 491 px and pushed the
-  // page sideways. Phone widths get a compact bar: no brand, tighter padding.
-  it.each([320, 375])('drops the brand and tightens tab padding at %i wide', async (width) => {
+  // Phone and tablet widths get a bottom tab bar (icon over label, no brand); the top pill bar with
+  // the brand is kept for wide screens, where a sidebar is expected to replace it later.
+  it.each([320, 375, 899])('renders the bottom bar without the brand at %i wide', async (width) => {
     await renderTabBar(width);
 
     expect(screen.queryByText('Sicmu')).toBeNull();
-    expect(screen.getByText('Settings').parent).toHaveStyle({ paddingHorizontal: Spacing.two });
+    expect(screen.getByText('Settings')).toBeOnTheScreen();
   });
 
-  it('keeps the brand and roomy tabs on wide screens', async () => {
-    await renderTabBar(1024);
+  it('keeps the brand and top pill tabs on wide screens', async () => {
+    await renderTabBar(900);
 
     expect(screen.getByText('Sicmu')).toBeOnTheScreen();
     expect(screen.getByText('Settings').parent).toHaveStyle({ paddingHorizontal: Spacing.three });

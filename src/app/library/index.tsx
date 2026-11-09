@@ -1,7 +1,10 @@
-import { HomeScreen } from '@/features/home/components/HomeScreen';
+import { useLocalSearchParams } from 'expo-router';
 
-// The Home tab's discover shelves (Build Order step 9), replacing step 7b's redirect into the
-// Artists list. The full catalog lists now live one level down at `/library/artists`.
+import { ArtistsScreen } from '@/features/library/components/ArtistsScreen';
+
+// The Library tab: the full catalog list — the sectioned Artists list plus its Genres toggle.
+// `?view=genres` opens straight on the Genres view.
 export default function LibraryRoute() {
-  return <HomeScreen />;
+  const { view } = useLocalSearchParams<{ view?: string }>();
+  return <ArtistsScreen initialView={view === 'genres' ? 'genres' : 'artists'} />;
 }
