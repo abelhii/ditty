@@ -1,6 +1,6 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, Dimensions, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -99,7 +99,9 @@ export function NowPlayingScreen() {
             </Pressable>
           </View>
 
-          <View style={styles.body}>
+          {/* Scrolls when the content is taller than the viewport (e.g. a landscape phone), so
+              the transport and Queue button stay reachable; centred when it fits. */}
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
             <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={64} />
 
             <View style={styles.titleRow}>
@@ -183,7 +185,7 @@ export function NowPlayingScreen() {
                 Queue
               </ThemedText>
             </Pressable>
-          </View>
+          </ScrollView>
         </View>
       </View>
 
@@ -244,12 +246,16 @@ const styles = StyleSheet.create({
     left: Spacing.four,
     top: Spacing.one,
   },
-  body: {
+  scroll: {
     flex: 1,
+  },
+  body: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.four,
     paddingHorizontal: Spacing.five,
+    paddingVertical: Spacing.four,
   },
   art: {
     width: '70%',
