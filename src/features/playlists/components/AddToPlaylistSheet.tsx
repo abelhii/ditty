@@ -120,13 +120,16 @@ const styles = StyleSheet.create({
   },
   sheetWrap: {
     width: '100%',
+    // The cap lives here, not on `sheet`: a percentage resolves against the parent, and the
+    // backdrop is full-screen, whereas this wrapper is only as tall as the sheet itself.
+    maxHeight: '70%',
   },
   sheet: {
+    flexShrink: 1,
     borderTopLeftRadius: Spacing.three,
     borderTopRightRadius: Spacing.three,
     paddingTop: Spacing.three,
     paddingBottom: Spacing.six,
-    maxHeight: '70%',
   },
   heading: {
     paddingHorizontal: Spacing.four,
