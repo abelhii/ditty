@@ -1,25 +1,37 @@
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { ListBottomInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
+import { CollectionCard } from '@/features/home/components/CollectionCard';
+import { HomeHeader } from '@/features/home/components/HomeHeader';
+import { UnheardTracks } from '@/features/home/components/UnheardTracks';
 import { homeShelves } from '@/features/home/shelves';
+import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
+import { useTheme } from '@/hooks/use-theme';
+
+const LIKES_ICON_SIZE = 64;
+/** How many playlists the quick-access grid shows, two per row. */
+const PLAYLIST_CARD_COUNT = 2;
 
 /**
- * The Home tab's discover surface (Build Order step 9), replacing the old redirect-to-Artists.
- * Faceted browse: a vertical scroll of horizontal album carousels (Recently Added / New Releases /
- * Explore), above quick links into the full catalog lists (Artists / Genres, which live under
- * `/library/artists`). Deliberately query-less — text search is the Search tab's job.
+ * The Home tab (mobile design): greeting header, a quick-access grid (Your Likes plus the first
+ * playlists), the Recently Added shelf, and a "Tunes you haven't heard" list. Deliberately
+ * query-less — text search is the Search tab's job.
  */
 export function HomeScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const playlists = usePlaylists().data ?? [];
   // Injected once per mount so New Releases' year window is stable across re-renders.
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
+  const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
+  const explore = shelves.find((shelf) => shelf.id === 'explore');
 
   return (
     <ThemedView style={styles.container}>
@@ -30,31 +42,41 @@ export function HomeScreen() {
             paddingBottom: insets.bottom + ListBottomInset,
             gap: Spacing.five,
           }}>
-          <ThemedText type="title" style={styles.title}>
-            Home
-          </ThemedText>
+          <HomeHeader />
 
-          <ThemedView style={styles.browse}>
-            <BrowseLink label="Artists" onPress={() => router.push('/library/artists')} />
-            <BrowseLink label="Genres" onPress={() => router.push('/library/artists?view=genres')} />
+          <ThemedView style={styles.grid}>
+            <CollectionCard
+              title="Your Likes"
+              onPress={() => router.push('/home/liked-songs')}
+              leading={
+                <ThemedView style={[styles.likesIcon, { backgroundColor: theme.accent }]}>
+                  <SymbolView
+                    name={{ ios: 'heart.fill', android: 'favorite', web: 'favorite' }}
+                    size={28}
+                    tintColor={theme.tint}
+                  />
+                </ThemedView>
+              }
+            />
+            <ThemedView style={styles.playlistRow}>
+              {playlists.slice(0, PLAYLIST_CARD_COUNT).map((playlist) => (
+                <CollectionCard
+                  key={playlist.id}
+                  title={playlist.name}
+                  subtitle={`${playlist.songCount} songs`}
+                  onPress={() => router.push(`/home/playlist/${playlist.id}`)}
+                />
+              ))}
+            </ThemedView>
           </ThemedView>
 
-          {shelves.map((shelf) => (
-            <AlbumShelf key={shelf.id} shelf={shelf} />
-          ))}
+          {recentlyAdded && (
+            <AlbumShelf shelf={recentlyAdded} onSeeAll={() => router.push('/library')} />
+          )}
+          {explore && <UnheardTracks shelf={explore} />}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
-  );
-}
-
-function BrowseLink({ label, onPress }: { label: string; onPress: () => void }) {
-  return (
-    <Pressable style={({ pressed }) => [styles.link, pressed && styles.pressed]} onPress={onPress}>
-      <ThemedView type="backgroundElement" style={styles.linkInner}>
-        <ThemedText type="smallBold">{label}</ThemedText>
-      </ThemedView>
-    </Pressable>
   );
 }
 
@@ -68,23 +90,19 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     width: '100%',
   },
-  title: {
-    paddingHorizontal: Spacing.four,
-  },
-  browse: {
-    flexDirection: 'row',
+  grid: {
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
   },
-  link: {
-    flex: 1,
+  playlistRow: {
+    flexDirection: 'row',
+    gap: Spacing.three,
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkInner: {
-    paddingVertical: Spacing.three,
+  likesIcon: {
+    width: LIKES_ICON_SIZE,
+    height: LIKES_ICON_SIZE,
+    borderRadius: Radius.md,
     alignItems: 'center',
-    borderRadius: Radius.pill,
+    justifyContent: 'center',
   },
 });
