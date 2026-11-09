@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { ActivityIndicator, Button, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/use-theme';
 
 export function ServerConfigScreen() {
   const theme = useTheme();

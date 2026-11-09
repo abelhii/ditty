@@ -4,7 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Album } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { AlbumTile } from '@/components/AlbumTile';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { FavouriteButton } from '@/components/FavouriteButton';
@@ -12,7 +12,7 @@ import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useArtist } from '@/features/library/hooks/useArtist';
+import { useArtist } from '@/features/library/hooks/use-artist';
 
 const GRID_COLUMNS = 2;
 const GRID_GAP = Spacing.four;

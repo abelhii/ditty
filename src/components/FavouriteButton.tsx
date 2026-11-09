@@ -1,9 +1,9 @@
 import { SymbolView } from 'expo-symbols';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { useStar, useUnstar } from '@/features/favourites/hooks/useStar';
-import type { StarTarget } from '@/features/favourites/starredCache';
-import { useTheme } from '@/hooks/useTheme';
+import { useStar, useUnstar } from '@/features/favourites/hooks/use-star';
+import type { StarTarget } from '@/features/favourites/starred-cache';
+import { useTheme } from '@/hooks/use-theme';
 
 type FavouriteButtonProps = {
   /** The item to favourite, plus its kind — carries the current `starred` state used to render

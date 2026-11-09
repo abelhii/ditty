@@ -2,20 +2,19 @@ import { buildRequestUrl } from '@/api/subsonic/client';
 import type { SubsonicAuth } from '@/api/subsonic/types';
 
 /**
- * Builds a signed streaming URL for bit-perfect, untranscoded playback on every platform.
+ * Builds a signed streaming URL for the original, untouched file — bit-perfect, no transcode.
  *
- * `format=raw` tells Subsonic/Navidrome to serve the original bytes and skip any per-player
- * transcoding it might otherwise apply. Web already relied on the browser's native FLAC decode; now
- * native does the same through `react-native-audio-api`'s streaming `<Audio>` tag, so a lossless
- * library streams lossless rather than as 320 kbps MP3.
+ * We stream `format=raw` (the server default when no `format` is given) on every platform. expo-audio
+ * decodes FLAC — including 24-bit — natively: ExoPlayer/Media3 on Android, AVFoundation on iOS, the
+ * browser's `<audio>` on web. This supersedes the earlier MP3 transcode workaround that existed only
+ * because `react-native-audio-api` output silence for 24-bit sources on Android
+ * (docs/adr/0008-transcode-stream-to-mp3.md, superseded by docs/adr/0009-expo-audio-lossless.md).
  *
- * This supersedes the unconditional MP3 transcode of ADR 0008, which existed only to dodge a
- * 24-bit-FLAC-silent-on-Android bug in the library's `<Audio>` output. We're validating on-device
- * whether that bug still bites at 0.13.2 (and on which files) before deciding any per-platform
- * fallback — see docs/adr/0008-transcode-stream-to-mp3.md.
+ * A user-selectable "data saver" that re-adds `format=mp3`/`maxBitRate` is a clean later follow-up;
+ * lossless is the right default for a lossless library.
  */
 export function getStreamUrl(serverUrl: string, trackId: string, auth: SubsonicAuth): string {
-  return buildRequestUrl(serverUrl, 'stream', { id: trackId, format: 'raw' }, auth).toString();
+  return buildRequestUrl(serverUrl, 'stream', { id: trackId }, auth).toString();
 }
 
 /** Fixed cover art sizes, shared by every call site — see docs/adr/0003-cover-art-sizing-and-caching.md. */

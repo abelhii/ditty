@@ -5,7 +5,7 @@ import type { Genre } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/use-theme';
 
 type GenreRowProps = {
   genre: Genre;

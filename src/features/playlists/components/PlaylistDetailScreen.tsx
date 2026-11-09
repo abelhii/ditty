@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
@@ -15,14 +15,14 @@ import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useDeletePlaylist } from '@/features/playlists/hooks/useDeletePlaylist';
-import { usePlaylist } from '@/features/playlists/hooks/usePlaylist';
-import { useRemoveFromPlaylist } from '@/features/playlists/hooks/useRemoveFromPlaylist';
-import { useUpdatePlaylist } from '@/features/playlists/hooks/useUpdatePlaylist';
-import { useTheme } from '@/hooks/useTheme';
+import { useDeletePlaylist } from '@/features/playlists/hooks/use-delete-playlist';
+import { usePlaylist } from '@/features/playlists/hooks/use-playlist';
+import { useRemoveFromPlaylist } from '@/features/playlists/hooks/use-remove-from-playlist';
+import { useUpdatePlaylist } from '@/features/playlists/hooks/use-update-playlist';
+import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/usePlayerStore';
+import { usePlayerStore } from '@/player/use-player-store';
 
 type PlaylistDetailScreenProps = {
   playlistId: string;

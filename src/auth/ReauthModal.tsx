@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from '@/hooks/use-theme';
 
 /**
  * The in-place Re-authentication prompt (ADR 0007): a blocking, password-only modal shown when the

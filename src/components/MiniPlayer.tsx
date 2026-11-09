@@ -3,18 +3,18 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { BottomTabInset, ProgressBarHeight, Radius, Shadow, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
-import { useProgress } from '@/player/hooks/useProgress';
-import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
-import { usePlayerStore } from '@/player/usePlayerStore';
-import { usePlayerUiStore } from '@/player/usePlayerUiStore';
+import { useProgress } from '@/player/hooks/use-progress';
+import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { usePlayerStore } from '@/player/use-player-store';
+import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 /**
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform
@@ -41,12 +41,14 @@ export function MiniPlayer() {
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.list);
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset }]}>
+    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + Spacing.one }]}>
       <Pressable onPress={openNowPlaying}>
-        <ThemedView type="backgroundElement" style={styles.bar}>
-          <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={18} />
+        <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
+          <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
           <View style={styles.text}>
-            <ThemedText numberOfLines={1}>{currentTrack.title}</ThemedText>
+            <ThemedText type="smallBold" numberOfLines={1}>
+              {currentTrack.title}
+            </ThemedText>
             {status === 'error' ? (
               <ThemedText type="small" numberOfLines={1} style={styles.error}>
                 {playbackErrorMessage(errorOffline)}
@@ -56,27 +58,30 @@ export function MiniPlayer() {
                 {currentTrack.artist}
               </ThemedText>
             )}
+            <View style={[styles.progressTrack, { backgroundColor: theme.backgroundSelected }]}>
+              <View
+                style={[styles.progressFill, { backgroundColor: theme.accent, width: `${fraction * 100}%` }]}
+              />
+            </View>
           </View>
           <PlayPauseButton />
         </ThemedView>
-        <View style={styles.progressTrack}>
-          <View
-            style={[styles.progressFill, { backgroundColor: theme.text, width: `${fraction * 100}%` }]}
-          />
-        </View>
       </Pressable>
     </View>
   );
 }
 
 /** Shared play/pause control — a spinner while the track is loading, a Retry glyph when the track
- *  has halted on an error (ADR 0007), otherwise a play/pause glyph reflecting the observed status. */
-export function PlayPauseButton({ size = 26 }: { size?: number }) {
+ *  has halted on an error (ADR 0007), otherwise a play/pause glyph reflecting the observed status.
+ *  `tintColor` overrides the default theme-driven tint (used on the full player's accent-filled
+ *  button, which sits on a fixed dark surface — see NowPlayingScreen). */
+export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintColor?: string }) {
   const theme = useTheme();
   const status = usePlaybackStatusStore((state) => state.status);
+  const color = tintColor ?? theme.text;
 
   if (status === 'loading') {
-    return <ActivityIndicator style={styles.control} color={theme.text} />;
+    return <ActivityIndicator style={styles.control} color={color} />;
   }
 
   if (status === 'error') {
@@ -89,7 +94,7 @@ export function PlayPauseButton({ size = 26 }: { size?: number }) {
         <SymbolView
           name={{ ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' }}
           size={size}
-          tintColor={theme.text}
+          tintColor={color}
         />
       </Pressable>
     );
@@ -107,32 +112,34 @@ export function PlayPauseButton({ size = 26 }: { size?: number }) {
             : { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' }
         }
         size={size}
-        tintColor={theme.text}
+        tintColor={color}
       />
     </Pressable>
   );
 }
 
+const ART_SIZE = 40;
+
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: Spacing.two,
-    right: Spacing.two,
+    left: Spacing.four,
+    right: Spacing.four,
   },
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
+    gap: Spacing.two,
+    borderRadius: Radius.pill,
     paddingLeft: Spacing.two,
     paddingRight: Spacing.three,
     paddingVertical: Spacing.two,
-    borderTopLeftRadius: Spacing.two,
-    borderTopRightRadius: Spacing.two,
+    ...Shadow.floating,
   },
   art: {
-    width: 40,
-    height: 40,
-    borderRadius: Spacing.one,
+    width: ART_SIZE,
+    height: ART_SIZE,
+    borderRadius: ART_SIZE / 2,
   },
   text: {
     flex: 1,
@@ -147,13 +154,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   progressTrack: {
-    height: 2,
-    backgroundColor: 'rgba(128,128,128,0.3)',
-    borderBottomLeftRadius: Spacing.two,
-    borderBottomRightRadius: Spacing.two,
+    height: ProgressBarHeight,
+    borderRadius: Radius.pill,
+    marginTop: Spacing.half,
     overflow: 'hidden',
   },
   progressFill: {
-    height: 2,
+    height: ProgressBarHeight,
   },
 });

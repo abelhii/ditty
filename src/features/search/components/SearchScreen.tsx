@@ -15,7 +15,7 @@ import {
 
 import { CoverArtSize, getCoverArtUrl } from "@/api/subsonic/endpoints/media";
 import type { Album, Artist, Track } from "@/api/types";
-import { useAuthStore } from "@/auth/useAuthStore";
+import { useAuthStore } from "@/auth/use-auth-store";
 import { AlbumTile } from "@/components/AlbumTile";
 import { ArtistRow } from "@/components/ArtistRow";
 import { QueryState } from "@/components/QueryState";
@@ -23,13 +23,13 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
-import { BottomTabInset, MaxContentWidth, Spacing } from "@/constants/theme";
-import { useRecentSearches } from "@/features/search/hooks/useRecentSearches";
-import { useSearch } from "@/features/search/hooks/useSearch";
-import { useTheme } from "@/hooks/useTheme";
+import { BottomTabInset, MaxContentWidth, Radius, Spacing } from "@/constants/theme";
+import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
+import { useSearch } from "@/features/search/hooks/use-search";
+import { useTheme } from "@/hooks/use-theme";
 import * as PlaybackController from "@/player/PlaybackController";
 import { getCurrentTrack } from "@/player/QueueManager";
-import { usePlayerStore } from "@/player/usePlayerStore";
+import { usePlayerStore } from "@/player/use-player-store";
 
 const GRID_COLUMNS = 2;
 const GRID_GAP = Spacing.four;
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.four,
     marginVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.pill,
   },
   input: {
     flex: 1,

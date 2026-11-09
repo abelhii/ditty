@@ -5,8 +5,8 @@ import type { Track } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { Radius, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 const THUMBNAIL_SIZE = 40;
 
@@ -46,7 +46,7 @@ export function TrackRow({
         <CoverArtImage uri={coverArtUri} style={styles.thumbnail} />
       )}
       <ThemedView style={styles.text}>
-        <ThemedText numberOfLines={1} themeColor={isPlaying ? 'text' : undefined}>
+        <ThemedText type="defaultBold" numberOfLines={1} themeColor={isPlaying ? 'text' : undefined}>
           {track.title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: THUMBNAIL_SIZE,
     height: THUMBNAIL_SIZE,
-    borderRadius: Spacing.one,
+    borderRadius: Radius.sm,
   },
   text: {
     flex: 1,

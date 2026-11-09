@@ -5,23 +5,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { FavouriteButton } from '@/components/FavouriteButton';
 import { PlayPauseButton } from '@/components/MiniPlayer';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
+import { Colors, MaxContentWidth, PlayerSurface, Radius, Spacing } from '@/constants/theme';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
-import { useProgress } from '@/player/hooks/useProgress';
-import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/usePlaybackStatusStore';
-import { usePlayerStore } from '@/player/usePlayerStore';
-import { usePlayerUiStore } from '@/player/usePlayerUiStore';
+import { useProgress } from '@/player/hooks/use-progress';
+import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { usePlayerStore } from '@/player/use-player-store';
+import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
@@ -35,7 +33,6 @@ const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', on
  */
 export function NowPlayingScreen() {
   const insets = useSafeAreaInsets();
-  const theme = useTheme();
   const nowPlayingOpen = usePlayerUiStore((state) => state.nowPlayingOpen);
   const closeNowPlaying = usePlayerUiStore((state) => state.closeNowPlaying);
   const openQueue = usePlayerUiStore((state) => state.openQueue);
@@ -93,10 +90,10 @@ export function NowPlayingScreen() {
 
   return (
     <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]}>
-      <ThemedView style={styles.fill}>
+      <View style={styles.fill}>
         <View style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           <View style={styles.grabberArea} {...grabber.panHandlers}>
-            <View style={[styles.grabber, { backgroundColor: theme.textSecondary }]} />
+            <View style={styles.grabber} />
             <Pressable hitSlop={12} onPress={dismiss} style={styles.chevron}>
               <Icon name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={26} />
             </Pressable>
@@ -105,42 +102,44 @@ export function NowPlayingScreen() {
           <View style={styles.body}>
             <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={64} />
 
-            <View style={styles.meta}>
-              <ThemedText type="subtitle" numberOfLines={2} style={styles.center}>
-                {currentTrack.title}
-              </ThemedText>
-              <ThemedText type="default" themeColor="textSecondary" numberOfLines={1}>
-                {currentTrack.artist}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {currentTrack.album}
-              </ThemedText>
-              {audioLabel !== '' && (
-                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                  {audioLabel}
+            <View style={styles.titleRow}>
+              <View style={styles.meta}>
+                <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
+                  {currentTrack.title}
                 </ThemedText>
-              )}
-            </View>
+                <ThemedText type="default" numberOfLines={1} style={styles.textSecondary}>
+                  {currentTrack.artist}
+                </ThemedText>
+                <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                  {currentTrack.album}
+                </ThemedText>
+                {audioLabel !== '' && (
+                  <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                    {audioLabel}
+                  </ThemedText>
+                )}
+              </View>
 
-            <View style={styles.secondaryActions}>
-              <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={26} />
-              <Pressable
-                hitSlop={10}
-                accessibilityLabel="Add to playlist"
-                onPress={() => setAddToPlaylistTrack(currentTrack)}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <SymbolView
-                  name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
-                  size={26}
-                  tintColor={theme.textSecondary}
-                />
-              </Pressable>
+              <View style={styles.secondaryActions}>
+                <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={32} />
+                <Pressable
+                  hitSlop={10}
+                  accessibilityLabel="Add to playlist"
+                  onPress={() => setAddToPlaylistTrack(currentTrack)}
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <SymbolView
+                    name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
+                    size={32}
+                    tintColor={PlayerSurface.text}
+                  />
+                </Pressable>
+              </View>
             </View>
 
             <Scrubber {...progress} onSeek={PlaybackController.seekTo} />
 
             {status === 'error' && (
-              <ThemedText type="small" style={styles.error}>
+              <ThemedText type="small" style={[styles.center, styles.error]}>
                 {playbackErrorMessage(errorOffline)}
               </ThemedText>
             )}
@@ -154,12 +153,16 @@ export function NowPlayingScreen() {
               <IconButton
                 name={{ ios: 'backward.end.fill', android: 'skip_previous', web: 'skip_previous' }}
                 size={34}
+                active
                 onPress={PlaybackController.skipPrevious}
               />
-              <PlayPauseButton size={56} />
+              <View style={styles.playButton}>
+                <PlayPauseButton size={26} tintColor={PlayerSurface.text} />
+              </View>
               <IconButton
                 name={{ ios: 'forward.end.fill', android: 'skip_next', web: 'skip_next' }}
                 size={34}
+                active
                 onPress={PlaybackController.skipNext}
               />
               <IconButton
@@ -173,13 +176,16 @@ export function NowPlayingScreen() {
               />
             </View>
 
-            <Pressable style={styles.queueButton} onPress={openQueue}>
-              <Icon name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }} size={20} />
-              <ThemedText type="smallBold">Queue</ThemedText>
+            <Pressable
+              style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
+              onPress={openQueue}>
+              <ThemedText type="small" style={styles.textSecondary}>
+                Queue
+              </ThemedText>
             </Pressable>
           </View>
         </View>
-      </ThemedView>
+      </View>
 
       <AddToPlaylistSheet track={addToPlaylistTrack} onClose={() => setAddToPlaylistTrack(null)} />
     </Animated.View>
@@ -187,25 +193,20 @@ export function NowPlayingScreen() {
 }
 
 function Icon({ name, size = 24 }: { name: SymbolViewProps['name']; size?: number }) {
-  const theme = useTheme();
-  return <SymbolView name={name} size={size} tintColor={theme.text} />;
+  return <SymbolView name={name} size={size} tintColor={PlayerSurface.text} />;
 }
 
-function IconButton({
-  name,
-  size = 24,
-  active = false,
-  onPress,
-}: {
+type IconButtonProps = {
   name: SymbolViewProps['name'];
   size?: number;
   active?: boolean;
   onPress: () => void;
-}) {
-  const theme = useTheme();
+};
+
+function IconButton({ name, size = 24, active = false, onPress }: IconButtonProps) {
   return (
     <Pressable hitSlop={10} onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
-      <SymbolView name={name} size={size} tintColor={active ? theme.text : theme.textSecondary} />
+      <SymbolView name={name} size={size} tintColor={active ? PlayerSurface.text : PlayerSurface.textMuted} />
     </Pressable>
   );
 }
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
   },
   fill: {
     flex: 1,
+    backgroundColor: PlayerSurface.background,
   },
   content: {
     flex: 1,
@@ -235,7 +237,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 5,
     borderRadius: 3,
-    opacity: 0.5,
+    backgroundColor: PlayerSurface.textMuted,
   },
   chevron: {
     position: 'absolute',
@@ -247,24 +249,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.four,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.five,
   },
   art: {
-    width: '80%',
+    width: '70%',
     aspectRatio: 1,
     maxWidth: 360,
-    borderRadius: Spacing.three,
+    borderRadius: Radius.pill,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
+    width: '100%',
   },
   meta: {
-    alignItems: 'center',
-    gap: Spacing.one,
-    width: '100%',
+    flex: 1,
+    gap: Spacing.half,
+  },
+  title: {
+    color: PlayerSurface.text,
+  },
+  textSecondary: {
+    color: PlayerSurface.textSecondary,
   },
   secondaryActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.five,
+    gap: Spacing.three,
+    paddingTop: Spacing.one,
   },
   center: {
     textAlign: 'center',
@@ -276,18 +289,25 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 340,
   },
-  queueButton: {
-    flexDirection: 'row',
+  playButton: {
+    width: 72,
+    height: 72,
+    borderRadius: Radius.pill,
     alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+    justifyContent: 'center',
+    backgroundColor: Colors.light.accent,
+  },
+  queueButton: {
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderWidth: 1,
+    borderColor: PlayerSurface.trackBackground,
+    borderRadius: Radius.pill,
   },
   pressed: {
     opacity: 0.6,
   },
   error: {
     color: '#e5484d',
-    textAlign: 'center',
   },
 });

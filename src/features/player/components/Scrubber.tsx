@@ -2,9 +2,8 @@ import { useMemo, useRef, useState } from 'react';
 import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/useTheme';
-import { formatTime } from '@/player/hooks/useProgress';
+import { Colors, PlayerSurface, ProgressBarHeight, Radius, Spacing } from '@/constants/theme';
+import { formatTime } from '@/player/hooks/use-progress';
 
 type ScrubberProps = {
   position: number;
@@ -20,7 +19,6 @@ type ScrubberProps = {
  *  doesn't fight the finger. Built on PanResponder (no reanimated dependency), so it behaves
  *  the same on iOS/Android/web. */
 export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps) {
-  const theme = useTheme();
   const widthRef = useRef(0);
   const [dragFraction, setDragFraction] = useState<number | null>(null);
 
@@ -53,20 +51,18 @@ export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps
       <View style={styles.track} onLayout={onLayout} {...responder.panHandlers}>
         <View style={styles.trackBackground} />
         <View
-          style={[styles.fill, { backgroundColor: theme.text, width: `${shownFraction * 100}%` }]}
-        />
-        <View
           style={[
-            styles.thumb,
-            { backgroundColor: theme.text, left: `${shownFraction * 100}%` },
+            styles.fill,
+            { backgroundColor: Colors.light.accent, width: `${shownFraction * 100}%` },
           ]}
         />
+        <View style={[styles.thumb, { left: `${shownFraction * 100}%` }]} />
       </View>
       <View style={styles.times}>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" style={styles.time}>
           {formatTime(shownPosition)}
         </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" style={styles.time}>
           {formatTime(duration)}
         </ThemedText>
       </View>
@@ -74,7 +70,7 @@ export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps
   );
 }
 
-const THUMB = 14;
+const THUMB = 16;
 
 const styles = StyleSheet.create({
   container: {
@@ -86,14 +82,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   trackBackground: {
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(128,128,128,0.3)',
+    height: ProgressBarHeight,
+    borderRadius: Radius.pill,
+    backgroundColor: PlayerSurface.trackBackground,
   },
   fill: {
     position: 'absolute',
-    height: 4,
-    borderRadius: 2,
+    height: ProgressBarHeight,
+    borderRadius: Radius.pill,
   },
   thumb: {
     position: 'absolute',
@@ -101,9 +97,13 @@ const styles = StyleSheet.create({
     height: THUMB,
     borderRadius: THUMB / 2,
     marginLeft: -THUMB / 2,
+    backgroundColor: PlayerSurface.text,
   },
   times: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  time: {
+    color: PlayerSurface.textMuted,
   },
 });

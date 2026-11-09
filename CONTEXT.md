@@ -24,6 +24,9 @@ Subsonic API. Distinct from the Queue.
 A single Track, Album, or Artist the user has flagged via the Subsonic `star` endpoint. The
 set of all flagged items (from `getStarred2`) is the user's Favourites. A Favourite is one
 marked item, not an ordered list — distinct from a Playlist.
+_Avoid_: "Following" — the mockup's label for a starred Artist row. There is no separate
+follow relationship; Subsonic/Navidrome has no server primitive for it. Resolved via grilling
+session 2026-08-28.
 
 **Library**:
 The server-backed catalog — artists, albums, tracks, genres, playlists — cached locally
@@ -36,6 +39,9 @@ _Avoid_: Catalog. Do **not** use "Library" for the user's personal collection (s
 The app's UI surface grouping the user's *personal* collections — their Playlists and their
 Favourites. A navigation grouping, not a distinct domain entity, and deliberately not called
 "Library" (which is the server catalog).
+_Note_: the "High-Fidelity Mockups v4" design file labels this screen "Library" and its per-row
+action icon "Following" (see Favourite _Avoid_ note). Both are mockup mislabels, resolved via
+grilling session 2026-08-28 — the canonical terms below still stand.
 
 **Shelf**:
 A horizontal, side-scrolling carousel of albums on the Home screen, each a client-side facet over

@@ -5,15 +5,15 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Artist, ArtistSection } from '@/api/types';
-import { useAuthStore } from '@/auth/useAuthStore';
+import { useAuthStore } from '@/auth/use-auth-store';
 import { ArtistRow } from '@/components/ArtistRow';
 import { GenreRow } from '@/components/GenreRow';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useArtistSections } from '@/features/library/hooks/useArtistSections';
-import { useGenres } from '@/features/library/hooks/useGenres';
+import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
+import { useGenres } from '@/features/library/hooks/use-genres';
 
 type LibraryView = 'artists' | 'genres';
 

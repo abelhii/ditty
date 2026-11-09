@@ -6,10 +6,10 @@ import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
-import { useAddToPlaylist } from '@/features/playlists/hooks/useAddToPlaylist';
-import { useCreatePlaylist } from '@/features/playlists/hooks/useCreatePlaylist';
-import { usePlaylists } from '@/features/playlists/hooks/usePlaylists';
-import { useTheme } from '@/hooks/useTheme';
+import { useAddToPlaylist } from '@/features/playlists/hooks/use-add-to-playlist';
+import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
+import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
+import { useTheme } from '@/hooks/use-theme';
 
 type AddToPlaylistSheetProps = {
   /** The track to add; `null` hides the sheet. Single-track only (bulk add is deferred). */
