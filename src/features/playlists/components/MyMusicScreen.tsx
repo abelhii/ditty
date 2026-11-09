@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Artist, Playlist } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { albumGridLayout, AlbumGridGap } from '@/components/album-grid';
 import { AlbumTile } from '@/components/AlbumTile';
 import { ArtistRow } from '@/components/ArtistRow';
 import { CoverArtImage } from '@/components/CoverArtImage';
@@ -23,9 +24,6 @@ import { useTheme } from '@/hooks/use-theme';
 
 type MyMusicFilter = 'playlists' | 'albums' | 'artists';
 
-const GRID_COLUMNS = 2;
-const GRID_GAP = Spacing.four;
-
 /** The My Music tab (Build Order step 7b, merged with the old Favourites screen per the v4 restyle
  *  — see PLAN.md step 7b amendment): a pinned Liked Songs shortcut, then Playlists / Albums /
  *  Artists behind a filter-chip row — one entity type visible at a time, since favourites can grow
@@ -34,7 +32,7 @@ export function MyMusicScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const playlistsQuery = usePlaylists();
   const favouritesQuery = useFavourites();
@@ -42,8 +40,7 @@ export function MyMusicScreen() {
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<MyMusicFilter>('playlists');
 
-  const contentWidth = Math.min(width, MaxContentWidth) - Spacing.four * 2;
-  const tileWidth = (contentWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
+  const { tileWidth, coverArtSize } = albumGridLayout(width, scale);
   const listContentStyle = { paddingBottom: insets.bottom + ListBottomInset };
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
@@ -153,7 +150,7 @@ export function MyMusicScreen() {
                           key={album.id}
                           album={album}
                           width={tileWidth}
-                          coverArtUri={coverUri(album.coverArtId, CoverArtSize.list)}
+                          coverArtUri={coverUri(album.coverArtId, coverArtSize)}
                           onPress={() => router.push(`/my-music/album/${album.id}`)}
                         />
                       ))}
@@ -269,7 +266,7 @@ const styles = StyleSheet.create({
   albumGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: GRID_GAP,
+    gap: AlbumGridGap,
     paddingHorizontal: Spacing.four,
   },
   pressed: {

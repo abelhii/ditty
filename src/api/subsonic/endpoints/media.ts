@@ -21,9 +21,21 @@ export function getStreamUrl(serverUrl: string, trackId: string, auth: SubsonicA
 export const CoverArtSize = {
   /** List rows / thumbnails. */
   list: 150,
+  /** Album grid tiles on 2x screens (phone, tablet, desktop). */
+  grid: 400,
   /** Album/artist detail headers. */
   detail: 600,
 } as const;
+
+/** Picks the smallest fixed {@link CoverArtSize} that covers an image drawn `renderWidth` logical
+ *  pixels wide at `pixelRatio`, so it isn't upscaled. Falls back to the largest size. Only fixed
+ *  sizes are returned, since each size is a separate image-cache entry. */
+export function coverArtSizeFor(renderWidth: number, pixelRatio: number): number {
+  const physicalWidth = renderWidth * pixelRatio;
+  if (physicalWidth <= CoverArtSize.list) return CoverArtSize.list;
+  if (physicalWidth <= CoverArtSize.grid) return CoverArtSize.grid;
+  return CoverArtSize.detail;
+}
 
 /** Builds a signed cover art URL for the given size, or `undefined` if there's no cover art to
  *  fetch — callers (CoverArtImage) render a placeholder in that case rather than a broken image. */
