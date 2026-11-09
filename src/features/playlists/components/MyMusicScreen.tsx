@@ -15,7 +15,7 @@ import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
@@ -44,7 +44,7 @@ export function MyMusicScreen() {
 
   const contentWidth = Math.min(width, MaxContentWidth) - Spacing.four * 2;
   const tileWidth = (contentWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
-  const listContentStyle = { paddingBottom: insets.bottom + BottomTabInset + Spacing.three };
+  const listContentStyle = { paddingBottom: insets.bottom + ListBottomInset };
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
     credentials ? getCoverArtUrl(credentials.serverUrl, coverArtId, credentials, size) : undefined;

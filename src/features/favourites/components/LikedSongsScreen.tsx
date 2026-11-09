@@ -11,7 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -43,7 +43,7 @@ export function LikedSongsScreen() {
             <FlatList<Track>
               data={tracks}
               keyExtractor={(track) => track.id}
-              contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.three }}
+              contentContainerStyle={{ paddingBottom: insets.bottom + ListBottomInset }}
               refreshing={favouritesQuery.isFetching}
               onRefresh={() => favouritesQuery.refetch()}
               ListEmptyComponent={<EmptyMessage text="No starred songs." />}

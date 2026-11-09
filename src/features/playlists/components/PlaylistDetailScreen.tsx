@@ -14,7 +14,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useDeletePlaylist } from '@/features/playlists/hooks/use-delete-playlist';
 import { usePlaylist } from '@/features/playlists/hooks/use-playlist';
 import { useRemoveFromPlaylist } from '@/features/playlists/hooks/use-remove-from-playlist';
@@ -60,7 +60,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
               <FlatList<Track>
                 data={tracks}
                 keyExtractor={(track, index) => `${track.id}-${index}`}
-                contentContainerStyle={{ paddingBottom: insets.bottom + BottomTabInset + Spacing.three }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + ListBottomInset }}
                 ListHeaderComponent={
                   <ThemedView style={styles.header}>
                     <CoverArtImage

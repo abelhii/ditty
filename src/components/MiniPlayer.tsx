@@ -7,7 +7,15 @@ import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, ProgressBarHeight, Radius, Shadow, Spacing } from '@/constants/theme';
+import {
+  BottomTabInset,
+  MiniPlayerHeight,
+  MiniPlayerOffset,
+  ProgressBarHeight,
+  Radius,
+  Shadow,
+  Spacing,
+} from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -41,7 +49,7 @@ export function MiniPlayer() {
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.list);
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + Spacing.one }]}>
+    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
       <Pressable onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
@@ -127,6 +135,7 @@ const styles = StyleSheet.create({
     right: Spacing.four,
   },
   bar: {
+    height: MiniPlayerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,

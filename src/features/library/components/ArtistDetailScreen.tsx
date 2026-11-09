@@ -11,7 +11,7 @@ import { FavouriteButton } from '@/components/FavouriteButton';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useArtist } from '@/features/library/hooks/use-artist';
 
 const GRID_COLUMNS = 2;
@@ -51,7 +51,7 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
               columnWrapperStyle={styles.row}
               contentContainerStyle={{
                 padding: Spacing.four,
-                paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+                paddingBottom: insets.bottom + ListBottomInset,
                 gap: GRID_GAP,
               }}
               ListHeaderComponent={

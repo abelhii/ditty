@@ -9,7 +9,7 @@ import { AlbumTile } from '@/components/AlbumTile';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbumsByGenre } from '@/features/library/hooks/use-albums-by-genre';
 
 const GRID_COLUMNS = 2;
@@ -50,7 +50,7 @@ export function GenreAlbumsScreen({ genre }: GenreAlbumsScreenProps) {
               columnWrapperStyle={styles.row}
               contentContainerStyle={{
                 padding: Spacing.four,
-                paddingBottom: insets.bottom + BottomTabInset + Spacing.three,
+                paddingBottom: insets.bottom + ListBottomInset,
                 gap: GRID_GAP,
               }}
               renderItem={({ item }) =>
