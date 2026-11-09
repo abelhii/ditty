@@ -1,10 +1,10 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, ThemeColor, TypeScale } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: 'default' | 'defaultBold' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
   themeColor?: ThemeColor;
 };
 
@@ -16,6 +16,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
       style={[
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,
+        type === 'defaultBold' && styles.defaultBold,
         type === 'title' && styles.title,
         type === 'small' && styles.small,
         type === 'smallBold' && styles.smallBold,
@@ -32,33 +33,33 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
 const styles = StyleSheet.create({
   small: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...TypeScale.small,
     fontWeight: 500,
     fontFamily: Fonts.sans,
   },
   smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...TypeScale.small,
     fontWeight: 700,
     fontFamily: Fonts.sansBold,
   },
   default: {
-    fontSize: 16,
-    lineHeight: 24,
+    ...TypeScale.default,
     fontWeight: 500,
     fontFamily: Fonts.sans,
   },
+  defaultBold: {
+    ...TypeScale.default,
+    fontWeight: 700,
+    fontFamily: Fonts.sansBold,
+  },
   title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
+    ...TypeScale.title,
+    fontWeight: 700,
     fontFamily: Fonts.sansBold,
   },
   subtitle: {
-    fontSize: 32,
-    lineHeight: 44,
-    fontWeight: 600,
+    ...TypeScale.subtitle,
+    fontWeight: 700,
     fontFamily: Fonts.sansBold,
   },
   link: {

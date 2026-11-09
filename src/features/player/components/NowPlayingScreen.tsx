@@ -100,31 +100,33 @@ export function NowPlayingScreen() {
           <View style={styles.body}>
             <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={64} />
 
-            <View style={styles.meta}>
-              <ThemedText type="subtitle" numberOfLines={2} style={[styles.center, styles.title]}>
-                {currentTrack.title}
-              </ThemedText>
-              <ThemedText type="default" numberOfLines={1} style={styles.textSecondary}>
-                {currentTrack.artist}
-              </ThemedText>
-              <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
-                {currentTrack.album}
-              </ThemedText>
-            </View>
+            <View style={styles.titleRow}>
+              <View style={styles.meta}>
+                <ThemedText type="subtitle" numberOfLines={2} style={styles.title}>
+                  {currentTrack.title}
+                </ThemedText>
+                <ThemedText type="default" numberOfLines={1} style={styles.textSecondary}>
+                  {currentTrack.artist}
+                </ThemedText>
+                <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                  {currentTrack.album}
+                </ThemedText>
+              </View>
 
-            <View style={styles.secondaryActions}>
-              <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={26} />
-              <Pressable
-                hitSlop={10}
-                accessibilityLabel="Add to playlist"
-                onPress={() => setAddToPlaylistTrack(currentTrack)}
-                style={({ pressed }) => pressed && styles.pressed}>
-                <SymbolView
-                  name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
-                  size={26}
-                  tintColor={PlayerSurface.text}
-                />
-              </Pressable>
+              <View style={styles.secondaryActions}>
+                <FavouriteButton target={{ kind: 'song', item: currentTrack }} size={32} />
+                <Pressable
+                  hitSlop={10}
+                  accessibilityLabel="Add to playlist"
+                  onPress={() => setAddToPlaylistTrack(currentTrack)}
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <SymbolView
+                    name={{ ios: 'text.badge.plus', android: 'playlist_add', web: 'playlist_add' }}
+                    size={32}
+                    tintColor={PlayerSurface.text}
+                  />
+                </Pressable>
+              </View>
             </View>
 
             <Scrubber {...progress} onSeek={PlaybackController.seekTo} />
@@ -167,9 +169,10 @@ export function NowPlayingScreen() {
               />
             </View>
 
-            <Pressable style={styles.queueButton} onPress={openQueue}>
-              <Icon name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }} size={20} />
-              <ThemedText type="smallBold" style={styles.text}>
+            <Pressable
+              style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
+              onPress={openQueue}>
+              <ThemedText type="small" style={styles.textSecondary}>
                 Queue
               </ThemedText>
             </Pressable>
@@ -239,23 +242,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: Spacing.four,
-    paddingHorizontal: Spacing.four,
+    paddingHorizontal: Spacing.five,
   },
   art: {
-    width: '80%',
+    width: '70%',
     aspectRatio: 1,
     maxWidth: 360,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.pill,
   },
-  meta: {
-    alignItems: 'center',
-    gap: Spacing.one,
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
     width: '100%',
   },
-  title: {
-    color: PlayerSurface.text,
+  meta: {
+    flex: 1,
+    gap: Spacing.half,
   },
-  text: {
+  title: {
     color: PlayerSurface.text,
   },
   textSecondary: {
@@ -264,8 +269,8 @@ const styles = StyleSheet.create({
   secondaryActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.five,
+    gap: Spacing.three,
+    paddingTop: Spacing.one,
   },
   center: {
     textAlign: 'center',
@@ -278,19 +283,19 @@ const styles = StyleSheet.create({
     maxWidth: 340,
   },
   playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 72,
+    height: 72,
+    borderRadius: Radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.light.accent,
   },
   queueButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.three,
+    borderWidth: 1,
+    borderColor: PlayerSurface.trackBackground,
+    borderRadius: Radius.pill,
   },
   pressed: {
     opacity: 0.6,

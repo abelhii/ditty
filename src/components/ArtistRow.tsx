@@ -19,7 +19,7 @@ export function ArtistRow({ artist, coverArtUri, onPress }: ArtistRowProps) {
     <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
       <CoverArtImage uri={coverArtUri} style={styles.thumbnail} />
       <ThemedView style={styles.text}>
-        <ThemedText numberOfLines={1}>{artist.name}</ThemedText>
+        <ThemedText type="defaultBold" numberOfLines={1}>{artist.name}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           {artist.albumCount} {artist.albumCount === 1 ? 'album' : 'albums'}
         </ThemedText>

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { BottomTabInset, ProgressBarHeight, Radius, Shadow, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -44,27 +44,27 @@ export function MiniPlayer() {
     <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + Spacing.one }]}>
       <Pressable onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
-          <View style={styles.row}>
-            <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={18} />
-            <View style={styles.text}>
-              <ThemedText numberOfLines={1}>{currentTrack.title}</ThemedText>
-              {status === 'error' ? (
-                <ThemedText type="small" numberOfLines={1} style={styles.error}>
-                  {playbackErrorMessage(errorOffline)}
-                </ThemedText>
-              ) : (
-                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                  {currentTrack.artist}
-                </ThemedText>
-              )}
+          <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
+          <View style={styles.text}>
+            <ThemedText type="smallBold" numberOfLines={1}>
+              {currentTrack.title}
+            </ThemedText>
+            {status === 'error' ? (
+              <ThemedText type="small" numberOfLines={1} style={styles.error}>
+                {playbackErrorMessage(errorOffline)}
+              </ThemedText>
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                {currentTrack.artist}
+              </ThemedText>
+            )}
+            <View style={[styles.progressTrack, { backgroundColor: theme.backgroundSelected }]}>
+              <View
+                style={[styles.progressFill, { backgroundColor: theme.accent, width: `${fraction * 100}%` }]}
+              />
             </View>
-            <PlayPauseButton />
           </View>
-          <View style={[styles.progressTrack, { backgroundColor: theme.backgroundSelected }]}>
-            <View
-              style={[styles.progressFill, { backgroundColor: theme.accent, width: `${fraction * 100}%` }]}
-            />
-          </View>
+          <PlayPauseButton />
         </ThemedView>
       </Pressable>
     </View>
@@ -123,24 +123,18 @@ const ART_SIZE = 40;
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: Spacing.two,
-    right: Spacing.two,
+    left: Spacing.four,
+    right: Spacing.four,
   },
   bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
     borderRadius: Radius.pill,
     paddingLeft: Spacing.two,
     paddingRight: Spacing.three,
     paddingVertical: Spacing.two,
-    gap: Spacing.one,
-    shadowOpacity: 0.16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
+    ...Shadow.floating,
   },
   art: {
     width: ART_SIZE,
@@ -160,12 +154,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   progressTrack: {
-    height: 4,
-    borderRadius: 2,
-    marginHorizontal: Spacing.one,
+    height: ProgressBarHeight,
+    borderRadius: Radius.pill,
+    marginTop: Spacing.half,
     overflow: 'hidden',
   },
   progressFill: {
-    height: 4,
+    height: ProgressBarHeight,
   },
 });

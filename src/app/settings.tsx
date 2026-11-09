@@ -29,7 +29,7 @@ export default function SettingsScreen() {
         <Pressable
           style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
           onPress={() => logout()}>
-          <ThemedText type="smallBold" style={{ color: theme.accentDeep }}>
+          <ThemedText style={{ color: theme.accentDeep }}>
             Log out
           </ThemedText>
         </Pressable>

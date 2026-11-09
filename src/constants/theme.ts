@@ -8,10 +8,9 @@ import '@/global.css';
 import { Platform } from 'react-native';
 
 /**
- * Warm-stone palette from "High-Fidelity Mockups v4" (Claude Design project
- * d2ae5646-f553-4cbc-8772-af147bfb237e). Dark mode has no mockup counterpart, so `dark` keeps its
- * prior values for the new keys (`accent`/`accentDeep`/`tint`) as an unverified fallback — see
- * TODO.md "Dark mode" gap.
+ * Warm-stone palette from the "High-Fidelity Mockups v4" design. The mockup is light-only, so
+ * `dark` keeps the app's earlier dark values; its `accent`/`accentDeep`/`tint`/`shadow`/`border`
+ * entries are an unverified fallback, not a designed dark palette.
  */
 export const Colors = {
   light: {
@@ -28,6 +27,8 @@ export const Colors = {
     tint: '#faf8f5',
     /** Drop-shadow tint for elevated surfaces (e.g. the floating mini-player bar). */
     shadow: '#2e2b25',
+    /** Hairline outlines and dividers (e.g. inactive filter chips). */
+    border: '#d1d0cc',
   },
   dark: {
     text: '#ffffff',
@@ -39,6 +40,7 @@ export const Colors = {
     accentDeep: '#3c4a29',
     tint: '#212225',
     shadow: '#000000',
+    border: '#2E3135',
   },
 } as const;
 
@@ -55,12 +57,35 @@ export const PlayerSurface = {
   trackBackground: 'rgba(243,242,238,.25)',
 } as const;
 
-/** Radius scale from the v4 mockup: pill controls, cards/dialogs, list rows, thumbnails. */
+/** Radius scale from the v4 mockup: pill controls (and circles), cards, thumbnails. */
 export const Radius = {
   pill: 999,
-  lg: 32,
   md: 16,
   sm: 10,
+} as const;
+
+/** Soft drop shadow for surfaces floating above content (the mini-player bar). Pair with
+ *  `shadowColor: theme.shadow`. */
+export const Shadow = {
+  floating: {
+    shadowOpacity: 0.16,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 10,
+    elevation: 4,
+  },
+} as const;
+
+/** Thickness of the playback progress bars (mini player, full-player scrubber). */
+export const ProgressBarHeight = 5;
+
+/** Type ramp from the v4 mockup (font size / line height), used by `ThemedText`. Mockup sizes are
+ *  scaled 1.3x so its 300 pt phone artboard fills a ~390 pt phone. Other sizes taken from the mockup
+ *  (radii, progress bar, player and tile sizes) use the same factor. */
+export const TypeScale = {
+  title: { fontSize: 26, lineHeight: 34 },
+  subtitle: { fontSize: 28, lineHeight: 36 },
+  default: { fontSize: 18, lineHeight: 26 },
+  small: { fontSize: 16, lineHeight: 21 },
 } as const;
 
 export const Fonts = Platform.select({
@@ -92,9 +117,8 @@ export const Fonts = Platform.select({
   },
 });
 
-/** Unchanged for the v4 restyle — the mockup's own scale (4.4/8.8/13.2/17.6/26.4/35.2) doesn't map
- *  cleanly onto this one, and reworking every screen's spacing wasn't worth it for a restyle pass
- *  that's otherwise just colors/radius/font. See TODO.md "Design tokens" gap. */
+/** Kept as-is for the v4 restyle: the mockup's own spacing (4.4/8.8/13.2/17.6/26.4/35.2) doesn't
+ *  map cleanly onto this scale, so screens use the nearest step here rather than a second scale. */
 export const Spacing = {
   half: 2,
   one: 4,

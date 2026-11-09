@@ -113,7 +113,7 @@ export function MyMusicScreen() {
                       style={styles.cover}
                     />
                     <ThemedView style={styles.rowText}>
-                      <ThemedText numberOfLines={1}>{item.name}</ThemedText>
+                      <ThemedText type="defaultBold" numberOfLines={1}>{item.name}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
                         {item.songCount} {item.songCount === 1 ? 'song' : 'songs'}
                       </ThemedText>
@@ -195,7 +195,7 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
         styles.chip,
         active
           ? { backgroundColor: theme.accent }
-          : { borderWidth: 1, borderColor: theme.backgroundSelected },
+          : { borderWidth: 1, borderColor: theme.border },
       ]}
       onPress={onPress}>
       <ThemedText type="smallBold" style={active ? { color: theme.tint } : { color: theme.textSecondary }}>

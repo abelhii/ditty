@@ -24,7 +24,7 @@ import { useAlbumShelf } from '@/features/home/hooks/use-album-shelf';
 import type { Shelf } from '@/features/home/shelves';
 
 /** Fixed tile width for the horizontal carousel — narrower than the genre grid's two-up tiles. */
-const TILE_WIDTH = 140;
+const TILE_WIDTH = 96;
 
 /** Web only: touch/trackpad users swipe, but pointer-only users need explicit controls — a page is
  *  most of the viewport so consecutive clicks walk the shelf without losing their place. */
@@ -140,7 +140,7 @@ export function AlbumShelf({ shelf }: { shelf: Shelf }) {
 function ShelfHeader({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
     <View style={styles.header}>
-      <ThemedText type="subtitle">{title}</ThemedText>
+      <ThemedText type="defaultBold">{title}</ThemedText>
       {children}
     </View>
   );

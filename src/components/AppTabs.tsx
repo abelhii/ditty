@@ -11,7 +11,8 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      iconColor={{ selected: colors.accent }}
+      labelStyle={{ selected: { color: colors.accent } }}>
       {/* Home lives under the `library` route: its index is the step-9 discover shelves, with the
           full Artists/Genres catalog list pushed one level down at `/library/artists`. The tab keeps
           the internal name `library` (its stack owns the album/artist/genre detail routes). */}

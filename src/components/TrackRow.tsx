@@ -46,7 +46,7 @@ export function TrackRow({
         <CoverArtImage uri={coverArtUri} style={styles.thumbnail} />
       )}
       <ThemedView style={styles.text}>
-        <ThemedText numberOfLines={1} themeColor={isPlaying ? 'text' : undefined}>
+        <ThemedText type="defaultBold" numberOfLines={1} themeColor={isPlaying ? 'text' : undefined}>
           {track.title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>

@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
-import { Colors, PlayerSurface, Spacing } from '@/constants/theme';
+import { Colors, PlayerSurface, ProgressBarHeight, Radius, Spacing } from '@/constants/theme';
 import { formatTime } from '@/player/hooks/use-progress';
 
 type ScrubberProps = {
@@ -70,7 +70,7 @@ export function Scrubber({ position, duration, fraction, onSeek }: ScrubberProps
   );
 }
 
-const THUMB = 14;
+const THUMB = 16;
 
 const styles = StyleSheet.create({
   container: {
@@ -82,14 +82,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   trackBackground: {
-    height: 4,
-    borderRadius: 2,
+    height: ProgressBarHeight,
+    borderRadius: Radius.pill,
     backgroundColor: PlayerSurface.trackBackground,
   },
   fill: {
     position: 'absolute',
-    height: 4,
-    borderRadius: 2,
+    height: ProgressBarHeight,
+    borderRadius: Radius.pill,
   },
   thumb: {
     position: 'absolute',
