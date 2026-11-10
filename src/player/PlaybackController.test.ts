@@ -138,3 +138,17 @@ describe('Auto-DJ refill', () => {
     expect(usePlayerStore.getState().queue.tracks.slice(1, 3).map((t) => t.id)).toEqual(['g1', 'g2']);
   });
 });
+
+describe('setVolume', () => {
+  it('stores the volume', () => {
+    PlaybackController.setVolume(0.4);
+    expect(usePlayerStore.getState().volume).toBe(0.4);
+  });
+
+  it('clamps to 0-1', () => {
+    PlaybackController.setVolume(1.5);
+    expect(usePlayerStore.getState().volume).toBe(1);
+    PlaybackController.setVolume(-0.2);
+    expect(usePlayerStore.getState().volume).toBe(0);
+  });
+});

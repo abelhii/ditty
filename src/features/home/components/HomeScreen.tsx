@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/ThemedView';
-import { ListBottomInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
@@ -15,6 +15,7 @@ import { homeShelves } from '@/features/home/shelves';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 const LIKES_ICON_SIZE = 64;
 /** How many playlists the quick-access grid shows, two per row. */
@@ -34,6 +35,7 @@ function NarrowHome() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const playlists = usePlaylists().data ?? [];
   // Injected once per mount so New Releases' year window is stable across re-renders.
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
@@ -47,7 +49,7 @@ function NarrowHome() {
         <ScrollView
           contentContainerStyle={{
             paddingTop: Spacing.three,
-            paddingBottom: insets.bottom + ListBottomInset,
+            paddingBottom: insets.bottom + listBottomInset,
             gap: Spacing.five,
           }}>
           <HomeHeader />

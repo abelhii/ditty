@@ -10,8 +10,9 @@ import { AlbumTile } from '@/components/AlbumTile';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbumsByGenre } from '@/features/library/hooks/use-albums-by-genre';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type GenreAlbumsScreenProps = {
   genre: string;
@@ -22,6 +23,7 @@ type GenreAlbumsScreenProps = {
 export function GenreAlbumsScreen({ genre }: GenreAlbumsScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const albumsQuery = useAlbumsByGenre(genre);
@@ -49,7 +51,7 @@ export function GenreAlbumsScreen({ genre }: GenreAlbumsScreenProps) {
               columnWrapperStyle={styles.row}
               contentContainerStyle={{
                 padding: Spacing.four,
-                paddingBottom: insets.bottom + ListBottomInset,
+                paddingBottom: insets.bottom + listBottomInset,
                 gap: AlbumGridGap,
               }}
               renderItem={({ item }) =>

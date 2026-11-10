@@ -16,10 +16,8 @@ import {
   ProgressBarHeight,
   Radius,
   Shadow,
-  SidebarWidth,
   Spacing,
 } from '@/constants/theme';
-import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -31,13 +29,12 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
 /**
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform
  * (see docs/adr/0005-miniplayer-js-overlay-not-native-accessory.md), mounted as a sibling of
- * NativeTabs in _layout.tsx. Artwork + title/artist + previous / play-pause / next + a hairline progress line;
+ * NativeTabs in _layout.tsx (the wide layout swaps in WidePlayer instead). Artwork + title/artist + previous / play-pause / next + a hairline progress line;
  * tapping the bar expands the now-playing overlay. Hidden when there's nothing playing or when
  * now-playing is already open.
  */
 export function MiniPlayer() {
   const insets = useSafeAreaInsets();
-  const wide = useIsWideLayout();
   const theme = useTheme();
   const credentials = useAuthStore((state) => state.credentials);
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
@@ -55,16 +52,7 @@ export function MiniPlayer() {
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.list);
 
   return (
-    // On wide web there is no bottom tab bar (a sidebar replaces it), so no tab inset, and the bar
-    // docks inside the content pane rather than over the sidebar.
-    <View
-      style={[
-        styles.container,
-        {
-          bottom: insets.bottom + (wide ? 0 : BottomTabInset) + MiniPlayerOffset,
-          left: wide ? SidebarWidth : 0,
-        },
-      ]}>
+    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
       <Pressable style={styles.pressable} onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
@@ -110,18 +98,21 @@ type SkipButtonProps = {
   name: ComponentProps<typeof SymbolView>['name'];
   label: string;
   onPress: () => void;
+  /** For toggles (the wide player's shuffle and repeat): accent-tinted and announced as selected. */
+  selected?: boolean;
 };
 
-function SkipButton({ name, label, onPress }: SkipButtonProps) {
+export function SkipButton({ name, label, onPress, selected }: SkipButtonProps) {
   const theme = useTheme();
   return (
     <Pressable
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={selected === undefined ? undefined : { selected }}
       style={styles.control}
       onPress={onPress}>
-      <SymbolView name={name} size={22} tintColor={theme.text} />
+      <SymbolView name={name} size={22} tintColor={selected ? theme.accent : theme.text} />
     </Pressable>
   );
 }

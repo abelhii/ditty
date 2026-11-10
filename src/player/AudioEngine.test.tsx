@@ -28,6 +28,7 @@ const mockPlayer = {
   seekTo: jest.fn(),
   setActiveForLockScreen: jest.fn(),
   loop: false,
+  volume: 1,
 };
 let mockStatus: Record<string, unknown>;
 jest.mock('expo-audio', () => ({
@@ -108,5 +109,15 @@ describe('AudioEngine track source', () => {
     PlaybackController.play([track('a')], 0);
     await render(<AudioEngine />);
     expect(mockPlayer.replace).toHaveBeenCalledWith({ uri: 'file:///d/a.flac' });
+  });
+});
+
+describe('AudioEngine volume', () => {
+  it('applies the store volume to the player, and follows changes', async () => {
+    mockPlayer.volume = 1;
+    await render(<AudioEngine />);
+
+    await act(async () => PlaybackController.setVolume(0.3));
+    expect(mockPlayer.volume).toBe(0.3);
   });
 });
