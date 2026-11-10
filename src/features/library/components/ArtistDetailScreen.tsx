@@ -18,7 +18,7 @@ import { useArtist } from '@/features/library/hooks/use-artist';
 /** The tab stacks that render this screen — the prefix its album drill-down pushes onto, so the
  *  push lands in the current tab's own stack. Kept as literals (not a free-form string) so
  *  expo-router's typed routes still validate the resulting href. */
-type DetailBasePath = '/library' | '/search' | '/my-music';
+type DetailBasePath = '/library' | '/search' | '/my-music' | '/home';
 
 type ArtistDetailScreenProps = {
   artistId: string;
@@ -83,7 +83,9 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
                           ? `/search/album/${item.id}`
                           : basePath === '/my-music'
                             ? `/my-music/album/${item.id}`
-                            : `/library/album/${item.id}`,
+                            : basePath === '/home'
+                              ? `/home/album/${item.id}`
+                              : `/library/album/${item.id}`,
                       )
                     }
                   />

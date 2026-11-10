@@ -22,11 +22,13 @@ import { ArtistRow } from "@/components/ArtistRow";
 import { QueryState } from "@/components/QueryState";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { WideTopBar } from "@/components/WideTopBar";
 import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
-import { ListBottomInset, MaxContentWidth, Radius, Spacing } from "@/constants/theme";
+import { ListBottomInset, MaxContentWidth, Radius, Spacing, WideMaxContentWidth } from "@/constants/theme";
 import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
 import { useSearch } from "@/features/search/hooks/use-search";
+import { useIsWideLayout } from "@/hooks/use-is-wide-layout";
 import { useTheme } from "@/hooks/use-theme";
 import * as PlaybackController from "@/player/PlaybackController";
 
@@ -38,6 +40,7 @@ export function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const wide = useIsWideLayout();
   const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
 
@@ -46,7 +49,7 @@ export function SearchScreen() {
   const recent = useRecentSearches();
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
-  const { tileWidth, coverArtSize } = albumGridLayout(width, scale);
+  const { tileWidth, coverArtSize } = albumGridLayout(width, scale, wide);
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
     credentials
@@ -74,7 +77,27 @@ export function SearchScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <SafeAreaView
+        style={[styles.safeArea, wide && styles.safeAreaWide]}
+        edges={["top", "left", "right"]}
+      >
+        {wide ? (
+          // On wide, search has no tab: Home's top bar opens this screen, and Escape or clearing
+          // the field returns to Home.
+          <ThemedView style={styles.wideBar}>
+            <WideTopBar
+              value={input}
+              onChangeText={setInput}
+              autoFocus
+              onEscape={() => router.navigate("/home")}
+              onClear={() => {
+                setInput("");
+                router.navigate("/home");
+              }}
+            />
+          </ThemedView>
+        ) : (
+          <>
         <ThemedText type="title" style={styles.title}>
           Search
         </ThemedText>
@@ -115,6 +138,8 @@ export function SearchScreen() {
             </Pressable>
           )}
         </ThemedView>
+          </>
+        )}
 
         {isActive ? (
           <QueryState
@@ -297,6 +322,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     maxWidth: MaxContentWidth,
     width: "100%",
+  },
+  safeAreaWide: {
+    maxWidth: WideMaxContentWidth,
+  },
+  wideBar: {
+    paddingBottom: Spacing.three,
   },
   title: {
     paddingHorizontal: Spacing.four,
