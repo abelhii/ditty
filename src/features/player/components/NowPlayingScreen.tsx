@@ -10,11 +10,14 @@ import { CoverArtImage } from '@/components/CoverArtImage';
 import { FavouriteButton } from '@/components/FavouriteButton';
 import { PlayPauseButton } from '@/components/MiniPlayer';
 import { ThemedText } from '@/components/ThemedText';
+import { VolumeSlider } from '@/components/VolumeSlider';
 import { Colors, MaxContentWidth, PlayerSurface, Radius, Spacing } from '@/constants/theme';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
+import { QueueList } from '@/features/player/components/QueueScreen';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
 import { useProgress } from '@/player/hooks/use-progress';
@@ -23,6 +26,12 @@ import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
+const QUEUE_PANEL_PALETTE = {
+  background: PlayerSurface.panel,
+  selected: PlayerSurface.panelSelected,
+  text: PlayerSurface.text,
+  textSecondary: PlayerSurface.textSecondary,
+};
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', one: 'off' };
@@ -36,6 +45,8 @@ const REPEAT_LABEL: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repe
  */
 export function NowPlayingScreen() {
   const insets = useSafeAreaInsets();
+  const wide = useIsWideLayout();
+  const volume = usePlayerStore((state) => state.volume);
   const nowPlayingOpen = usePlayerUiStore((state) => state.nowPlayingOpen);
   const closeNowPlaying = usePlayerUiStore((state) => state.closeNowPlaying);
   const openQueue = usePlayerUiStore((state) => state.openQueue);
@@ -96,9 +107,14 @@ export function NowPlayingScreen() {
     <PlayerOverlay onRequestClose={dismiss}>
       <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]}>
         <View style={styles.fill}>
-          <View style={[styles.content, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-            <View style={styles.grabberArea} {...grabber.panHandlers}>
-              <View style={styles.grabber} />
+          <View
+            style={[
+              styles.content,
+              wide && styles.contentWide,
+              { paddingTop: insets.top, paddingBottom: insets.bottom },
+            ]}>
+            <View style={styles.grabberArea} {...(wide ? {} : grabber.panHandlers)}>
+              {!wide && <View style={styles.grabber} />}
               <Pressable
                 hitSlop={12}
                 accessibilityRole="button"
@@ -111,8 +127,13 @@ export function NowPlayingScreen() {
 
             {/* Scrolls when the content is taller than the viewport (e.g. a landscape phone), so
                 the transport and Queue button stay reachable; centred when it fits. */}
+            <View style={wide ? styles.wideRow : styles.fill}>
             <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
-              <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={64} />
+              <CoverArtImage
+                uri={coverArtUri || undefined}
+                style={wide ? styles.artWide : styles.art}
+                iconSize={64}
+              />
 
               <View style={styles.titleRow}>
                 <View style={styles.meta}>
@@ -203,16 +224,33 @@ export function NowPlayingScreen() {
                 onPress={() => PlaybackController.setAutoDj(!autoDj)}
               />
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open Queue"
-                style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
-                onPress={openQueue}>
-                <ThemedText type="small" style={styles.textSecondary}>
+              {!wide && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Queue"
+                  style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
+                  onPress={openQueue}>
+                  <ThemedText type="small" style={styles.textSecondary}>
+                    Queue
+                  </ThemedText>
+                </Pressable>
+              )}
+            </ScrollView>
+
+            {wide && (
+              <View style={styles.queuePanel}>
+                <ThemedText type="smallBold" style={styles.panelTitle}>
                   Queue
                 </ThemedText>
-              </Pressable>
-            </ScrollView>
+                <View style={styles.fill}>
+                  <QueueList palette={QUEUE_PANEL_PALETTE} />
+                </View>
+                <View style={styles.panelVolume}>
+                  <VolumeSlider volume={volume} onChange={PlaybackController.setVolume} />
+                </View>
+              </View>
+            )}
+            </View>
           </View>
         </View>
 
@@ -268,6 +306,29 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
     maxWidth: MaxContentWidth,
+  },
+  contentWide: {
+    maxWidth: '100%',
+  },
+  artWide: {
+    width: 300,
+    height: 300,
+    borderRadius: Radius.pill,
+  },
+  wideRow: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  queuePanel: {
+    width: 300,
+    backgroundColor: PlayerSurface.panel,
+  },
+  panelTitle: {
+    color: PlayerSurface.text,
+    padding: Spacing.three,
+  },
+  panelVolume: {
+    padding: Spacing.three,
   },
   grabberArea: {
     alignItems: 'center',

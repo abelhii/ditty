@@ -41,7 +41,11 @@ function modalAround(element: HostNode): HostNode | null {
   return null;
 }
 
+let mockWide = false;
+jest.mock('@/hooks/use-is-wide-layout', () => ({ useIsWideLayout: () => mockWide }));
+
 beforeEach(() => {
+  mockWide = false;
   jest.useFakeTimers();
   usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')]));
   usePlayerUiStore.setState({ nowPlayingOpen: true, queueOpen: true });
@@ -88,5 +92,47 @@ describe('player overlays on native', () => {
     await render(<QueueScreen />);
 
     expect(modalAround(screen.getByText('Queue') as unknown as HostNode)).toBeNull();
+  });
+});
+
+describe('player overlays on the wide layout', () => {
+  const g = globalThis as unknown as { document?: unknown };
+  let keydown: ((event: { key: string }) => void) | undefined;
+
+  beforeEach(() => {
+    mockWide = true;
+    keydown = undefined;
+    g.document = {
+      addEventListener: (_: string, handler: typeof keydown) => (keydown = handler),
+      removeEventListener: () => {},
+    };
+  });
+  afterAll(() => delete g.document);
+
+  it('shows the Queue as a panel in the full player instead of a separate overlay', async () => {
+    usePlayerUiStore.setState({ queueOpen: false });
+    await render(<NowPlayingScreen />);
+
+    expect(screen.getByText('Queue')).toBeTruthy();
+    expect(screen.getByText('Track b')).toBeTruthy();
+    expect(screen.queryByLabelText('Open Queue')).toBeNull();
+  });
+
+  it('does not render the Queue overlay', async () => {
+    await render(<QueueScreen />);
+    expect(screen.queryByText('Queue')).toBeNull();
+  });
+
+  it('closes the full player on Escape without a Modal', async () => {
+    usePlayerUiStore.setState({ queueOpen: false });
+    await render(<NowPlayingScreen />);
+    expect(modalAround(screen.getAllByText('Track a')[0] as unknown as HostNode)).toBeNull();
+
+    await act(async () => {
+      keydown?.({ key: 'Escape' });
+      jest.runAllTimers();
+    });
+
+    expect(usePlayerUiStore.getState().nowPlayingOpen).toBe(false);
   });
 });

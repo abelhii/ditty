@@ -62,6 +62,9 @@ export const PlayerSurface = {
   textSecondary: 'rgba(243,242,238,.65)',
   textMuted: 'rgba(243,242,238,.55)',
   trackBackground: 'rgba(243,242,238,.25)',
+  /** The wide player's Queue panel, one step lighter than the background. */
+  panel: '#2c2a25',
+  panelSelected: '#3a3833',
 } as const;
 
 /** Radius scale from the v4 mockup: pill controls (and circles), cards, thumbnails. */

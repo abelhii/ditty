@@ -55,9 +55,11 @@ export default function SettingsScreen() {
 
   const appearance = (
     <ThemedView style={styles.appearance}>
-      <ThemedText type="small" themeColor="textSecondary">
-        Appearance
-      </ThemedText>
+      {!wide && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Appearance
+        </ThemedText>
+      )}
       <ThemedView
         type={wide ? 'background' : 'backgroundElement'}
         accessibilityRole="radiogroup"
@@ -83,9 +85,11 @@ export default function SettingsScreen() {
 
   const autoDjSection = (
     <ThemedView style={styles.appearance}>
-      <ThemedText type="small" themeColor="textSecondary">
-        Auto-DJ
-      </ThemedText>
+      {!wide && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Auto-DJ
+        </ThemedText>
+      )}
       <ThemedView type={wide ? 'background' : 'backgroundElement'} style={styles.autoDjRow}>
         <ThemedText type="small">Start with Auto-DJ on</ThemedText>
         <Switch
@@ -146,7 +150,7 @@ export default function SettingsScreen() {
               <ThemedText type="smallBold">Appearance</ThemedText>
               {appearance}
             </ThemedView>
-            <ThemedView type="backgroundElement" style={styles.card}>
+            <ThemedView type="backgroundElement" style={[styles.card, styles.cardPlayback]}>
               <ThemedText type="smallBold">Playback</ThemedText>
               {autoDjSection}
             </ThemedView>
@@ -226,6 +230,7 @@ const styles = StyleSheet.create({
   },
   profileText: {
     flex: 1,
+    backgroundColor: 'transparent',
     gap: Spacing.half,
   },
   avatar: {
@@ -245,6 +250,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: Spacing.three,
     gap: Spacing.three,
+  },
+  cardPlayback: {
+    flex: 1.5,
   },
   logOutRow: {
     paddingVertical: Spacing.two,
