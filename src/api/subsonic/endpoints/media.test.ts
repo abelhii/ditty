@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { CoverArtSize, coverArtSizeFor, getStreamUrl } from '@/api/subsonic/endpoints/media';
+import { CoverArtSize, coverArtSizeFor, getDownloadUrl, getStreamUrl } from '@/api/subsonic/endpoints/media';
 
 const auth = { username: 'alice', token: 'abc123', salt: 'xyz789' };
 
@@ -25,6 +25,16 @@ describe('getStreamUrl', () => {
     } finally {
       Platform.OS = originalOS;
     }
+  });
+});
+
+describe('getDownloadUrl', () => {
+  it('signs a download request keyed by track id, with no transcode params', () => {
+    const url = new URL(getDownloadUrl('https://navidrome.example.com', 'track-1', auth));
+    expect(url.origin + url.pathname).toBe('https://navidrome.example.com/rest/download.view');
+    expect(url.searchParams.get('id')).toBe('track-1');
+    expect(url.searchParams.get('u')).toBe('alice');
+    expect(url.searchParams.get('format')).toBeNull();
   });
 });
 

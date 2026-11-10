@@ -17,6 +17,14 @@ export function getStreamUrl(serverUrl: string, trackId: string, auth: SubsonicA
   return buildRequestUrl(serverUrl, 'stream', { id: trackId }, auth).toString();
 }
 
+/**
+ * Builds a signed URL for the server's `download` endpoint — the original file, used for offline
+ * downloads (docs: issue #38). Unlike `stream` it never transcodes.
+ */
+export function getDownloadUrl(serverUrl: string, trackId: string, auth: SubsonicAuth): string {
+  return buildRequestUrl(serverUrl, 'download', { id: trackId }, auth).toString();
+}
+
 /** Fixed cover art sizes, shared by every call site — see docs/adr/0003-cover-art-sizing-and-caching.md. */
 export const CoverArtSize = {
   /** List rows / thumbnails. */
