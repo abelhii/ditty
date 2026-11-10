@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 
 import { CustomTabList, TabButton } from '@/components/AppTabs.web';
-import { Spacing } from '@/constants/theme';
+import { Colors } from '@/constants/theme';
 
 // theme.ts imports the web stylesheet, which jest can't parse.
 jest.mock('@/global.css', () => ({}));
@@ -25,19 +25,31 @@ async function renderTabBar(width: number) {
 }
 
 describe('web tab bar', () => {
-  // Phone and tablet widths get a bottom tab bar (icon over label, no brand); the top pill bar with
-  // the brand is kept for wide screens, where a sidebar is expected to replace it later.
+  // Phone and tablet widths get a bottom tab bar (icon over label, no brand); at 900 and up a
+  // sidebar replaces it.
   it.each([320, 375, 899])('renders the bottom bar without the brand at %i wide', async (width) => {
     await renderTabBar(width);
 
     expect(screen.queryByText('Sicmu')).toBeNull();
+    expect(screen.getByText('Search')).toBeOnTheScreen();
     expect(screen.getByText('Settings')).toBeOnTheScreen();
   });
 
-  it('keeps the brand and top pill tabs on wide screens', async () => {
-    await renderTabBar(900);
+  it.each([900, 1200])('renders the sidebar at %i wide', async (width) => {
+    await renderTabBar(width);
 
     expect(screen.getByText('Sicmu')).toBeOnTheScreen();
-    expect(screen.getByText('Settings').parent).toHaveStyle({ paddingHorizontal: Spacing.three });
+    expect(screen.getByText('Home')).toBeOnTheScreen();
+    expect(screen.getByText('Library')).toBeOnTheScreen();
+    // Search is the top bar's job on wide; Settings becomes the account row.
+    expect(screen.queryByText('Search')).toBeNull();
+    expect(screen.getByLabelText('Settings')).toBeOnTheScreen();
+  });
+
+  it('highlights the active sidebar item with the accent colour', async () => {
+    await renderTabBar(1200);
+
+    expect(screen.getByText('Home')).toHaveStyle({ color: Colors.light.accent });
+    expect(screen.getByText('Library')).toHaveStyle({ color: Colors.light.text });
   });
 });
