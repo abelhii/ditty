@@ -45,3 +45,16 @@ export async function getStarred(
     tracks: (starred2.song ?? []).map(normalizeTrack),
   };
 }
+
+/** Reports a play. `submission: false` is a "now playing" ping; `true` records the play and bumps
+ *  the server's play count (what getAlbumList2 `frequent`/`recent` sort on). `time` is when the
+ *  Track started, in ms since epoch. */
+export async function scrobble(
+  serverUrl: string,
+  auth: SubsonicAuth,
+  id: string,
+  time: number,
+  submission: boolean,
+): Promise<void> {
+  await request(serverUrl, 'scrobble', { id, time, submission }, auth);
+}
