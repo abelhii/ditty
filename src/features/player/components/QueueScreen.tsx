@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { usePlayerStore } from '@/player/use-player-store';
@@ -31,6 +32,62 @@ export function QueueScreen() {
   const theme = useTheme();
   const queueOpen = usePlayerUiStore((state) => state.queueOpen);
   const closeQueue = usePlayerUiStore((state) => state.closeQueue);
+  const wide = useIsWideLayout();
+
+  // On the wide layout the Queue is a permanent panel in the full player, not an overlay.
+  if (!queueOpen || wide) return null;
+
+  return (
+    <PlayerOverlay onRequestClose={closeQueue}>
+      <ThemedView style={styles.overlay}>
+        <View style={[styles.content, { paddingTop: insets.top }]}>
+          <View style={styles.header}>
+            <Pressable
+              hitSlop={12}
+              accessibilityRole="button"
+              accessibilityLabel="Close Queue"
+              onPress={closeQueue}
+              style={styles.headerButton}>
+              <SymbolView
+                name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
+                size={26}
+                tintColor={theme.text}
+              />
+            </Pressable>
+            <ThemedText type="smallBold">Queue</ThemedText>
+            <View style={styles.headerButton} />
+          </View>
+
+          <QueueList />
+        </View>
+      </ThemedView>
+    </PlayerOverlay>
+  );
+}
+
+type QueueListPalette = {
+  background: string;
+  selected: string;
+  text: string;
+  textSecondary: string;
+};
+
+type QueueListProps = {
+  /** Colours for a list that sits on a surface other than the app background (the wide player's
+   *  dark panel). Defaults to the app theme. */
+  palette?: QueueListPalette;
+};
+
+/** The reorderable list of Queue tracks, shared by the Queue overlay and the wide player's panel. */
+export function QueueList({ palette }: QueueListProps) {
+  const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const colors = palette ?? {
+    background: theme.background,
+    selected: theme.backgroundSelected,
+    text: theme.text,
+    textSecondary: theme.textSecondary,
+  };
   const credentials = useAuthStore((state) => state.credentials);
 
   const queue = usePlayerStore((state) => state.queue);
@@ -79,60 +136,36 @@ export function QueueScreen() {
   const onJump = useCallback((index: number) => PlaybackController.jumpTo(index), []);
   const onRemove = useCallback((index: number) => PlaybackController.removeFromQueue(index), []);
 
-  if (!queueOpen) return null;
-
   return (
-    <PlayerOverlay onRequestClose={closeQueue}>
-      <ThemedView style={styles.overlay}>
-        <View style={[styles.content, { paddingTop: insets.top }]}>
-          <View style={styles.header}>
-            <Pressable
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel="Close Queue"
-              onPress={closeQueue}
-              style={styles.headerButton}>
-              <SymbolView
-                name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }}
-                size={26}
-                tintColor={theme.text}
-              />
-            </Pressable>
-            <ThemedText type="smallBold">Queue</ThemedText>
-            <View style={styles.headerButton} />
-          </View>
-
-          <ScrollView
-            scrollEnabled={draggingIndex === null}
-            contentContainerStyle={{
-              height: tracks.length * ROW_HEIGHT + insets.bottom + Spacing.four,
-            }}>
-            {tracks.map((track, index) => (
-              <QueueRow
-                key={`${track.id}-${index}`}
-                track={track}
-                index={index}
-                coverArtUri={
-                  (credentials &&
-                    getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)) ||
-                  undefined
-                }
-                isCurrent={index === currentIndex}
-                isPlayed={index < currentIndex}
-                isDragging={index === draggingIndex}
-                shift={shiftFor(index, draggingIndex, hoverIndex)}
-                dragY={dragY}
-                onJump={onJump}
-                onRemove={onRemove}
-                onDragStart={onDragStart}
-                onDragMove={onDragMove}
-                onDragEnd={onDragEnd}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      </ThemedView>
-    </PlayerOverlay>
+    <ScrollView
+      scrollEnabled={draggingIndex === null}
+      contentContainerStyle={{
+        height: tracks.length * ROW_HEIGHT + insets.bottom + Spacing.four,
+      }}>
+      {tracks.map((track, index) => (
+        <QueueRow
+          key={`${track.id}-${index}`}
+          track={track}
+          index={index}
+          colors={colors}
+          coverArtUri={
+            (credentials &&
+              getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)) ||
+            undefined
+          }
+          isCurrent={index === currentIndex}
+          isPlayed={index < currentIndex}
+          isDragging={index === draggingIndex}
+          shift={shiftFor(index, draggingIndex, hoverIndex)}
+          dragY={dragY}
+          onJump={onJump}
+          onRemove={onRemove}
+          onDragStart={onDragStart}
+          onDragMove={onDragMove}
+          onDragEnd={onDragEnd}
+        />
+      ))}
+    </ScrollView>
   );
 }
 
@@ -147,6 +180,7 @@ function shiftFor(index: number, from: number | null, to: number): number {
 type QueueRowProps = {
   track: Track;
   index: number;
+  colors: QueueListPalette;
   coverArtUri?: string;
   isCurrent: boolean;
   isPlayed: boolean;
@@ -163,6 +197,7 @@ type QueueRowProps = {
 function QueueRow({
   track,
   index,
+  colors,
   coverArtUri,
   isCurrent,
   isPlayed,
@@ -175,7 +210,6 @@ function QueueRow({
   onDragMove,
   onDragEnd,
 }: QueueRowProps) {
-  const theme = useTheme();
   const [translateX] = useState(() => new Animated.Value(0));
 
   const swipe = useMemo(
@@ -222,11 +256,11 @@ function QueueRow({
           transform: [{ translateY: isDragging ? dragY : shift }],
         },
       ]}>
-      <View style={[styles.removeBackground, { backgroundColor: theme.backgroundSelected }]}>
+      <View style={[styles.removeBackground, { backgroundColor: colors.selected }]}>
         <SymbolView
           name={{ ios: 'trash', android: 'delete', web: 'delete' }}
           size={20}
-          tintColor={theme.textSecondary}
+          tintColor={colors.textSecondary}
         />
       </View>
 
@@ -235,7 +269,7 @@ function QueueRow({
         style={[
           styles.swipeLayer,
           {
-            backgroundColor: isCurrent ? theme.backgroundSelected : theme.background,
+            backgroundColor: isCurrent ? colors.selected : colors.background,
             transform: [{ translateX }],
           },
         ]}
@@ -245,10 +279,10 @@ function QueueRow({
           style={({ pressed }) => [styles.rowInner, pressed && styles.pressed]}>
           <CoverArtImage uri={coverArtUri} style={[styles.thumbnail, isPlayed && styles.dimmed]} />
           <View style={[styles.text, isPlayed && styles.dimmed]}>
-            <ThemedText numberOfLines={1} themeColor={isCurrent ? 'text' : undefined}>
+            <ThemedText numberOfLines={1} style={{ color: colors.text }}>
               {track.title}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            <ThemedText type="small" numberOfLines={1} style={{ color: colors.textSecondary }}>
               {track.artist}
             </ThemedText>
           </View>
@@ -259,7 +293,7 @@ function QueueRow({
         <SymbolView
           name={{ ios: 'line.3.horizontal', android: 'drag_handle', web: 'drag_handle' }}
           size={22}
-          tintColor={theme.textSecondary}
+          tintColor={colors.textSecondary}
         />
       </View>
     </Animated.View>

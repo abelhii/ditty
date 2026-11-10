@@ -71,4 +71,6 @@ export type Playlist = {
   /** Seconds. */
   duration: number;
   coverArtId?: string;
+  /** ISO timestamp the server created the playlist. */
+  created?: string;
 };
