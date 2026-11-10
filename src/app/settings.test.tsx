@@ -9,7 +9,13 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-beforeEach(() => useAutoDjSettingsStore.getState().reset());
+let mockWide = false;
+jest.mock('@/hooks/use-is-wide-layout', () => ({ useIsWideLayout: () => mockWide }));
+
+beforeEach(() => {
+  mockWide = false;
+  useAutoDjSettingsStore.getState().reset();
+});
 
 describe('SettingsScreen Auto-DJ section', () => {
   it('shows the saved source and randomness as selected', async () => {
@@ -33,5 +39,16 @@ describe('SettingsScreen Auto-DJ section', () => {
     useAutoDjSettingsStore.setState({ source: 'random' });
     await render(<SettingsScreen />);
     expect(screen.getByRole('radio', { name: 'Some' }).props.accessibilityState.disabled).toBe(true);
+  });
+});
+
+describe('SettingsScreen wide layout', () => {
+  it('groups the settings into Appearance, Playback and Account cards', async () => {
+    mockWide = true;
+    await render(<SettingsScreen />);
+    expect(screen.getByText('Playback')).toBeTruthy();
+    expect(screen.getByText('Account')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Random' })).toBeTruthy();
+    expect(screen.getByText('Log out')).toBeTruthy();
   });
 });

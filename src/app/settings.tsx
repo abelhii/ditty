@@ -4,8 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import {
+  MaxContentWidth,
+  Radius,
+  Spacing,
+  WideContentPadding,
+  WideMaxContentWidth,
+} from '@/constants/theme';
 import { SegmentedChoice } from '@/features/settings/components/SegmentedChoice';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useThemePreferenceStore, type ThemePreference } from '@/hooks/use-theme-preference-store';
 import { useAutoDjSettingsStore, type AutoDjSource } from '@/player/use-auto-dj-settings-store';
@@ -30,92 +37,137 @@ const RANDOMNESS_OPTIONS: { value: number; label: string }[] = [
 
 export default function SettingsScreen() {
   const theme = useTheme();
+  const wide = useIsWideLayout();
   const logout = useAuthStore((state) => state.logout);
   const credentials = useAuthStore((state) => state.credentials);
   const preference = useThemePreferenceStore((state) => state.preference);
   const setPreference = useThemePreferenceStore((state) => state.setPreference);
   const autoDj = useAutoDjSettingsStore();
 
+  const serverInfo = credentials && (
+    <ThemedView type="backgroundElement" style={wide ? undefined : styles.serverInfo}>
+      <ThemedText type="small" themeColor="textSecondary">
+        Signed in to
+      </ThemedText>
+      <ThemedText type="small">{credentials.serverUrl}</ThemedText>
+    </ThemedView>
+  );
+
+  const appearance = (
+    <ThemedView style={styles.appearance}>
+      <ThemedText type="small" themeColor="textSecondary">
+        Appearance
+      </ThemedText>
+      <ThemedView
+        type={wide ? 'background' : 'backgroundElement'}
+        accessibilityRole="radiogroup"
+        style={styles.segments}>
+        {APPEARANCE_OPTIONS.map((option) => {
+          const selected = option.value === preference;
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityRole="radio"
+              accessibilityState={{ selected }}
+              onPress={() => setPreference(option.value)}
+              style={[styles.segment, selected && { backgroundColor: theme.accent }]}>
+              <ThemedText type="small" style={selected ? { color: theme.tint } : undefined}>
+                {option.label}
+              </ThemedText>
+            </Pressable>
+          );
+        })}
+      </ThemedView>
+    </ThemedView>
+  );
+
+  const autoDjSection = (
+    <ThemedView style={styles.appearance}>
+      <ThemedText type="small" themeColor="textSecondary">
+        Auto-DJ
+      </ThemedText>
+      <ThemedView type={wide ? 'background' : 'backgroundElement'} style={styles.autoDjRow}>
+        <ThemedText type="small">Start with Auto-DJ on</ThemedText>
+        <Switch
+          accessibilityLabel="Start with Auto-DJ on"
+          value={autoDj.enabledByDefault}
+          onValueChange={autoDj.setEnabledByDefault}
+        />
+      </ThemedView>
+      <ThemedText type="small" themeColor="textSecondary">
+        Source
+      </ThemedText>
+      <SegmentedChoice
+        label="Auto-DJ source"
+        options={SOURCE_OPTIONS}
+        value={autoDj.source}
+        onChange={autoDj.setSource}
+      />
+      <ThemedText type="small" themeColor="textSecondary">
+        Randomness
+      </ThemedText>
+      <SegmentedChoice
+        label="Auto-DJ randomness"
+        options={RANDOMNESS_OPTIONS}
+        value={autoDj.randomness}
+        onChange={autoDj.setRandomness}
+        disabled={autoDj.source === 'random'}
+      />
+    </ThemedView>
+  );
+
+  const logOut = (
+    <Pressable
+      style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
+      onPress={() => logout()}>
+      <ThemedText style={{ color: theme.accentDeep }}>Log out</ThemedText>
+    </Pressable>
+  );
+
+  if (wide) {
+    const username = credentials?.username;
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={[styles.safeArea, styles.safeAreaWide]}>
+          <ThemedText type="title">Settings</ThemedText>
+          <ThemedView type="backgroundElement" style={styles.profile}>
+            <ThemedView style={[styles.avatar, { backgroundColor: theme.accent }]}>
+              <ThemedText type="subtitle" style={{ color: theme.tint }}>
+                {username?.charAt(0).toUpperCase() ?? ''}
+              </ThemedText>
+            </ThemedView>
+            <ThemedView style={styles.profileText}>
+              <ThemedText type="smallBold">{username ?? ''}</ThemedText>
+              {serverInfo}
+            </ThemedView>
+          </ThemedView>
+          <ThemedView style={styles.cards}>
+            <ThemedView type="backgroundElement" style={styles.card}>
+              <ThemedText type="smallBold">Appearance</ThemedText>
+              {appearance}
+            </ThemedView>
+            <ThemedView type="backgroundElement" style={styles.card}>
+              <ThemedText type="smallBold">Playback</ThemedText>
+              {autoDjSection}
+            </ThemedView>
+            <ThemedView type="backgroundElement" style={styles.card}>
+              <ThemedText type="smallBold">Account</ThemedText>
+              {logOut}
+            </ThemedView>
+          </ThemedView>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedText type="title">Settings</ThemedText>
-
-        {credentials && (
-          <ThemedView type="backgroundElement" style={styles.serverInfo}>
-            <ThemedText type="small" themeColor="textSecondary">
-              Signed in to
-            </ThemedText>
-            <ThemedText type="small">{credentials.serverUrl}</ThemedText>
-          </ThemedView>
-        )}
-
-        <ThemedView style={styles.appearance}>
-          <ThemedText type="small" themeColor="textSecondary">
-            Appearance
-          </ThemedText>
-          <ThemedView
-            type="backgroundElement"
-            accessibilityRole="radiogroup"
-            style={styles.segments}>
-            {APPEARANCE_OPTIONS.map((option) => {
-              const selected = option.value === preference;
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  onPress={() => setPreference(option.value)}
-                  style={[styles.segment, selected && { backgroundColor: theme.accent }]}>
-                  <ThemedText type="small" style={selected ? { color: theme.tint } : undefined}>
-                    {option.label}
-                  </ThemedText>
-                </Pressable>
-              );
-            })}
-          </ThemedView>
-        </ThemedView>
-
-        <ThemedView style={styles.appearance}>
-          <ThemedText type="small" themeColor="textSecondary">
-            Auto-DJ
-          </ThemedText>
-          <ThemedView type="backgroundElement" style={styles.autoDjRow}>
-            <ThemedText type="small">Start with Auto-DJ on</ThemedText>
-            <Switch
-              accessibilityLabel="Start with Auto-DJ on"
-              value={autoDj.enabledByDefault}
-              onValueChange={autoDj.setEnabledByDefault}
-            />
-          </ThemedView>
-          <ThemedText type="small" themeColor="textSecondary">
-            Source
-          </ThemedText>
-          <SegmentedChoice
-            label="Auto-DJ source"
-            options={SOURCE_OPTIONS}
-            value={autoDj.source}
-            onChange={autoDj.setSource}
-          />
-          <ThemedText type="small" themeColor="textSecondary">
-            Randomness
-          </ThemedText>
-          <SegmentedChoice
-            label="Auto-DJ randomness"
-            options={RANDOMNESS_OPTIONS}
-            value={autoDj.randomness}
-            onChange={autoDj.setRandomness}
-            disabled={autoDj.source === 'random'}
-          />
-        </ThemedView>
-
-        <Pressable
-          style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
-          onPress={() => logout()}>
-          <ThemedText style={{ color: theme.accentDeep }}>
-            Log out
-          </ThemedText>
-        </Pressable>
+        {serverInfo}
+        {appearance}
+        {autoDjSection}
+        {logOut}
       </SafeAreaView>
     </ThemedView>
   );
@@ -141,6 +193,7 @@ const styles = StyleSheet.create({
   },
   appearance: {
     gap: Spacing.two,
+    backgroundColor: 'transparent',
   },
   segments: {
     flexDirection: 'row',
@@ -159,6 +212,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: Radius.md,
     padding: Spacing.three,
+  },
+  safeAreaWide: {
+    maxWidth: WideMaxContentWidth,
+    paddingHorizontal: WideContentPadding,
+  },
+  profile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderRadius: Radius.md,
+    padding: Spacing.three,
+  },
+  profileText: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cards: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.three,
+  },
+  card: {
+    flex: 1,
+    borderRadius: Radius.md,
+    padding: Spacing.three,
+    gap: Spacing.three,
   },
   logOutRow: {
     paddingVertical: Spacing.two,
