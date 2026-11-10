@@ -160,6 +160,14 @@ export type GetSearch3Response = {
   searchResult3: SearchResult3;
 };
 
+export type GetRandomSongsResponse = {
+  randomSongs: { song?: SubsonicSong[] };
+};
+
+export type GetSimilarSongs2Response = {
+  similarSongs2: { song?: SubsonicSong[] };
+};
+
 export type GetStarred2Response = {
   starred2: {
     artist?: SubsonicArtist[];

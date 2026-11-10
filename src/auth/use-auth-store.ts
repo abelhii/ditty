@@ -7,6 +7,7 @@ import {
   readPersistedCredentials,
   writePersistedCredentials,
 } from '@/auth/credential-storage';
+import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 
 /** Everything needed to sign future requests. The plaintext password is never part of this. */
@@ -95,6 +96,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // The persisted queue holds server-specific track ids (ADR 0006) — drop it (and stop
     // playback) so the next account never inherits this one's queue.
     usePlayerStore.getState().reset();
+    useAutoDjStore.getState().reset();
     usePlayerStore.persist.clearStorage();
     set({ status: 'unauthenticated', credentials: null, error: null, reauthRequired: false, reauthError: null });
   },

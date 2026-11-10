@@ -19,6 +19,7 @@ import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
 import { useProgress } from '@/player/hooks/use-progress';
 import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
@@ -43,6 +44,7 @@ export function NowPlayingScreen() {
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
   const shuffle = usePlayerStore((state) => state.queue.shuffle);
   const repeat = usePlayerStore((state) => state.queue.repeat);
+  const autoDj = useAutoDjStore((state) => state.enabled);
   const status = usePlaybackStatusStore((state) => state.status);
   const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
   const progress = useProgress();
@@ -192,6 +194,14 @@ export function NowPlayingScreen() {
                   onPress={() => PlaybackController.setRepeat(NEXT_REPEAT[repeat])}
                 />
               </View>
+
+              <IconButton
+                name={{ ios: 'infinity', android: 'all_inclusive', web: 'all_inclusive' }}
+                label="Auto-DJ"
+                selected={autoDj}
+                active={autoDj}
+                onPress={() => PlaybackController.setAutoDj(!autoDj)}
+              />
 
               <Pressable
                 accessibilityRole="button"
