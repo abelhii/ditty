@@ -7,6 +7,7 @@ import { BATCH_SIZE, pickNextBatch, REFILL_THRESHOLD } from '@/player/auto-dj';
 import * as QueueManager from '@/player/QueueManager';
 import type { RepeatMode } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 
@@ -184,16 +185,20 @@ async function autoDjRefill(): Promise<void> {
   refilling = true;
   try {
     const { serverUrl } = credentials;
+    const { source, randomness } = useAutoDjSettingsStore.getState();
+    const wantGenre = source !== 'random' && seed.genre !== undefined;
+    const similarArtistId = source === 'mixed' ? seed.artistId : undefined;
     const [similar, genre, random] = await Promise.allSettled([
-      seed.artistId ? getSimilarSongs2(serverUrl, credentials, seed.artistId, BATCH_SIZE) : Promise.resolve([]),
-      seed.genre
+      similarArtistId ? getSimilarSongs2(serverUrl, credentials, similarArtistId, BATCH_SIZE) : Promise.resolve([]),
+      wantGenre
         ? getRandomSongs(serverUrl, credentials, { size: BATCH_SIZE * 2, genre: seed.genre })
         : Promise.resolve([]),
       getRandomSongs(serverUrl, credentials, { size: BATCH_SIZE }),
     ]);
 
     // Similar is allowed to fail (no Last.fm); only an all-sources failure is worth a Notice.
-    if (genre.status === 'rejected' && random.status === 'rejected') {
+    const genreFailed = !wantGenre || genre.status === 'rejected';
+    if (genreFailed && random.status === 'rejected') {
       if (!noticeShown) {
         noticeShown = true;
         showNotice("Auto-DJ couldn't load more tracks.");
@@ -209,6 +214,7 @@ async function autoDjRefill(): Promise<void> {
     const batch = pickNextBatch({
       pools: { similar: value(similar), genre: value(genre), random: value(random) },
       excludeIds: exclude,
+      randomness: source === 'random' ? 1 : randomness / 100,
     });
     if (batch.length === 0 || !useAutoDjStore.getState().enabled) return;
 

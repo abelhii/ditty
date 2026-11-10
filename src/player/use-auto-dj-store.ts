@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { RECENT_WINDOW } from '@/player/auto-dj';
+import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 
 type AutoDjState = {
   enabled: boolean;
@@ -12,10 +13,10 @@ type AutoDjState = {
   reset: () => void;
 };
 
-/** Client/session state for Auto-DJ. Deliberately not persisted and not part of `QueueState`
- *  (no ADR 0006 persist version bump); the settings issue decides what becomes durable. */
+/** Client/session state for Auto-DJ. Not persisted and not part of `QueueState` (no ADR 0006
+ *  persist version bump); each launch starts from the durable `enabledByDefault` setting. */
 export const useAutoDjStore = create<AutoDjState>((set) => ({
-  enabled: false,
+  enabled: useAutoDjSettingsStore.getState().enabledByDefault,
   recentIds: [],
 
   setEnabled: (enabled) => set({ enabled }),

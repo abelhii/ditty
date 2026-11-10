@@ -22,9 +22,12 @@ generated Tracks, so the Queue never runs off the end.
   been verified against a real Navidrome instance.
 - **No repeats.** Skipped ids: everything already in the Queue plus the last 50 ids Auto-DJ added
   (session-only), so a new Queue doesn't replay what was just generated.
-- **Not persisted, not in `QueueState`.** The flag lives in `use-auto-dj-store`, so ADR 0006's
-  persist version stays at 1. The settings issue (#43) decides what becomes durable and
-  configurable.
+- **Session flag outside `QueueState`; preferences persisted separately.** The on/off flag lives
+  in `use-auto-dj-store`, so ADR 0006's persist version stays at 1; each launch starts from the
+  persisted `enabledByDefault`. Source (`mixed` = genre + similar, `genre`, `random`) and
+  randomness (0 to 100) live in `use-auto-dj-settings-store`, read on every refill so changes
+  apply to the next batch. They are cleared on logout (#43). History window and batch size stay
+  constants until someone needs them configurable.
 - **Repeat wins.** With repeat all/one the Queue never ends, so Auto-DJ does nothing.
 - **Failures are quiet.** If the genre and any-genre fetches both fail, one Notice per session;
   the existing Queue keeps playing.
