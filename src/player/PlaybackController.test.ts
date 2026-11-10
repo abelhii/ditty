@@ -4,6 +4,7 @@ import { useAuthStore } from '@/auth/use-auth-store';
 import { showNotice } from '@/components/use-notice-store';
 import * as PlaybackController from '@/player/PlaybackController';
 import { createQueueState, setRepeat } from '@/player/QueueManager';
+import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 
@@ -22,6 +23,7 @@ const flush = () => new Promise((r) => setTimeout(r, 0));
 beforeEach(() => {
   jest.clearAllMocks();
   useAutoDjStore.getState().reset();
+  useAutoDjSettingsStore.getState().reset();
   usePlayerStore.getState().reset();
   useAuthStore.setState({
     credentials: { serverUrl: 'https://x', username: 'u', token: 't', salt: 's' },
@@ -95,5 +97,44 @@ describe('Auto-DJ refill', () => {
     expect(randomMock).toHaveBeenCalledTimes(1);
     expect(randomMock.mock.calls[0][2]).not.toHaveProperty('genre');
     expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['a', 'r1']);
+  });
+
+  it('source "random" fetches only the any-genre pool, even for a seed with a genre', async () => {
+    useAutoDjSettingsStore.getState().setSource('random');
+    randomMock.mockResolvedValue([track('r1')]);
+    PlaybackController.play([track('a', { genre: 'Rock', artistId: 'ar1' })]);
+    PlaybackController.setAutoDj(true);
+    await flush();
+
+    expect(randomMock).toHaveBeenCalledTimes(1);
+    expect(randomMock.mock.calls[0][2]).not.toHaveProperty('genre');
+    expect(similarMock).not.toHaveBeenCalled();
+  });
+
+  it('source "genre" skips similar songs, "mixed" asks for them', async () => {
+    randomMock.mockResolvedValue([track('r1')]);
+    useAutoDjSettingsStore.getState().setSource('genre');
+    PlaybackController.play([track('a', { genre: 'Rock', artistId: 'ar1' })]);
+    PlaybackController.setAutoDj(true);
+    await flush();
+    expect(similarMock).not.toHaveBeenCalled();
+
+    useAutoDjSettingsStore.getState().setSource('mixed');
+    PlaybackController.play([track('b', { genre: 'Rock', artistId: 'ar1' })]);
+    PlaybackController.setAutoDj(true);
+    await flush();
+    expect(similarMock).toHaveBeenCalledWith('https://x', expect.anything(), 'ar1', expect.any(Number));
+  });
+
+  it('randomness 0 keeps picks on the genre pool', async () => {
+    useAutoDjSettingsStore.getState().setRandomness(0);
+    randomMock.mockImplementation(async (_u, _a, p: { genre?: string }) =>
+      p.genre ? [track('g1'), track('g2')] : [track('r1'), track('r2')],
+    );
+    PlaybackController.play([track('a', { genre: 'Rock' })]);
+    PlaybackController.setAutoDj(true);
+    await flush();
+
+    expect(usePlayerStore.getState().queue.tracks.slice(1, 3).map((t) => t.id)).toEqual(['g1', 'g2']);
   });
 });

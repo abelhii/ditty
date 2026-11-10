@@ -7,6 +7,7 @@ import {
   readPersistedCredentials,
   writePersistedCredentials,
 } from '@/auth/credential-storage';
+import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 
@@ -97,6 +98,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // playback) so the next account never inherits this one's queue.
     usePlayerStore.getState().reset();
     useAutoDjStore.getState().reset();
+    useAutoDjSettingsStore.getState().reset();
+    useAutoDjSettingsStore.persist.clearStorage();
     usePlayerStore.persist.clearStorage();
     set({ status: 'unauthenticated', credentials: null, error: null, reauthRequired: false, reauthError: null });
   },
