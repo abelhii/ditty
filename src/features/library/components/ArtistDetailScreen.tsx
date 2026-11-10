@@ -12,8 +12,9 @@ import { FavouriteButton } from '@/components/FavouriteButton';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, WideMaxContentWidth, Spacing } from '@/constants/theme';
 import { useArtist } from '@/features/library/hooks/use-artist';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 /** The tab stacks that render this screen — the prefix its album drill-down pushes onto, so the
@@ -36,11 +37,13 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
   const credentials = useAuthStore((state) => state.credentials);
   const artistQuery = useArtist(artistId);
 
-  const { columns, tileWidth, coverArtSize } = albumGridLayout(width, scale);
+  const wide = useIsWideLayout();
+
+  const { columns, tileWidth, coverArtSize } = albumGridLayout(width, scale, wide);
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[styles.safeArea, wide && styles.safeAreaWide]} edges={['top', 'left', 'right']}>
         <QueryState query={artistQuery} emptyMessage="Artist not found.">
           {({ artist, albums }) => (
             <FlatList<Album>
@@ -110,6 +113,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     maxWidth: MaxContentWidth,
     width: '100%',
+  },
+  safeAreaWide: {
+    maxWidth: WideMaxContentWidth,
   },
   header: {
     alignItems: 'center',

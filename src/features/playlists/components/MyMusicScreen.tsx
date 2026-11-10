@@ -16,11 +16,12 @@ import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, WideMaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useTheme } from '@/hooks/use-theme';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type MyMusicFilter = 'playlists' | 'albums' | 'artists';
@@ -42,7 +43,9 @@ export function MyMusicScreen() {
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<MyMusicFilter>('playlists');
 
-  const { tileWidth, coverArtSize } = albumGridLayout(width, scale);
+  const wide = useIsWideLayout();
+
+  const { tileWidth, coverArtSize } = albumGridLayout(width, scale, wide);
   const listContentStyle = { paddingBottom: insets.bottom + listBottomInset };
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
@@ -50,7 +53,7 @@ export function MyMusicScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <SafeAreaView style={[styles.safeArea, wide && styles.safeAreaWide]} edges={['top', 'left', 'right']}>
         <ThemedView style={styles.titleRow}>
           <ThemedText type="title">My Music</ThemedText>
           <Pressable
@@ -218,6 +221,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     maxWidth: MaxContentWidth,
     width: '100%',
+  },
+  safeAreaWide: {
+    maxWidth: WideMaxContentWidth,
   },
   titleRow: {
     flexDirection: 'row',
