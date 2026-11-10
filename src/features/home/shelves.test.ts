@@ -1,17 +1,23 @@
 import { homeShelves, SHELF_SIZE } from '@/features/home/shelves';
 
 describe('homeShelves', () => {
-  it('returns the three discover facets in order', () => {
+  it('returns the discover facets in order', () => {
     expect(homeShelves(2026).map((shelf) => shelf.id)).toEqual([
       'recentlyAdded',
       'newReleases',
       'explore',
+      'frequentlyPlayed',
     ]);
   });
 
   it('maps each shelf to its getAlbumList2 ordering', () => {
     const byId = Object.fromEntries(homeShelves(2026).map((shelf) => [shelf.id, shelf.params.type]));
-    expect(byId).toEqual({ recentlyAdded: 'newest', newReleases: 'byYear', explore: 'random' });
+    expect(byId).toEqual({
+      recentlyAdded: 'newest',
+      newReleases: 'byYear',
+      explore: 'random',
+      frequentlyPlayed: 'frequent',
+    });
   });
 
   it('windows New Releases newest-first (fromYear > toYear) from the given year', () => {
