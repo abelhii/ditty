@@ -20,7 +20,7 @@ const PLAYLIST_CARD_COUNT = 2;
 
 /**
  * The Home tab (mobile design): greeting header, a quick-access grid (Your Likes plus the first
- * playlists), the Recently Added shelf, and a "Tunes you haven't heard" list. Deliberately
+ * playlists), the Recently Added and Frequently Played shelves, and a "Tunes you haven't heard" list. Deliberately
  * query-less — text search is the Search tab's job.
  */
 export function HomeScreen() {
@@ -32,6 +32,7 @@ export function HomeScreen() {
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
   const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
   const explore = shelves.find((shelf) => shelf.id === 'explore');
+  const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
 
   return (
     <ThemedView style={styles.container}>
@@ -73,6 +74,7 @@ export function HomeScreen() {
           {recentlyAdded && (
             <AlbumShelf shelf={recentlyAdded} onSeeAll={() => router.push('/library')} />
           )}
+          {frequentlyPlayed && <AlbumShelf shelf={frequentlyPlayed} />}
           {explore && <UnheardTracks shelf={explore} />}
         </ScrollView>
       </SafeAreaView>
