@@ -7,11 +7,7 @@ import {
   useAudioPlayerStatus,
 } from "expo-audio";
 
-import {
-  CoverArtSize,
-  getCoverArtUrl,
-  getStreamUrl,
-} from "@/api/subsonic/endpoints/media";
+import { getStreamUrl } from "@/api/subsonic/endpoints/media";
 import { useAuthStore } from "@/auth/use-auth-store";
 import * as PlaybackController from "@/player/PlaybackController";
 import { getCurrentTrack } from "@/player/QueueManager";
@@ -31,12 +27,12 @@ import { isOffline } from "@/utils/network";
  *    `useAudioPlayer(source)` recreates the native player on every source change, churning the
  *    lock-screen registration and buffers on each skip.
  *
- * 2. Lock-screen controls live here on native (NotificationBridge is a no-op there). expo-audio owns
- *    the OS controls via `setActiveForLockScreen` — play/pause/seek handled natively, no JS round-trip.
- *    It surfaces no next/previous buttons and no reliable way to add them was found (ADR 0009). Web
- *    uses its own Media Session bridge (NotificationBridge.web.tsx), so skip this API there.
+ * 2. The OS lock-screen / notification controls are NOT registered here: expo-audio's
+ *    `setActiveForLockScreen` can't show next/previous, so NotificationBridge drives them through
+ *    expo-media-control and forwards each button into PlaybackController. Don't call
+ *    `setActiveForLockScreen` — two owners of the media session fight over the buttons.
  *
- * 3. Native lock-screen play/pause bypasses PlaybackController, so the status effect reconciles
+ * 3. OS-driven play/pause (audio-focus interruptions, headset buttons) can bypass PlaybackController, so the status effect reconciles
  *    `desiredPlaying` to the player's real state once settled — else a lock-screen pause leaves the
  *    in-app toggle out of phase.
  *
@@ -85,20 +81,6 @@ export function AudioEngine() {
     player.replace({
       uri: getStreamUrl(credentials.serverUrl, currentTrack.id, credentials),
     });
-
-    if (Platform.OS !== "web") {
-      player.setActiveForLockScreen(true, {
-        title: currentTrack.title,
-        artist: currentTrack.artist,
-        albumTitle: currentTrack.album,
-        artworkUrl: getCoverArtUrl(
-          credentials.serverUrl,
-          currentTrack.coverArtId,
-          credentials,
-          CoverArtSize.detail,
-        ),
-      });
-    }
 
     if (usePlayerStore.getState().desiredPlaying) player.play();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by track identity, not the whole object

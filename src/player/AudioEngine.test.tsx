@@ -18,7 +18,6 @@ const mockPlayer = {
   pause: jest.fn(),
   replace: jest.fn(),
   seekTo: jest.fn(),
-  setActiveForLockScreen: jest.fn(),
   loop: false,
 };
 let mockStatus: Record<string, unknown>;
