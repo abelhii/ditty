@@ -16,6 +16,7 @@ import { MiniPlayer } from '@/components/MiniPlayer';
 import { Notice } from '@/components/Notice';
 import { ThemedView } from '@/components/ThemedView';
 import { WidePlayer } from '@/components/WidePlayer';
+import { hydrateDownloads } from '@/features/downloads/downloads-runtime';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -44,6 +45,10 @@ export default function TabLayout() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  useEffect(() => {
+    hydrateDownloads();
+  }, [credentials]);
 
   useEffect(() => {
     if (credentials) {

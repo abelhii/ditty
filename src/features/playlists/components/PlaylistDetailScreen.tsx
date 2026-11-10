@@ -15,6 +15,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { DownloadCollectionButton } from '@/features/downloads/components/DownloadCollectionButton';
 import { useDeletePlaylist } from '@/features/playlists/hooks/use-delete-playlist';
 import { usePlaylist } from '@/features/playlists/hooks/use-playlist';
 import { useRemoveFromPlaylist } from '@/features/playlists/hooks/use-remove-from-playlist';
@@ -89,6 +90,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                           <ThemedText type="smallBold">Play</ThemedText>
                         </ThemedView>
                       </Pressable>
+                      <DownloadCollectionButton kind="playlist" collectionId={playlist.id} tracks={tracks} />
                       <Pressable
                         hitSlop={12}
                         accessibilityRole="button"

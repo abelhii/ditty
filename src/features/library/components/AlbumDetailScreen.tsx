@@ -14,6 +14,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { DownloadCollectionButton } from '@/features/downloads/components/DownloadCollectionButton';
 import { useAlbum } from '@/features/library/hooks/use-album';
 import * as PlaybackController from '@/player/PlaybackController';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
@@ -81,6 +82,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                           </ThemedView>
                         </Pressable>
                         <FavouriteButton target={{ kind: 'album', item: album }} size={26} />
+                        <DownloadCollectionButton kind="album" collectionId={album.id} tracks={tracks} />
                       </ThemedView>
                     </ThemedView>
                   }

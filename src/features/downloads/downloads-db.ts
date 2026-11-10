@@ -113,6 +113,21 @@ export function releaseCollection(
   return orphaned;
 }
 
+export function listDownloadedIds(server: string): string[] {
+  return db
+    .getAllSync<{ track_id: string }>(
+      "SELECT track_id FROM downloads WHERE server_key = ? AND state = 'complete'",
+      server,
+    )
+    .map((row) => row.track_id);
+}
+
+/** Drops every collection's claim on one track — "remove this download" from a track row means
+ *  gone, even if an album or playlist had also asked for it. */
+export function releaseTrack(server: string, trackId: string): void {
+  db.runSync('DELETE FROM download_collections WHERE server_key = ? AND track_id = ?', server, trackId);
+}
+
 export function deleteDownload(server: string, trackId: string): void {
   db.runSync('DELETE FROM downloads WHERE server_key = ? AND track_id = ?', server, trackId);
 }

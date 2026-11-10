@@ -8,9 +8,16 @@ import { showNotice } from '@/components/use-notice-store';
 import { parseApiErrorBody } from '@/features/downloads/api-error-body';
 import { createDownloadManager } from '@/features/downloads/download-manager';
 import { audioFileName, coverFileName, serverKey } from '@/features/downloads/download-paths';
+import { removableCovers } from '@/features/downloads/download-rows';
+import type { DownloadRecord } from '@/features/downloads/download-rows';
 import {
   addMembership,
+  deleteDownload,
   getDownload,
+  listDownloadedIds,
+  listDownloads,
+  releaseCollection,
+  releaseTrack,
   saveDownload,
 } from '@/features/downloads/downloads-db';
 import type { CollectionKind } from '@/features/downloads/downloads-db';
@@ -28,6 +35,11 @@ const MAX_ATTEMPTS = 3;
 
 function destinationUri(server: string, name: string): string {
   return new File(ensureServerDirectory(server), name).uri;
+}
+
+function currentServer(): string | null {
+  const credentials = useAuthStore.getState().credentials;
+  return credentials ? serverKey(credentials.serverUrl, credentials.username) : null;
 }
 
 const manager = createDownloadManager({
@@ -65,7 +77,10 @@ const manager = createDownloadManager({
   },
   deleteFile,
   getDownload,
-  saveDownload,
+  saveDownload: (server, record) => {
+    saveDownload(server, record);
+    useDownloadsStore.getState().markDownloaded([record.track.id]);
+  },
   addMembership,
   setItem: (trackId, item) => useDownloadsStore.getState().setItem(trackId, item),
   onAuthError: () => useAuthStore.getState().sessionExpired(),
@@ -84,4 +99,46 @@ export function downloadTracks(kind: CollectionKind, collectionId: string, track
 
 export function cancelDownload(trackId: string): void {
   manager.cancel(trackId);
+}
+
+export function cancelDownloads(trackIds: string[]): void {
+  for (const id of trackIds) manager.cancel(id);
+}
+
+/** Loads the downloaded-track index from the DB into the store. Call once per signed-in session. */
+export function hydrateDownloads(): void {
+  const server = currentServer();
+  useDownloadsStore.getState().setDownloadedIds(server ? listDownloadedIds(server) : []);
+}
+
+/** Deletes the files and rows of `records`, plus cover art nothing else uses. */
+function deleteRecords(server: string, records: DownloadRecord[]): void {
+  for (const record of records) {
+    deleteFile(record.filePath);
+    deleteDownload(server, record.track.id);
+  }
+  for (const cover of removableCovers(records, listDownloads(server))) deleteFile(cover);
+  useDownloadsStore.getState().markRemoved(records.map((r) => r.track.id));
+}
+
+/** Removes one track's download entirely, whichever album/playlist had asked for it. */
+export function removeTrackDownload(trackId: string): void {
+  const server = currentServer();
+  if (!server) return;
+  manager.cancel(trackId);
+  const record = getDownload(server, trackId);
+  releaseTrack(server, trackId);
+  if (record) deleteRecords(server, [record]);
+}
+
+/** Removes an album/playlist's claim; tracks another collection still needs are kept. */
+export function removeCollectionDownload(
+  kind: CollectionKind,
+  collectionId: string,
+  trackIds: string[],
+): void {
+  const server = currentServer();
+  if (!server) return;
+  for (const id of trackIds) manager.cancel(id);
+  deleteRecords(server, releaseCollection(server, kind, collectionId));
 }

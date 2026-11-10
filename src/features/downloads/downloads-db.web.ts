@@ -24,5 +24,9 @@ export function releaseCollection(
 ): DownloadRecord[] {
   return [];
 }
+export function listDownloadedIds(_server: string): string[] {
+  return [];
+}
+export function releaseTrack(_server: string, _trackId: string): void {}
 export function deleteDownload(_server: string, _trackId: string): void {}
 export function clearServer(_server: string): void {}

@@ -7,6 +7,7 @@ import { PlayingIndicator } from '@/components/PlayingIndicator';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Radius, Spacing } from '@/constants/theme';
+import { DownloadBadge } from '@/features/downloads/components/DownloadBadge';
 import { useTheme } from '@/hooks/use-theme';
 import { useIsCurrentTrack } from '@/player/hooks/use-is-current-track';
 
@@ -63,6 +64,7 @@ export function TrackRow({
           {track.artist}
         </ThemedText>
       </ThemedView>
+      <DownloadBadge trackId={track.id} />
       <ThemedText type="small" themeColor="textSecondary">
         {formatDuration(track.duration)}
       </ThemedText>

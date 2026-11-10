@@ -1,4 +1,4 @@
-import { parseRow, reconcile } from '@/features/downloads/download-rows';
+import { parseRow, reconcile, removableCovers } from '@/features/downloads/download-rows';
 import type { DownloadRecord, DownloadRow } from '@/features/downloads/download-rows';
 
 const track = { id: 't1', title: 'Song', artist: 'A', album: 'B', duration: 200, starred: false };
@@ -66,5 +66,22 @@ describe('reconcile', () => {
     const r = record('file:///d/t1.flac', 'file:///d/cover-x.jpg');
     const result = reconcile([r], ['file:///d/t1.flac', 'file:///d/cover-x.jpg']);
     expect(result).toEqual({ missingFiles: [], orphanFiles: [] });
+  });
+});
+
+describe('removableCovers', () => {
+  it('keeps a cover that a remaining download still uses', () => {
+    const removed = [record('a.flac', 'cover.jpg')];
+    const remaining = [record('b.flac', 'cover.jpg')];
+    expect(removableCovers(removed, remaining)).toEqual([]);
+  });
+
+  it('returns each unused cover once', () => {
+    const removed = [record('a.flac', 'cover.jpg'), record('b.flac', 'cover.jpg'), record('c.flac')];
+    expect(removableCovers(removed, [])).toEqual(['cover.jpg']);
+  });
+
+  it('is empty when nothing is removed', () => {
+    expect(removableCovers([], [record('a.flac', 'cover.jpg')])).toEqual([]);
   });
 });
