@@ -1,9 +1,13 @@
 import { getAlbum } from '@/api/subsonic/endpoints/browsing';
+import { getRandomSongs, getSimilarSongs2 } from '@/api/subsonic/endpoints/discovery';
 import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { showNotice } from '@/components/use-notice-store';
+import { BATCH_SIZE, pickNextBatch, REFILL_THRESHOLD } from '@/player/auto-dj';
 import * as QueueManager from '@/player/QueueManager';
 import type { RepeatMode } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
+import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
 
 /**
@@ -81,6 +85,7 @@ export function skipNext(): void {
     queue,
     desiredPlaying: QueueManager.getCurrentTrack(queue) !== undefined,
   });
+  void autoDjRefillIfLow();
 }
 
 /** Jumps to an existing track in the current queue and plays it — the queue view's tap-to-jump.
@@ -139,4 +144,84 @@ export function reorderQueue(fromIndex: number, toIndex: number): void {
  *  entry point as a UI/notification skip so nothing needs special-case "track ended" logic. */
 export function handleTrackEnded(): void {
   skipNext();
+}
+
+let refilling = false;
+let noticeShown = false;
+
+/** Turns Auto-DJ on or off. Turning it on tops the Queue up immediately if it is running low. */
+export function setAutoDj(enabled: boolean): void {
+  useAutoDjStore.getState().setEnabled(enabled);
+  if (enabled) void autoDjRefillIfLow();
+}
+
+/** Tracks left after the current one; 0 once the queue has run off the end. */
+function remainingAfterCurrent(queue: QueueManager.QueueState): number {
+  return Math.max(0, queue.tracks.length - 1 - queue.currentIndex);
+}
+
+async function autoDjRefillIfLow(): Promise<void> {
+  const queue = currentQueue();
+  // Repeat wraps the queue, so it never runs out; an empty queue has no seed to build on.
+  if (!useAutoDjStore.getState().enabled || queue.repeat !== 'off' || queue.tracks.length === 0) return;
+  if (remainingAfterCurrent(queue) > REFILL_THRESHOLD) return;
+  await autoDjRefill();
+}
+
+/**
+ * Appends a batch of generated Tracks: same-genre and similar Tracks plus a random share (see
+ * auto-dj.ts). Fetches in the background and never blocks playback; if the Queue had already run
+ * off the end by the time the batch lands, playback resumes on the first new Track.
+ */
+async function autoDjRefill(): Promise<void> {
+  const credentials = useAuthStore.getState().credentials;
+  if (refilling || !credentials) return;
+
+  const before = currentQueue();
+  const seed = QueueManager.getCurrentTrack(before) ?? before.tracks[before.tracks.length - 1];
+  if (!seed) return;
+
+  refilling = true;
+  try {
+    const { serverUrl } = credentials;
+    const [similar, genre, random] = await Promise.allSettled([
+      seed.artistId ? getSimilarSongs2(serverUrl, credentials, seed.artistId, BATCH_SIZE) : Promise.resolve([]),
+      seed.genre
+        ? getRandomSongs(serverUrl, credentials, { size: BATCH_SIZE * 2, genre: seed.genre })
+        : Promise.resolve([]),
+      getRandomSongs(serverUrl, credentials, { size: BATCH_SIZE }),
+    ]);
+
+    // Similar is allowed to fail (no Last.fm); only an all-sources failure is worth a Notice.
+    if (genre.status === 'rejected' && random.status === 'rejected') {
+      if (!noticeShown) {
+        noticeShown = true;
+        showNotice("Auto-DJ couldn't load more tracks.");
+      }
+      return;
+    }
+
+    const value = (r: PromiseSettledResult<Track[]>): Track[] => (r.status === 'fulfilled' ? r.value : []);
+    const { recentIds } = useAutoDjStore.getState();
+    // Re-read the queue: it may have changed while the requests were in flight.
+    let queue = currentQueue();
+    const exclude = new Set([...queue.tracks.map((t) => t.id), ...recentIds]);
+    const batch = pickNextBatch({
+      pools: { similar: value(similar), genre: value(genre), random: value(random) },
+      excludeIds: exclude,
+    });
+    if (batch.length === 0 || !useAutoDjStore.getState().enabled) return;
+
+    const wasFinished = queue.currentIndex >= queue.tracks.length;
+    const firstNewIndex = queue.tracks.length;
+    for (const track of batch) queue = QueueManager.enqueue(queue, track);
+    useAutoDjStore.getState().remember(batch.map((t) => t.id));
+    usePlayerStore.setState(
+      wasFinished
+        ? { queue: { ...queue, currentIndex: firstNewIndex }, desiredPlaying: true }
+        : { queue },
+    );
+  } finally {
+    refilling = false;
+  }
 }
