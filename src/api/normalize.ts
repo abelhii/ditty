@@ -83,5 +83,6 @@ export function normalizePlaylist(raw: SubsonicPlaylist): Playlist {
     songCount: raw.songCount,
     duration: raw.duration,
     coverArtId: raw.coverArt,
+    created: raw.created,
   };
 }
