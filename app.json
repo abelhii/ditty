@@ -49,6 +49,7 @@
           "enableBackgroundRecording": false
         }
       ],
+      "expo-media-control",
       "expo-secure-store",
       "expo-sqlite"
     ],
