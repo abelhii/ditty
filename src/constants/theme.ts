@@ -141,6 +141,21 @@ export const WebBottomBarHeight = 64;
 export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: WebBottomBarHeight }) ?? 0;
 export const MaxContentWidth = 800;
 
+/** Window width at and above which web uses the wide layout (sidebar shell) instead of the
+ *  bottom tab bar. */
+export const WideLayoutMinWidth = 900;
+/** Width of the wide layout's left sidebar. */
+export const SidebarWidth = 216;
+/** Side padding of the content pane in the wide layout. */
+export const WideContentPadding = Spacing.five;
+/** Width of the wide layout's floating player pill. */
+export const WidePlayerWidth = 820;
+
+/** Pure threshold check behind `useIsWideLayout`, so it can be tested without rendering. */
+export function isWideWidth(windowWidth: number): boolean {
+  return windowWidth >= WideLayoutMinWidth;
+}
+
 /** Height of the floating mini-player bar. The bar is sized to this, so screens can reserve room
  *  for it without measuring. */
 export const MiniPlayerHeight = 72;

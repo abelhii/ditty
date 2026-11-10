@@ -15,8 +15,10 @@ import {
   ProgressBarHeight,
   Radius,
   Shadow,
+  SidebarWidth,
   Spacing,
 } from '@/constants/theme';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
@@ -34,6 +36,7 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
  */
 export function MiniPlayer() {
   const insets = useSafeAreaInsets();
+  const wide = useIsWideLayout();
   const theme = useTheme();
   const credentials = useAuthStore((state) => state.credentials);
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
@@ -50,7 +53,16 @@ export function MiniPlayer() {
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.list);
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
+    // On wide web there is no bottom tab bar (a sidebar replaces it), so no tab inset, and the bar
+    // docks inside the content pane rather than over the sidebar.
+    <View
+      style={[
+        styles.container,
+        {
+          bottom: insets.bottom + (wide ? 0 : BottomTabInset) + MiniPlayerOffset,
+          left: wide ? SidebarWidth : 0,
+        },
+      ]}>
       <Pressable style={styles.pressable} onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
