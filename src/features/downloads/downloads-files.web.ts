@@ -11,3 +11,6 @@ export function deleteServerDirectory(_server: string): void {}
 export function availableBytes(): number {
   return 0;
 }
+export function fileExists(_uri: string): boolean {
+  return false;
+}

@@ -7,15 +7,12 @@ import {
   useAudioPlayerStatus,
 } from "expo-audio";
 
-import {
-  CoverArtSize,
-  getCoverArtUrl,
-  getStreamUrl,
-} from "@/api/subsonic/endpoints/media";
 import { useAuthStore } from "@/auth/use-auth-store";
+import { localSourceDeps } from "@/features/downloads/local-source-deps";
 import * as PlaybackController from "@/player/PlaybackController";
 import { getCurrentTrack } from "@/player/QueueManager";
 import { usePlaybackStatusStore } from "@/player/use-playback-status-store";
+import { resolveTrackSource } from "@/player/track-source";
 import { usePlayerStore } from "@/player/use-player-store";
 import { isOffline } from "@/utils/network";
 
@@ -82,21 +79,21 @@ export function AudioEngine() {
     }
 
     usePlaybackStatusStore.getState().setStatus("loading");
-    player.replace({
-      uri: getStreamUrl(credentials.serverUrl, currentTrack.id, credentials),
-    });
+    // A downloaded track plays from its local file (offline-capable); anything else streams.
+    const source = resolveTrackSource(
+      currentTrack,
+      credentials.serverUrl,
+      credentials,
+      localSourceDeps(credentials),
+    );
+    player.replace({ uri: source.uri });
 
     if (Platform.OS !== "web") {
       player.setActiveForLockScreen(true, {
         title: currentTrack.title,
         artist: currentTrack.artist,
         albumTitle: currentTrack.album,
-        artworkUrl: getCoverArtUrl(
-          credentials.serverUrl,
-          currentTrack.coverArtId,
-          credentials,
-          CoverArtSize.detail,
-        ),
+        artworkUrl: source.artworkUrl,
       });
     }
 

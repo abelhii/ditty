@@ -11,6 +11,14 @@ jest.mock('@/api/kv-storage', () => ({
   setItem: () => {},
   removeItem: () => {},
 }));
+let mockRecord: unknown = null;
+jest.mock('@/features/downloads/local-source-deps', () => ({
+  localSourceDeps: () => ({
+    lookup: () => mockRecord,
+    fileExists: () => true,
+    onMissingFile: () => {},
+  }),
+}));
 jest.mock('@/utils/network', () => ({ isOffline: () => Promise.resolve(false) }));
 
 const mockPlayer = {
@@ -44,6 +52,7 @@ const playingStatus = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockRecord = null;
   mockStatus = { ...playingStatus };
   useAuthStore.setState({
     credentials: { serverUrl: 'http://example.test', username: 'u', salt: 's', token: 't' },
@@ -76,5 +85,28 @@ describe('AudioEngine track end', () => {
     await act(async () => view.rerender(<AudioEngine />));
 
     expect(usePlayerStore.getState().queue.currentIndex).toBe(2);
+  });
+});
+
+describe('AudioEngine track source', () => {
+  it('streams a track that is not downloaded', async () => {
+    PlaybackController.play([track('a')], 0);
+    await render(<AudioEngine />);
+    expect(mockPlayer.replace).toHaveBeenCalledWith({
+      uri: expect.stringContaining('/rest/stream.view'),
+    });
+  });
+
+  it('plays a downloaded track from its local file', async () => {
+    mockRecord = {
+      track: track('a'),
+      filePath: 'file:///d/a.flac',
+      coverPath: null,
+      sizeBytes: 1,
+      state: 'complete',
+    };
+    PlaybackController.play([track('a')], 0);
+    await render(<AudioEngine />);
+    expect(mockPlayer.replace).toHaveBeenCalledWith({ uri: 'file:///d/a.flac' });
   });
 });

@@ -42,3 +42,7 @@ export function deleteServerDirectory(server: string): void {
 export function availableBytes(): number {
   return Paths.availableDiskSpace;
 }
+
+export function fileExists(uri: string): boolean {
+  return new File(uri).exists;
+}
