@@ -6,6 +6,7 @@ jest.mock('@/api/kv-storage', () => ({
   removeItem: (key: string) => void mockData.delete(key),
 }));
 
+/* eslint-disable @typescript-eslint/no-require-imports -- modules are re-required after `jest.resetModules()` to simulate a relaunch. */
 const KEY = 'music-player-theme-preference';
 
 describe('useThemePreferenceStore', () => {

@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { TrackRow } from '@/components/TrackRow';
@@ -11,7 +11,10 @@ import { createQueueState } from '@/player/QueueManager';
 // theme.ts imports the web stylesheet for its side effect; jest can't parse CSS.
 jest.mock('@/global.css', () => ({}));
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
-jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+jest.mock('react-native-reanimated', () => ({
+  ...require('react-native-reanimated/mock'),
+  useReducedMotion: () => false,
+}));
 jest.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => 'light' }));
 jest.mock('@/api/kv-storage', () => ({ getItem: () => null, setItem: () => {}, removeItem: () => {} }));
 
@@ -22,8 +25,8 @@ function colorOf(text: string) {
 }
 
 function rowBackground() {
-  const root = screen.toJSON() as { props: { style: unknown } };
-  return StyleSheet.flatten(root.props.style as never).backgroundColor;
+  const root = screen.toJSON() as unknown as { props: { style: StyleProp<ViewStyle> } };
+  return (StyleSheet.flatten(root.props.style) as ViewStyle).backgroundColor;
 }
 
 function setCurrentTrack(current: Track | null) {
@@ -67,6 +70,13 @@ describe('TrackRow', () => {
       (row.props.onResponderGrant as (e: unknown) => void)({ nativeEvent: { touches: [] }, persist() {}, currentTarget: 1 });
     });
     expect(rowBackground()).toBe(Colors.light.rowPressed);
+  });
+
+  it('renders the animated equaliser while the current track is playing', async () => {
+    usePlaybackStatusStore.setState({ status: 'playing' });
+    await renderRow({ isPlaying: true, position: 3 });
+    expect(screen.queryByText('3')).toBeNull();
+    expect(screen.getByText('Song')).toBeTruthy();
   });
 
   it('keeps the position visible when the track is not current', async () => {
