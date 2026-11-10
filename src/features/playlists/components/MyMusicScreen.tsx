@@ -16,11 +16,12 @@ import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { ListBottomInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useTheme } from '@/hooks/use-theme';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type MyMusicFilter = 'playlists' | 'albums' | 'artists';
 
@@ -32,6 +33,7 @@ export function MyMusicScreen() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const playlistsQuery = usePlaylists();
@@ -41,7 +43,7 @@ export function MyMusicScreen() {
   const [filter, setFilter] = useState<MyMusicFilter>('playlists');
 
   const { tileWidth, coverArtSize } = albumGridLayout(width, scale);
-  const listContentStyle = { paddingBottom: insets.bottom + ListBottomInset };
+  const listContentStyle = { paddingBottom: insets.bottom + listBottomInset };
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
     credentials ? getCoverArtUrl(credentials.serverUrl, coverArtId, credentials, size) : undefined;

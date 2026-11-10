@@ -37,6 +37,10 @@ jest.mock('expo-media-control', () => ({
   PlaybackState: { NONE: 0, STOPPED: 1, PLAYING: 2, PAUSED: 3, BUFFERING: 4, ERROR: 5 },
 }));
 jest.mock('@/global.css', () => ({}));
+jest.mock('@/features/downloads/local-source-deps', () => ({ localSourceDeps: () => ({}) }));
+jest.mock('@/player/track-source', () => ({
+  resolveTrackSource: () => ({ uri: 'x', artworkUrl: 'https://art/c1', isLocal: false }),
+}));
 jest.mock('@/api/kv-storage', () => ({
   getItem: () => null,
   setItem: () => {},

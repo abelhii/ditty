@@ -13,9 +13,10 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
-import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbum } from '@/features/library/hooks/use-album';
 import * as PlaybackController from '@/player/PlaybackController';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type AlbumDetailScreenProps = {
   albumId: string;
@@ -27,6 +28,7 @@ type AlbumDetailScreenProps = {
 export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
   const albumQuery = useAlbum(albumId);
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
@@ -44,7 +46,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                   data={tracks}
                   keyExtractor={(track) => track.id}
                   contentContainerStyle={{
-                    paddingBottom: insets.bottom + ListBottomInset,
+                    paddingBottom: insets.bottom + listBottomInset,
                   }}
                   ListHeaderComponent={
                     <ThemedView style={styles.header}>

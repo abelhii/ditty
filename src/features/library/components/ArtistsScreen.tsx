@@ -11,9 +11,10 @@ import { GenreRow } from '@/components/GenreRow';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
 import { useGenres } from '@/features/library/hooks/use-genres';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type LibraryView = 'artists' | 'genres';
 
@@ -23,6 +24,7 @@ type LibraryView = 'artists' | 'genres';
 export function ArtistsScreen({ initialView = 'artists' }: { initialView?: LibraryView } = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
   const [view, setView] = useState<LibraryView>(initialView);
 
@@ -30,7 +32,7 @@ export function ArtistsScreen({ initialView = 'artists' }: { initialView?: Libra
   const genresQuery = useGenres();
 
   const listContentStyle = {
-    paddingBottom: insets.bottom + ListBottomInset,
+    paddingBottom: insets.bottom + listBottomInset,
   };
 
   return (

@@ -9,6 +9,7 @@ import {
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import {
   Pressable,
+  type PressableStateCallbackType,
   StyleSheet,
   useWindowDimensions,
   View,
@@ -19,16 +20,22 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";
 
-import { Colors, MaxContentWidth, Spacing, WebBottomBarHeight } from "@/constants/theme";
+import { useAuthStore } from "@/auth/use-auth-store";
+import { SidebarPlaylists } from "@/features/playlists/components/SidebarPlaylists";
+import {
+  Colors,
+  isWideWidth,
+  Radius,
+  SidebarWidth,
+  Spacing,
+  WebBottomBarHeight,
+} from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
-// Below this width the nav is a bottom tab bar (icon over label, like the native tabs); at and
-// above it the top pill bar is used. Kept narrow-only so a wide-screen sidebar can replace the top
-// bar later.
-export const BottomTabBarMaxWidth = 900;
-
-function useIsBottomTabBar() {
-  return useWindowDimensions().width < BottomTabBarMaxWidth;
+// Below the wide breakpoint (see `isWideWidth`) the nav is a bottom tab bar (icon over label, like
+// the native tabs); at and above it a left sidebar replaces it.
+function useIsWide() {
+  return isWideWidth(useWindowDimensions().width);
 }
 
 const TabIcons: Record<string, SymbolViewProps["name"]> = {
@@ -38,8 +45,15 @@ const TabIcons: Record<string, SymbolViewProps["name"]> = {
   Settings: { ios: "slider.horizontal.3", android: "tune", web: "tune" },
 };
 
+type SidebarPressableState = PressableStateCallbackType & {
+  hovered?: boolean;
+  focused?: boolean;
+};
+
+const AVATAR_SIZE = 36;
+
 export default function AppTabs() {
-  const bottom = useIsBottomTabBar();
+  const wide = useIsWide();
 
   return (
     // TabList and TabSlot must stay DIRECT children of <Tabs>: it walks its own children (only
@@ -47,8 +61,8 @@ export default function AppTabs() {
     // <View> hides the triggers ("Couldn't find any screens"). <Tabs> already lays its container out
     // as flex:1 column, so ordering the bar first and giving the slot flex:1 puts content BELOW the
     // bar instead of behind it — no absolute positioning needed.
-    <Tabs>
-      {bottom && <TabSlot style={styles.slot} />}
+    <Tabs style={wide ? styles.wideRoot : styles.root}>
+      {!wide && <TabSlot style={styles.slot} />}
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/home" asChild>
@@ -57,6 +71,7 @@ export default function AppTabs() {
           <TabTrigger name="library" href="/library" asChild>
             <TabButton>Library</TabButton>
           </TabTrigger>
+          {wide && <SidebarPlaylists />}
           <TabTrigger name="search" href="/search" asChild>
             <TabButton>Search</TabButton>
           </TabTrigger>
@@ -65,7 +80,7 @@ export default function AppTabs() {
           </TabTrigger>
         </CustomTabList>
       </TabList>
-      {!bottom && <TabSlot style={styles.slot} />}
+      {wide && <TabSlot style={styles.slot} />}
     </Tabs>
   );
 }
@@ -75,39 +90,84 @@ export function TabButton({
   isFocused,
   ...props
 }: TabTriggerSlotProps) {
-  const bottom = useIsBottomTabBar();
+  const wide = useIsWide();
   const theme = useTheme();
+  const username = useAuthStore((state) => state.credentials?.username);
   const label = typeof children === "string" ? children : "";
   const iconName = TabIcons[label];
 
-  if (bottom) {
+  if (wide) {
+    // Search lives in the content pane's top bar on wide, and Settings is the account row below.
+    // Both triggers stay mounted: <Tabs> registers its routes from the triggers it finds.
+    if (label === "Search") return null;
+
+    if (label === "Settings") {
+      return (
+        <Pressable
+          {...props}
+          accessibilityLabel="Settings"
+          style={({ pressed, hovered, focused }: SidebarPressableState) => [
+            styles.accountRow,
+            { borderTopColor: theme.border },
+            (hovered || focused) && { backgroundColor: theme.backgroundElement },
+            pressed && styles.pressed,
+          ]}
+        >
+          <ThemedView
+            type={isFocused ? "backgroundSelected" : "backgroundElement"}
+            style={styles.avatar}
+          >
+            <ThemedText type="smallBold">
+              {username?.charAt(0).toUpperCase() ?? ""}
+            </ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.accountText}>
+            <ThemedText type="smallBold" numberOfLines={1}>
+              {username ?? ""}
+            </ThemedText>
+            <ThemedText
+              type="small"
+              numberOfLines={1}
+              style={{ color: isFocused ? theme.accent : theme.textSecondary }}
+            >
+              Settings
+            </ThemedText>
+          </ThemedView>
+        </Pressable>
+      );
+    }
+
     const color = isFocused ? theme.accent : theme.textSecondary;
     return (
       <Pressable
         {...props}
-        style={({ pressed }) => [styles.bottomTab, pressed && styles.pressed]}
+        style={({ pressed, hovered, focused }: SidebarPressableState) => [
+          styles.sidebarItem,
+          (hovered || focused) && { backgroundColor: theme.backgroundElement },
+          pressed && styles.pressed,
+        ]}
       >
-        {iconName && <SymbolView name={iconName} size={26} tintColor={color} />}
-        <ThemedText type="small" style={{ color }}>
+        {iconName && <SymbolView name={iconName} size={22} tintColor={color} />}
+        <ThemedText
+          type={isFocused ? "smallBold" : "small"}
+          style={{ color: isFocused ? theme.accent : theme.text }}
+        >
           {children}
         </ThemedText>
       </Pressable>
     );
   }
 
+  const color = isFocused ? theme.accent : theme.textSecondary;
   return (
-    <Pressable {...props} style={({ pressed }) => pressed && styles.pressed}>
-      <ThemedView
-        type={isFocused ? "backgroundSelected" : "backgroundElement"}
-        style={styles.tabButtonView}
-      >
-        <ThemedText
-          type="small"
-          themeColor={isFocused ? "text" : "textSecondary"}
-        >
-          {children}
-        </ThemedText>
-      </ThemedView>
+    <Pressable
+      {...props}
+      style={({ pressed }) => [styles.bottomTab, pressed && styles.pressed]}
+    >
+      {iconName && <SymbolView name={iconName} size={26} tintColor={color} />}
+      <ThemedText type="small" style={{ color }}>
+        {children}
+      </ThemedText>
     </Pressable>
   );
 }
@@ -115,17 +175,20 @@ export function TabButton({
 export function CustomTabList(props: TabListProps) {
   const scheme = useColorScheme();
   const colors = Colors[scheme === "unspecified" ? "light" : scheme];
-  const bottom = useIsBottomTabBar();
+  const wide = useIsWide();
 
-  if (bottom) {
+  if (wide) {
     return (
       <View
         {...props}
         style={[
-          styles.bottomBar,
-          { backgroundColor: colors.background, borderTopColor: colors.border },
+          styles.sidebar,
+          { backgroundColor: colors.background, borderRightColor: colors.border },
         ]}
       >
+        <ThemedText type="subtitle" style={styles.brandText}>
+          Sicmu
+        </ThemedText>
         {props.children}
       </View>
     );
@@ -134,15 +197,12 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View
       {...props}
-      style={[styles.tabListContainer, { backgroundColor: colors.background }]}
+      style={[
+        styles.bottomBar,
+        { backgroundColor: colors.background, borderTopColor: colors.border },
+      ]}
     >
-      <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Sicmu
-        </ThemedText>
-
-        {props.children}
-      </ThemedView>
+      {props.children}
     </View>
   );
 }
@@ -163,38 +223,53 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: Spacing.half,
   },
-  tabListContainer: {
-    padding: Spacing.three,
-    justifyContent: "center",
-    alignItems: "center",
+  // <Tabs> spreads `style` over its own flex:1 root, so both variants restate it.
+  root: {
+    flex: 1,
+  },
+  wideRoot: {
+    flex: 1,
     flexDirection: "row",
   },
-  innerContainer: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.five,
-    borderRadius: Spacing.five,
-    flexDirection: "row",
-    alignItems: "center",
-    flexGrow: 1,
-    gap: Spacing.two,
-    maxWidth: MaxContentWidth,
+  sidebar: {
+    width: SidebarWidth,
+    paddingTop: Spacing.four,
+    paddingHorizontal: Spacing.two,
+    gap: Spacing.one,
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
   brandText: {
-    marginRight: "auto",
+    paddingHorizontal: Spacing.two,
+    paddingBottom: Spacing.three,
+  },
+  sidebarItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.sm,
+  },
+  accountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.two,
+    padding: Spacing.two,
+    marginBottom: Spacing.two,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderRadius: Radius.sm,
+  },
+  avatar: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: Radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  accountText: {
+    flex: 1,
   },
   pressed: {
     opacity: 0.7,
-  },
-  tabButtonView: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
-  },
-  externalPressable: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: Spacing.one,
-    marginLeft: Spacing.three,
   },
 });

@@ -5,14 +5,17 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedView } from '@/components/ThemedView';
-import { ListBottomInset, MaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
+import { WideHome } from '@/features/home/components/WideHome';
 import { homeShelves } from '@/features/home/shelves';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 const LIKES_ICON_SIZE = 64;
 /** How many playlists the quick-access grid shows, two per row. */
@@ -24,9 +27,15 @@ const PLAYLIST_CARD_COUNT = 2;
  * query-less — text search is the Search tab's job.
  */
 export function HomeScreen() {
+  const wide = useIsWideLayout();
+  return wide ? <WideHome /> : <NarrowHome />;
+}
+
+function NarrowHome() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const playlists = usePlaylists().data ?? [];
   // Injected once per mount so New Releases' year window is stable across re-renders.
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
@@ -40,7 +49,7 @@ export function HomeScreen() {
         <ScrollView
           contentContainerStyle={{
             paddingTop: Spacing.three,
-            paddingBottom: insets.bottom + ListBottomInset,
+            paddingBottom: insets.bottom + listBottomInset,
             gap: Spacing.five,
           }}>
           <HomeHeader />

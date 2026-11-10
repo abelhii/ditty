@@ -15,9 +15,11 @@ import AppTabs from '@/components/AppTabs';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { Notice } from '@/components/Notice';
 import { ThemedView } from '@/components/ThemedView';
+import { WidePlayer } from '@/components/WidePlayer';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useThemePreferenceStore } from '@/hooks/use-theme-preference-store';
 import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
@@ -27,6 +29,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const wide = useIsWideLayout();
   const themePreference = useThemePreferenceStore((state) => state.preference);
   const status = useAuthStore((state) => state.status);
   const hydrate = useAuthStore((state) => state.hydrate);
@@ -60,7 +63,7 @@ export default function TabLayout() {
         {status === 'authenticated' && (
           <>
             <AppTabs />
-            <MiniPlayer />
+            {wide ? <WidePlayer /> : <MiniPlayer />}
             <NowPlayingScreen />
             <QueueScreen />
             <AudioEngine />

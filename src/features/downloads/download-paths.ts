@@ -1,5 +1,8 @@
 import { md5 } from 'js-md5';
 
+/** The slice of the stored credentials that identifies a server+user. */
+export type StoredCredentialsLike = { serverUrl: string; username: string };
+
 /** Stable, filesystem-safe key for one server+user pair — downloads are server-specific. */
 export function serverKey(serverUrl: string, username: string): string {
   return md5(`${serverUrl.toLowerCase()}|${username}`).slice(0, 12);

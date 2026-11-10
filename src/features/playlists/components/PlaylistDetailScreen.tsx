@@ -14,13 +14,14 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
-import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useDeletePlaylist } from '@/features/playlists/hooks/use-delete-playlist';
 import { usePlaylist } from '@/features/playlists/hooks/use-playlist';
 import { useRemoveFromPlaylist } from '@/features/playlists/hooks/use-remove-from-playlist';
 import { useUpdatePlaylist } from '@/features/playlists/hooks/use-update-playlist';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type PlaylistDetailScreenProps = {
   playlistId: string;
@@ -37,6 +38,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
   const playlistQuery = usePlaylist(playlistId);
 
@@ -57,7 +59,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
               <FlatList<Track>
                 data={tracks}
                 keyExtractor={(track, index) => `${track.id}-${index}`}
-                contentContainerStyle={{ paddingBottom: insets.bottom + ListBottomInset }}
+                contentContainerStyle={{ paddingBottom: insets.bottom + listBottomInset }}
                 ListHeaderComponent={
                   <ThemedView style={styles.header}>
                     <CoverArtImage

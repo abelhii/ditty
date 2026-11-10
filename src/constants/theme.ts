@@ -141,6 +141,26 @@ export const WebBottomBarHeight = 64;
 export const BottomTabInset = Platform.select({ ios: 50, android: 80, web: WebBottomBarHeight }) ?? 0;
 export const MaxContentWidth = 800;
 
+/** Window width at and above which web uses the wide layout (sidebar shell) instead of the
+ *  bottom tab bar. */
+export const WideLayoutMinWidth = 900;
+/** Width of the wide layout's left sidebar. */
+export const SidebarWidth = 216;
+/** Side padding of the content pane in the wide layout. */
+export const WideContentPadding = Spacing.five;
+/** Width of the wide layout's floating player pill. */
+export const WidePlayerWidth = 820;
+/** Widest the content pane grows in the wide layout; beyond it the pane stays centred. */
+export const WideMaxContentWidth = 1200;
+/** Height of the wide layout's floating player pill, and its gap above the window's bottom edge. */
+export const WidePlayerHeight = 88;
+export const WidePlayerOffset = Spacing.three;
+
+/** Pure threshold check behind `useIsWideLayout`, so it can be tested without rendering. */
+export function isWideWidth(windowWidth: number): boolean {
+  return windowWidth >= WideLayoutMinWidth;
+}
+
 /** Height of the floating mini-player bar. The bar is sized to this, so screens can reserve room
  *  for it without measuring. */
 export const MiniPlayerHeight = 72;
@@ -149,3 +169,5 @@ export const MiniPlayerOffset = Spacing.one;
 /** Bottom padding for scrollable screens, added to the bottom safe-area inset: clears the tab bar
  *  and the floating mini player so the last row can scroll fully into view. */
 export const ListBottomInset = BottomTabInset + MiniPlayerOffset + MiniPlayerHeight + Spacing.three;
+/** `ListBottomInset` for the wide layout: no tab bar, but the taller floating player pill. */
+export const WideListBottomInset = WidePlayerOffset + WidePlayerHeight + Spacing.three;

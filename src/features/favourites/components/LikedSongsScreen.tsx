@@ -11,9 +11,10 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
-import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import * as PlaybackController from '@/player/PlaybackController';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 /** The pinned My Music shortcut's destination (Build Order step 7b, split out of the old
  *  Favourites screen per the v4 restyle — see PLAN.md step 7b amendment): the user's starred
@@ -21,6 +22,7 @@ import * as PlaybackController from '@/player/PlaybackController';
  *  Albums/Artists filter chips instead. */
 export function LikedSongsScreen() {
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
   const favouritesQuery = useFavourites();
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
@@ -40,7 +42,7 @@ export function LikedSongsScreen() {
             <FlatList<Track>
               data={tracks}
               keyExtractor={(track) => track.id}
-              contentContainerStyle={{ paddingBottom: insets.bottom + ListBottomInset }}
+              contentContainerStyle={{ paddingBottom: insets.bottom + listBottomInset }}
               refreshing={favouritesQuery.isFetching}
               onRefresh={() => favouritesQuery.refetch()}
               ListEmptyComponent={<EmptyMessage text="No starred songs." />}

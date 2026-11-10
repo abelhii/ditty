@@ -117,6 +117,11 @@ export function retry(): void {
   usePlayerStore.setState({ desiredPlaying: true });
 }
 
+/** Sets the output volume (clamped to 0-1). */
+export function setVolume(volume: number): void {
+  usePlayerStore.getState().setVolume(Math.min(1, Math.max(0, volume)));
+}
+
 export function setShuffle(enabled: boolean): void {
   usePlayerStore.setState({ queue: QueueManager.setShuffle(currentQueue(), enabled) });
 }

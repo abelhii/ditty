@@ -1,11 +1,12 @@
 import { Command, MediaControl, PlaybackState } from 'expo-media-control';
 import { useEffect, useRef } from 'react';
 
-import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { localSourceDeps } from '@/features/downloads/local-source-deps';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
 import { usePlaybackStatusStore, type PlaybackStatus } from '@/player/use-playback-status-store';
+import { resolveTrackSource } from '@/player/track-source';
 import { usePlayerStore } from '@/player/use-player-store';
 
 const STATE_FOR_STATUS: Record<PlaybackStatus, PlaybackState> = {
@@ -83,12 +84,13 @@ export function NotificationBridge() {
   // Metadata (with artwork and duration) follows the current track.
   useEffect(() => {
     if (!currentTrack || !credentials) return;
-    const artworkUri = getCoverArtUrl(
+    // The downloaded cover when there is one, so the artwork also shows offline.
+    const artworkUri = resolveTrackSource(
+      currentTrack,
       credentials.serverUrl,
-      currentTrack.coverArtId,
       credentials,
-      CoverArtSize.detail,
-    );
+      localSourceDeps(credentials),
+    ).artworkUrl;
     void MediaControl.updateMetadata({
       title: currentTrack.title,
       artist: currentTrack.artist,

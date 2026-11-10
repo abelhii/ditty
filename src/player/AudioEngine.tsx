@@ -7,11 +7,12 @@ import {
   useAudioPlayerStatus,
 } from "expo-audio";
 
-import { getStreamUrl } from "@/api/subsonic/endpoints/media";
 import { useAuthStore } from "@/auth/use-auth-store";
+import { localSourceDeps } from "@/features/downloads/local-source-deps";
 import * as PlaybackController from "@/player/PlaybackController";
 import { getCurrentTrack } from "@/player/QueueManager";
 import { usePlaybackStatusStore } from "@/player/use-playback-status-store";
+import { resolveTrackSource } from "@/player/track-source";
 import { usePlayerStore } from "@/player/use-player-store";
 import { isOffline } from "@/utils/network";
 
@@ -45,6 +46,7 @@ export function AudioEngine() {
   const desiredPlaying = usePlayerStore((state) => state.desiredPlaying);
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const retryNonce = usePlayerStore((state) => state.retryNonce);
+  const volume = usePlayerStore((state) => state.volume);
 
   const player = useAudioPlayer(null, { updateInterval: 1000 });
   const status = useAudioPlayerStatus(player);
@@ -78,9 +80,14 @@ export function AudioEngine() {
     }
 
     usePlaybackStatusStore.getState().setStatus("loading");
-    player.replace({
-      uri: getStreamUrl(credentials.serverUrl, currentTrack.id, credentials),
-    });
+    // A downloaded track plays from its local file (offline-capable); anything else streams.
+    const source = resolveTrackSource(
+      currentTrack,
+      credentials.serverUrl,
+      credentials,
+      localSourceDeps(credentials),
+    );
+    player.replace({ uri: source.uri });
 
     if (usePlayerStore.getState().desiredPlaying) player.play();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by track identity, not the whole object
@@ -101,6 +108,11 @@ export function AudioEngine() {
     // eslint-disable-next-line react-hooks/immutability
     player.loop = queue.repeat === "one";
   }, [player, queue.repeat]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- same native SharedObject property as `loop`
+    player.volume = volume;
+  }, [player, volume]);
 
   useEffect(() => {
     if (seekRequest === null) return;

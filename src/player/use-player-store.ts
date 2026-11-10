@@ -25,12 +25,15 @@ type PlayerState = {
    *  stream after a playback error — the source string changes, so `<Audio>` reloads it without
    *  remounting (which would break the native AudioContext graph). Not persisted. */
   retryNonce: number;
+  /** Output volume, 0-1. Session-only (not persisted); AudioEngine applies it to the player. */
+  volume: number;
 
   setQueue: (queue: QueueState) => void;
   setDesiredPlaying: (desiredPlaying: boolean) => void;
   requestSeek: (seconds: number) => void;
   clearSeekRequest: () => void;
   requestReload: () => void;
+  setVolume: (volume: number) => void;
 
   /** Flips the `starred` flag on every queued copy of a track — keeps the now-playing/queue
    *  heart in sync with an optimistic favourite toggle (see features/favourites useStar/useUnstar). */
@@ -63,12 +66,14 @@ export const usePlayerStore = create<PlayerState>()(
       desiredPlaying: false,
       seekRequest: null,
       retryNonce: 0,
+      volume: 1,
 
       setQueue: (queue) => set({ queue }),
       setDesiredPlaying: (desiredPlaying) => set({ desiredPlaying }),
       requestSeek: (seconds) => set({ seekRequest: seconds }),
       clearSeekRequest: () => set({ seekRequest: null }),
       requestReload: () => set((state) => ({ retryNonce: state.retryNonce + 1 })),
+      setVolume: (volume) => set({ volume }),
 
       setTrackStarred: (trackId, starred) =>
         set((state) => {
