@@ -16,8 +16,6 @@ import { TrackRow } from '@/components/TrackRow';
 import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useAlbum } from '@/features/library/hooks/use-album';
 import * as PlaybackController from '@/player/PlaybackController';
-import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/use-player-store';
 
 type AlbumDetailScreenProps = {
   albumId: string;
@@ -31,8 +29,6 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const credentials = useAuthStore((state) => state.credentials);
   const albumQuery = useAlbum(albumId);
-  const queue = usePlayerStore((state) => state.queue);
-  const currentTrack = getCurrentTrack(queue);
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
   return (
@@ -90,7 +86,6 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                     <TrackRow
                       track={item}
                       position={index + 1}
-                      isPlaying={currentTrack?.id === item.id}
                       onPress={() => PlaybackController.play(tracks, index)}
                       onOverflowPress={() => setMenuTrack(item)}
                     />

@@ -1,12 +1,14 @@
 import { SymbolView } from 'expo-symbols';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { PlayingIndicator } from '@/components/PlayingIndicator';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useIsCurrentTrack } from '@/player/hooks/use-is-current-track';
 
 const THUMBNAIL_SIZE = 40;
 
@@ -18,7 +20,6 @@ type TrackRowProps = {
   position?: number;
   /** Cover art URL, used for the leading thumbnail when `position` is omitted. */
   coverArtUri?: string;
-  isPlaying?: boolean;
   onPress: () => void;
   onOverflowPress: () => void;
 };
@@ -27,19 +28,28 @@ export function TrackRow({
   track,
   position,
   coverArtUri,
-  isPlaying = false,
   onPress,
   onOverflowPress,
 }: TrackRowProps) {
   const theme = useTheme();
+  const isPlaying = useIsCurrentTrack(track.id);
 
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
-      {position !== undefined ? (
-        <ThemedText
-          type="small"
-          themeColor={isPlaying ? 'accent' : 'textSecondary'}
-          style={styles.position}>
+    <Pressable
+      style={(state) => [
+        styles.row,
+        // Pressed beats hover beats playing. `hovered` is only set by react-native-web.
+        isPlaying && { backgroundColor: theme.rowPlaying },
+        (state as { hovered?: boolean }).hovered && { backgroundColor: theme.rowHover },
+        state.pressed && { backgroundColor: theme.rowPressed },
+      ]}
+      onPress={onPress}>
+      {isPlaying ? (
+        <View style={position !== undefined ? styles.position : styles.thumbnailSlot}>
+          <PlayingIndicator />
+        </View>
+      ) : position !== undefined ? (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.position}>
           {position}
         </ThemedText>
       ) : (
@@ -86,12 +96,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.four,
   },
-  pressed: {
-    opacity: 0.7,
-  },
   position: {
     width: Spacing.four,
+    alignItems: 'center',
     textAlign: 'center',
+  },
+  thumbnailSlot: {
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   thumbnail: {
     width: THUMBNAIL_SIZE,

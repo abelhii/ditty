@@ -29,6 +29,10 @@ export const Colors = {
     shadow: '#2e2b25',
     /** Hairline outlines and dividers (e.g. inactive filter chips). */
     border: '#d1d0cc',
+    /** Track-row background tints (accent at 8% / 12% / 20% alpha): hover, now playing, pressed. */
+    rowHover: '#5f734014',
+    rowPlaying: '#5f73401f',
+    rowPressed: '#5f734033',
   },
   dark: {
     text: '#ffffff',
@@ -41,6 +45,9 @@ export const Colors = {
     tint: '#212225',
     shadow: '#000000',
     border: '#2E3135',
+    rowHover: '#5f734014',
+    rowPlaying: '#5f73401f',
+    rowPressed: '#5f734033',
   },
 } as const;
 

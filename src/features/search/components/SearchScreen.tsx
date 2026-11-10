@@ -29,8 +29,6 @@ import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
 import { useSearch } from "@/features/search/hooks/use-search";
 import { useTheme } from "@/hooks/use-theme";
 import * as PlaybackController from "@/player/PlaybackController";
-import { getCurrentTrack } from "@/player/QueueManager";
-import { usePlayerStore } from "@/player/use-player-store";
 
 /** The Search tab (Build Order step 6): a debounced text search over `search3`, rendered as one
  *  combined sectioned scroll (artists / albums / songs). An empty box shows Recent Searches; a song
@@ -42,7 +40,6 @@ export function SearchScreen() {
   const theme = useTheme();
   const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
-  const currentTrack = getCurrentTrack(usePlayerStore((state) => state.queue));
 
   const [input, setInput] = useState("");
   const { query, term, isActive } = useSearch(input);
@@ -163,7 +160,6 @@ export function SearchScreen() {
                           track.coverArtId,
                           CoverArtSize.list,
                         )}
-                        isPlaying={currentTrack?.id === track.id}
                         onPress={() => playSong(track)}
                         onOverflowPress={() => setMenuTrack(track)}
                       />

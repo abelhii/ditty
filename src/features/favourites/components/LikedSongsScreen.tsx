@@ -14,8 +14,6 @@ import { TrackRow } from '@/components/TrackRow';
 import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import * as PlaybackController from '@/player/PlaybackController';
-import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/use-player-store';
 
 /** The pinned My Music shortcut's destination (Build Order step 7b, split out of the old
  *  Favourites screen per the v4 restyle — see PLAN.md step 7b amendment): the user's starred
@@ -25,7 +23,6 @@ export function LikedSongsScreen() {
   const insets = useSafeAreaInsets();
   const credentials = useAuthStore((state) => state.credentials);
   const favouritesQuery = useFavourites();
-  const currentTrack = getCurrentTrack(usePlayerStore((state) => state.queue));
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
   const coverUri = (coverArtId: string | undefined, size: number) =>
@@ -51,7 +48,6 @@ export function LikedSongsScreen() {
                 <TrackRow
                   track={item}
                   coverArtUri={coverUri(item.coverArtId, CoverArtSize.list)}
-                  isPlaying={currentTrack?.id === item.id}
                   onPress={() => PlaybackController.playNow(item)}
                   onOverflowPress={() => setMenuTrack(item)}
                 />
