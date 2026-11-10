@@ -10,10 +10,11 @@ import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import {
   Pressable,
   StyleSheet,
-  useColorScheme,
   useWindowDimensions,
   View,
 } from "react-native";
+
+import { useColorScheme } from "@/hooks/use-color-scheme";
 
 import { ThemedText } from "./ThemedText";
 import { ThemedView } from "./ThemedView";

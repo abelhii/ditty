@@ -3,7 +3,7 @@ import { Figtree_400Regular, Figtree_700Bold, useFonts } from '@expo-google-font
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 
 import { persistOptions, queryClient } from '@/api/query-client';
 import { prefetchLibrary } from '@/api/prefetch-library';
@@ -17,6 +17,8 @@ import { Notice } from '@/components/Notice';
 import { ThemedView } from '@/components/ThemedView';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemePreferenceStore } from '@/hooks/use-theme-preference-store';
 import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
 
@@ -24,10 +26,16 @@ SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const themePreference = useThemePreferenceStore((state) => state.preference);
   const status = useAuthStore((state) => state.status);
   const hydrate = useAuthStore((state) => state.hydrate);
   const credentials = useAuthStore((state) => state.credentials);
   const [fontsLoaded] = useFonts({ Figtree_400Regular, Figtree_700Bold });
+
+  // Native chrome (status bar, system dialogs, SymbolView) follows the app's choice, not the OS's.
+  useEffect(() => {
+    if (Platform.OS !== 'web') Appearance.setColorScheme(themePreference === 'system' ? 'unspecified' : themePreference);
+  }, [themePreference]);
 
   useEffect(() => {
     hydrate();
