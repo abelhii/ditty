@@ -21,6 +21,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemePreferenceStore } from '@/hooks/use-theme-preference-store';
 import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
+import { ScrobbleReporter } from '@/player/ScrobbleReporter';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,6 +64,7 @@ export default function TabLayout() {
             <NowPlayingScreen />
             <QueueScreen />
             <AudioEngine />
+            <ScrobbleReporter />
             <NotificationBridge />
             <Notice />
             <ReauthModal />
