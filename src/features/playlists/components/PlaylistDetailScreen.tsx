@@ -21,8 +21,6 @@ import { useRemoveFromPlaylist } from '@/features/playlists/hooks/use-remove-fro
 import { useUpdatePlaylist } from '@/features/playlists/hooks/use-update-playlist';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
-import { getCurrentTrack } from '@/player/QueueManager';
-import { usePlayerStore } from '@/player/use-player-store';
 
 type PlaylistDetailScreenProps = {
   playlistId: string;
@@ -41,7 +39,6 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
   const insets = useSafeAreaInsets();
   const credentials = useAuthStore((state) => state.credentials);
   const playlistQuery = usePlaylist(playlistId);
-  const currentTrack = getCurrentTrack(usePlayerStore((state) => state.queue));
 
   const removeFromPlaylist = useRemoveFromPlaylist();
   const updatePlaylist = useUpdatePlaylist();
@@ -114,7 +111,6 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                   <TrackRow
                     track={item}
                     position={index + 1}
-                    isPlaying={currentTrack?.id === item.id}
                     onPress={() => PlaybackController.play(tracks, index)}
                     onOverflowPress={() => setMenuTarget({ track: item, index })}
                   />

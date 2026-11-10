@@ -1,15 +1,20 @@
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, TextInput } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { usePopAnimation } from '@/hooks/use-pop-animation';
 import { useAddToPlaylist } from '@/features/playlists/hooks/use-add-to-playlist';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useTheme } from '@/hooks/use-theme';
+
+/** How long the confirmation check stays up before the sheet closes. */
+const CONFIRM_MS = 450;
 
 type AddToPlaylistSheetProps = {
   /** The track to add; `null` hides the sheet. Single-track only (bulk add is deferred). */
@@ -27,16 +32,27 @@ export function AddToPlaylistSheet({ track, onClose }: AddToPlaylistSheetProps) 
 
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  /** The playlist just added to — shows its confirmation check while the sheet lingers. */
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+  }, []);
 
   const reset = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setAddedId(null);
     setCreating(false);
     setNewName('');
     onClose();
   };
 
   const addTo = (playlistId: string) => {
-    if (track) addToPlaylist.mutate({ playlistId, track });
-    reset();
+    if (!track || addedId) return;
+    addToPlaylist.mutate({ playlistId, track });
+    setAddedId(playlistId);
+    closeTimer.current = setTimeout(reset, CONFIRM_MS);
   };
 
   const createAndAdd = async () => {
@@ -93,11 +109,15 @@ export function AddToPlaylistSheet({ track, onClose }: AddToPlaylistSheetProps) 
                     key={playlist.id}
                     style={({ pressed }) => [styles.option, pressed && styles.pressed]}
                     onPress={() => addTo(playlist.id)}>
-                    <SymbolView
-                      name={{ ios: 'music.note.list', android: 'queue_music', web: 'queue_music' }}
-                      size={20}
-                      tintColor={theme.textSecondary}
-                    />
+                    {addedId === playlist.id ? (
+                      <AddedCheck />
+                    ) : (
+                      <SymbolView
+                        name={{ ios: 'music.note.list', android: 'queue_music', web: 'queue_music' }}
+                        size={20}
+                        tintColor={theme.textSecondary}
+                      />
+                    )}
                     <ThemedText numberOfLines={1} style={styles.optionLabel}>
                       {playlist.name}
                     </ThemedText>
@@ -109,6 +129,26 @@ export function AddToPlaylistSheet({ track, onClose }: AddToPlaylistSheetProps) 
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+/** The confirmation check that pops in on the playlist a track was just added to. */
+function AddedCheck() {
+  const theme = useTheme();
+  const { style, pop } = usePopAnimation();
+
+  useEffect(() => {
+    pop();
+  }, [pop]);
+
+  return (
+    <Animated.View style={style}>
+      <SymbolView
+        name={{ ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' }}
+        size={20}
+        tintColor={theme.accent}
+      />
+    </Animated.View>
   );
 }
 

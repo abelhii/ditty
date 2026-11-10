@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { useColorScheme as useRNColorScheme } from 'react-native';
 
+import { useThemePreferenceStore } from '@/hooks/use-theme-preference-store';
+
 function subscribe() {
   return () => {};
 }
@@ -17,7 +19,9 @@ export function useColorScheme() {
     () => false,
   );
 
-  const colorScheme = useRNColorScheme();
+  const preference = useThemePreferenceStore((state) => state.preference);
+  const systemScheme = useRNColorScheme();
+  const colorScheme = preference === 'system' ? systemScheme : preference;
 
   if (isClient) {
     return colorScheme;
