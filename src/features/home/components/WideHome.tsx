@@ -11,7 +11,7 @@ import { AlbumTile } from '@/components/AlbumTile';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { WideTopBar } from '@/components/WideTopBar';
-import { ListBottomInset, Radius, Spacing, WideMaxContentWidth } from '@/constants/theme';
+import { Radius, Spacing, WideMaxContentWidth } from '@/constants/theme';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { ExploreArtists } from '@/features/home/components/ExploreArtists';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
@@ -21,6 +21,7 @@ import { homeShelves } from '@/features/home/shelves';
 import { wideHomeLayout } from '@/features/home/wide-grid';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useTheme } from '@/hooks/use-theme';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 const LIKES_ICON_SIZE = 48;
 const JUMP_BACK_COLUMNS = 3;
@@ -36,6 +37,7 @@ export function WideHome() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const { width } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const playlists = usePlaylists().data ?? [];
@@ -52,7 +54,7 @@ export function WideHome() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView
           contentContainerStyle={{
-            paddingBottom: insets.bottom + ListBottomInset,
+            paddingBottom: insets.bottom + listBottomInset,
             gap: Spacing.five,
           }}>
           <WideTopBar value="" onFocus={() => router.push('/search')} />

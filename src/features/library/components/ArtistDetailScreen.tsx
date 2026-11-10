@@ -12,8 +12,9 @@ import { FavouriteButton } from '@/components/FavouriteButton';
 import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { ListBottomInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useArtist } from '@/features/library/hooks/use-artist';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 /** The tab stacks that render this screen — the prefix its album drill-down pushes onto, so the
  *  push lands in the current tab's own stack. Kept as literals (not a free-form string) so
@@ -30,6 +31,7 @@ type ArtistDetailScreenProps = {
 export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDetailScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const { width, scale } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const artistQuery = useArtist(artistId);
@@ -50,7 +52,7 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
               columnWrapperStyle={styles.row}
               contentContainerStyle={{
                 padding: Spacing.four,
-                paddingBottom: insets.bottom + ListBottomInset,
+                paddingBottom: insets.bottom + listBottomInset,
                 gap: AlbumGridGap,
               }}
               ListHeaderComponent={

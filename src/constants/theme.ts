@@ -152,6 +152,9 @@ export const WideContentPadding = Spacing.five;
 export const WidePlayerWidth = 820;
 /** Widest the content pane grows in the wide layout; beyond it the pane stays centred. */
 export const WideMaxContentWidth = 1200;
+/** Height of the wide layout's floating player pill, and its gap above the window's bottom edge. */
+export const WidePlayerHeight = 88;
+export const WidePlayerOffset = Spacing.three;
 
 /** Pure threshold check behind `useIsWideLayout`, so it can be tested without rendering. */
 export function isWideWidth(windowWidth: number): boolean {
@@ -166,3 +169,5 @@ export const MiniPlayerOffset = Spacing.one;
 /** Bottom padding for scrollable screens, added to the bottom safe-area inset: clears the tab bar
  *  and the floating mini player so the last row can scroll fully into view. */
 export const ListBottomInset = BottomTabInset + MiniPlayerOffset + MiniPlayerHeight + Spacing.three;
+/** `ListBottomInset` for the wide layout: no tab bar, but the taller floating player pill. */
+export const WideListBottomInset = WidePlayerOffset + WidePlayerHeight + Spacing.three;

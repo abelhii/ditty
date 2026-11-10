@@ -25,12 +25,13 @@ import { ThemedView } from "@/components/ThemedView";
 import { WideTopBar } from "@/components/WideTopBar";
 import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
-import { ListBottomInset, MaxContentWidth, Radius, Spacing, WideMaxContentWidth } from "@/constants/theme";
+import { MaxContentWidth, Radius, Spacing, WideMaxContentWidth } from "@/constants/theme";
 import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
 import { useSearch } from "@/features/search/hooks/use-search";
 import { useIsWideLayout } from "@/hooks/use-is-wide-layout";
 import { useTheme } from "@/hooks/use-theme";
 import * as PlaybackController from "@/player/PlaybackController";
+import { useListBottomInset } from "@/hooks/use-list-bottom-inset";
 
 /** The Search tab (Build Order step 6): a debounced text search over `search3`, rendered as one
  *  combined sectioned scroll (artists / albums / songs). An empty box shows Recent Searches; a song
@@ -39,6 +40,7 @@ import * as PlaybackController from "@/player/PlaybackController";
 export function SearchScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const theme = useTheme();
   const wide = useIsWideLayout();
   const { width, scale } = useWindowDimensions();
@@ -57,7 +59,7 @@ export function SearchScreen() {
       : undefined;
 
   const contentPadding = {
-    paddingBottom: insets.bottom + ListBottomInset,
+    paddingBottom: insets.bottom + listBottomInset,
   };
 
   // Recent searches are saved on result tap (not per keystroke), so we only ever persist terms the

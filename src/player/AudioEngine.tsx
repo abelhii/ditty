@@ -46,6 +46,7 @@ export function AudioEngine() {
   const desiredPlaying = usePlayerStore((state) => state.desiredPlaying);
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const retryNonce = usePlayerStore((state) => state.retryNonce);
+  const volume = usePlayerStore((state) => state.volume);
 
   const player = useAudioPlayer(null, { updateInterval: 1000 });
   const status = useAudioPlayerStatus(player);
@@ -116,6 +117,11 @@ export function AudioEngine() {
     // eslint-disable-next-line react-hooks/immutability
     player.loop = queue.repeat === "one";
   }, [player, queue.repeat]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- same native SharedObject property as `loop`
+    player.volume = volume;
+  }, [player, volume]);
 
   useEffect(() => {
     if (seekRequest === null) return;
