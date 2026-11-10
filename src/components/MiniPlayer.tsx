@@ -1,5 +1,6 @@
+import type { ComponentProps } from 'react';
 import { SymbolView } from 'expo-symbols';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -28,7 +29,7 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
 /**
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform
  * (see docs/adr/0005-miniplayer-js-overlay-not-native-accessory.md), mounted as a sibling of
- * NativeTabs in _layout.tsx. Artwork + title/artist + play-pause + a hairline progress line;
+ * NativeTabs in _layout.tsx. Artwork + title/artist + previous / play-pause / next + a hairline progress line;
  * tapping the bar expands the now-playing overlay. Hidden when there's nothing playing or when
  * now-playing is already open.
  */
@@ -42,6 +43,7 @@ export function MiniPlayer() {
   const status = usePlaybackStatusStore((state) => state.status);
   const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
   const { fraction } = useProgress();
+  const { width } = useWindowDimensions();
 
   if (!currentTrack || nowPlayingOpen) return null;
 
@@ -73,10 +75,42 @@ export function MiniPlayer() {
               />
             </View>
           </View>
+          {width >= HIDE_PREVIOUS_BELOW_WIDTH && (
+            <SkipButton
+              name={{ ios: 'backward.end.fill', android: 'skip_previous', web: 'skip_previous' }}
+              label="Previous track"
+              onPress={PlaybackController.skipPrevious}
+            />
+          )}
           <PlayPauseButton />
+          <SkipButton
+            name={{ ios: 'forward.end.fill', android: 'skip_next', web: 'skip_next' }}
+            label="Next track"
+            onPress={PlaybackController.skipNext}
+          />
         </ThemedView>
       </Pressable>
     </View>
+  );
+}
+
+type SkipButtonProps = {
+  name: ComponentProps<typeof SymbolView>['name'];
+  label: string;
+  onPress: () => void;
+};
+
+function SkipButton({ name, label, onPress }: SkipButtonProps) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={styles.control}
+      onPress={onPress}>
+      <SymbolView name={name} size={22} tintColor={theme.text} />
+    </Pressable>
   );
 }
 
@@ -131,6 +165,8 @@ export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintC
 }
 
 const ART_SIZE = 40;
+/** Below this window width the bar drops Previous so the title keeps room (Next stays). */
+const HIDE_PREVIOUS_BELOW_WIDTH = 360;
 
 const styles = StyleSheet.create({
   container: {
