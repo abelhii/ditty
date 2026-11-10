@@ -10,8 +10,10 @@ import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
+import { WideHome } from '@/features/home/components/WideHome';
 import { homeShelves } from '@/features/home/shelves';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
+import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 
 const LIKES_ICON_SIZE = 64;
@@ -24,6 +26,11 @@ const PLAYLIST_CARD_COUNT = 2;
  * query-less — text search is the Search tab's job.
  */
 export function HomeScreen() {
+  const wide = useIsWideLayout();
+  return wide ? <WideHome /> : <NarrowHome />;
+}
+
+function NarrowHome() {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();

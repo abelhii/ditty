@@ -150,6 +150,8 @@ export const SidebarWidth = 216;
 export const WideContentPadding = Spacing.five;
 /** Width of the wide layout's floating player pill. */
 export const WidePlayerWidth = 820;
+/** Widest the content pane grows in the wide layout; beyond it the pane stays centred. */
+export const WideMaxContentWidth = 1200;
 
 /** Pure threshold check behind `useIsWideLayout`, so it can be tested without rendering. */
 export function isWideWidth(windowWidth: number): boolean {

@@ -1,6 +1,6 @@
 import { CoverArtSize } from '@/api/subsonic/endpoints/media';
-import { AlbumGridGap, albumGridLayout } from '@/components/album-grid';
-import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { AlbumGridGap, albumGridLayout, widePaneContentWidth } from '@/components/album-grid';
+import { MaxContentWidth, SidebarWidth, Spacing, WideMaxContentWidth } from '@/constants/theme';
 
 // theme.ts imports the web stylesheet for its side effect; jest can't parse CSS.
 jest.mock('@/global.css', () => ({}));
@@ -41,5 +41,21 @@ describe('albumGridLayout', () => {
         }
       }
     }
+  });
+});
+
+describe('albumGridLayout (wide)', () => {
+  it('lays out inside the pane to the right of the sidebar', () => {
+    const { columns, tileWidth } = albumGridLayout(1200, 1, true);
+    const pane = 1200 - SidebarWidth - Spacing.four * 2;
+    expect(columns * tileWidth + (columns - 1) * AlbumGridGap).toBeCloseTo(pane);
+  });
+
+  it('caps the pane at WideMaxContentWidth', () => {
+    expect(widePaneContentWidth(3000)).toBe(WideMaxContentWidth - Spacing.four * 2);
+  });
+
+  it('gets more columns than the narrow 800px column at the same window width', () => {
+    expect(albumGridLayout(1600, 1, true).columns).toBeGreaterThan(albumGridLayout(1600, 1).columns);
   });
 });
