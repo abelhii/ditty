@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -26,12 +26,12 @@ type ScrubberProps = {
 export function Scrubber({ position, duration, fraction, onSeek, variant = 'player' }: ScrubberProps) {
   const theme = useTheme();
   const surface = variant === 'surface';
-  const widthRef = useRef(0);
+  const [width, setWidth] = useState(0);
   const [dragFraction, setDragFraction] = useState<number | null>(null);
 
   const responder = useMemo(() => {
     const fractionAt = (locationX: number) =>
-      widthRef.current > 0 ? Math.min(1, Math.max(0, locationX / widthRef.current)) : 0;
+      width > 0 ? Math.min(1, Math.max(0, locationX / width)) : 0;
 
     return PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -44,13 +44,13 @@ export function Scrubber({ position, duration, fraction, onSeek, variant = 'play
       },
       onPanResponderTerminate: () => setDragFraction(null),
     });
-  }, [duration, onSeek]);
+  }, [duration, onSeek, width]);
 
   const shownFraction = dragFraction ?? fraction;
   const shownPosition = dragFraction !== null ? dragFraction * duration : position;
 
   function onLayout(event: LayoutChangeEvent) {
-    widthRef.current = event.nativeEvent.layout.width;
+    setWidth(event.nativeEvent.layout.width);
   }
 
   const textColor = surface ? { color: theme.textSecondary } : undefined;
