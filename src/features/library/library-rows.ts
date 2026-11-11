@@ -16,6 +16,8 @@ export type LibraryRow = {
   songCount?: number;
   /** Already formatted for display; undefined shows a dash. */
   added?: string;
+  /** Raw ISO timestamp behind `added`, for sorting. */
+  createdAt?: string;
   href: string;
 };
 
@@ -58,6 +60,7 @@ export function playlistRows(playlists: Playlist[], now: Date): LibraryRow[] {
     typeLabel: 'Playlist',
     songCount: playlist.songCount,
     added: formatAddedDate(playlist.created, now),
+    createdAt: playlist.created,
     href: `/home/playlist/${playlist.id}`,
   }));
 }

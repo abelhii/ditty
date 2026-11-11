@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Pressable, SectionList, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,8 +13,16 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { AllSongsList } from '@/features/library/components/AllSongsList';
+import { ListControls } from '@/features/library/components/ListControls';
 import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
 import { useGenres } from '@/features/library/hooks/use-genres';
+import {
+  ARTIST_SORTS,
+  filterArtists,
+  sortArtists,
+  type ArtistSortKey,
+  type SortDirection,
+} from '@/features/library/list-sort';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type LibraryView = 'songs' | 'artists' | 'genres';
@@ -29,8 +37,36 @@ export function ArtistsScreen({ initialView = 'songs' }: { initialView?: Library
   const credentials = useAuthStore((state) => state.credentials);
   const [view, setView] = useState<LibraryView>(initialView);
 
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<ArtistSortKey>('default');
+  const [direction, setDirection] = useState<SortDirection>('asc');
+
   const artistSectionsQuery = useArtistSections();
   const genresQuery = useGenres();
+
+  // Server order keeps its A-Z sections; any other sort is one flat list, since sections would
+  // no longer line up with it.
+  const sections = useMemo(
+    () =>
+      toListSections(artistSectionsQuery.data ?? []).flatMap((section) => {
+        const data = filterArtists(section.data, query);
+        return data.length > 0 ? [{ ...section, data }] : [];
+      }),
+    [artistSectionsQuery.data, query],
+  );
+  const flatArtists = useMemo(
+    () => sortArtists(sections.flatMap((section) => section.data), sort, direction),
+    [sections, sort, direction],
+  );
+
+  const renderArtist = ({ item }: { item: Artist }) =>
+    credentials ? (
+      <ArtistRow
+        artist={item}
+        coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
+        onPress={() => router.push(`/library/artist/${item.id}`)}
+      />
+    ) : null;
 
   const listContentStyle = {
     paddingBottom: insets.bottom + listBottomInset,
@@ -52,42 +88,52 @@ export function ArtistsScreen({ initialView = 'songs' }: { initialView?: Library
         {view === 'songs' ? (
           <AllSongsList />
         ) : view === 'artists' ? (
-          <QueryState
-            query={artistSectionsQuery}
-            isEmpty={(sections) => sections.every((section) => section.artists.length === 0)}
-            emptyMessage="No artists found.">
-            {(sections) => (
-              <SectionList<Artist, { title: string; data: Artist[] }>
-                sections={toListSections(sections)}
-                keyExtractor={(artist) => artist.id}
-                renderItem={({ item }) =>
-                  credentials ? (
-                    <ArtistRow
-                      artist={item}
-                      coverArtUri={getCoverArtUrl(
-                        credentials.serverUrl,
-                        item.coverArtId,
-                        credentials,
-                        CoverArtSize.list,
-                      )}
-                      onPress={() => router.push(`/library/artist/${item.id}`)}
-                    />
-                  ) : null
-                }
-                renderSectionHeader={({ section }) => (
-                  <ThemedView style={styles.sectionHeader}>
-                    <ThemedText type="smallBold" themeColor="textSecondary">
-                      {section.title}
-                    </ThemedText>
-                  </ThemedView>
-                )}
-                stickySectionHeadersEnabled
-                contentContainerStyle={listContentStyle}
-                refreshing={artistSectionsQuery.isFetching}
-                onRefresh={() => artistSectionsQuery.refetch()}
-              />
-            )}
-          </QueryState>
+          <>
+            <ListControls
+              query={query}
+              onQueryChange={setQuery}
+              placeholder="Filter artists"
+              sortOptions={ARTIST_SORTS}
+              sort={sort}
+              onSortChange={setSort}
+              direction={direction}
+              onDirectionChange={setDirection}
+            />
+            <QueryState
+              query={artistSectionsQuery}
+              isEmpty={() => sections.length === 0}
+              emptyMessage={query.trim() ? 'No artists match.' : 'No artists found.'}>
+              {() =>
+                sort === 'default' ? (
+                  <SectionList<Artist, { title: string; data: Artist[] }>
+                    sections={sections}
+                    keyExtractor={(artist) => artist.id}
+                    renderItem={renderArtist}
+                    renderSectionHeader={({ section }) => (
+                      <ThemedView style={styles.sectionHeader}>
+                        <ThemedText type="smallBold" themeColor="textSecondary">
+                          {section.title}
+                        </ThemedText>
+                      </ThemedView>
+                    )}
+                    stickySectionHeadersEnabled
+                    contentContainerStyle={listContentStyle}
+                    refreshing={artistSectionsQuery.isFetching}
+                    onRefresh={() => artistSectionsQuery.refetch()}
+                  />
+                ) : (
+                  <FlatList<Artist>
+                    data={flatArtists}
+                    keyExtractor={(artist) => artist.id}
+                    renderItem={renderArtist}
+                    contentContainerStyle={listContentStyle}
+                    refreshing={artistSectionsQuery.isFetching}
+                    onRefresh={() => artistSectionsQuery.refetch()}
+                  />
+                )
+              }
+            </QueryState>
+          </>
         ) : (
           <QueryState query={genresQuery} isEmpty={(genres) => genres.length === 0} emptyMessage="No genres found.">
             {(genres) => (

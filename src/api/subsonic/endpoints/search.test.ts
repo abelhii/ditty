@@ -22,6 +22,12 @@ describe('getAllSongsPage', () => {
     expect(tracks.map((t) => t.id)).toEqual(['s1']);
   });
 
+  it('passes a text query through to the server', async () => {
+    requestMock.mockResolvedValue({ searchResult3: { song: [song] } });
+    await getAllSongsPage('https://x', auth, 0, 'blue');
+    expect(requestMock.mock.calls[0][2]).toMatchObject({ query: 'blue', songOffset: 0 });
+  });
+
   it('returns an empty list when the server sends no songs', async () => {
     requestMock.mockResolvedValue({ searchResult3: {} });
     expect(await getAllSongsPage('https://x', auth, 0)).toEqual([]);

@@ -48,7 +48,8 @@ export async function search3(
 export const ALL_SONGS_PAGE_SIZE = 500;
 
 /**
- * One page of every song on the server. Subsonic has no "all songs" endpoint, so this uses the
+ * One page of every song on the server, or of those matching `query` (a text query is the server's
+ * own search, so it reaches songs that haven't been paged in yet). Subsonic has no "all songs" endpoint, so this uses the
  * `search3` empty-query browse-all convention (Navidrome supports it with `songOffset` paging). A
  * server that doesn't support it returns no songs, which the screen shows as empty. Order is the
  * server's, not guaranteed — callers sort.
@@ -57,12 +58,13 @@ export async function getAllSongsPage(
   serverUrl: string,
   auth: SubsonicAuth,
   offset: number,
+  query = '',
 ): Promise<Track[]> {
   const { searchResult3 } = await request<GetSearch3Response>(
     serverUrl,
     'search3',
     {
-      query: '',
+      query,
       artistCount: 0,
       albumCount: 0,
       songCount: ALL_SONGS_PAGE_SIZE,
