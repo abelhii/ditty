@@ -12,16 +12,17 @@ import { QueryState } from '@/components/QueryState';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { AllSongsList } from '@/features/library/components/AllSongsList';
 import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
 import { useGenres } from '@/features/library/hooks/use-genres';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
-type LibraryView = 'artists' | 'genres';
+type LibraryView = 'songs' | 'artists' | 'genres';
 
-/** The catalog list — a sectioned (A-Z) artist list, with a Genres view reachable via a segmented
- *  toggle (Build Order step 5). Pushed from Home at `/library/artists`; `initialView` lets Home's
+/** The catalog list — every song (the default), a sectioned (A-Z) artist list, and a Genres view,
+ *  reachable via a segmented toggle (Build Order step 5). Pushed from Home at `/library/artists`; `initialView` lets Home's
  *  Genres quick link open straight on the Genres tab (Build Order step 9). */
-export function ArtistsScreen({ initialView = 'artists' }: { initialView?: LibraryView } = {}) {
+export function ArtistsScreen({ initialView = 'songs' }: { initialView?: LibraryView } = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const listBottomInset = useListBottomInset();
@@ -43,11 +44,14 @@ export function ArtistsScreen({ initialView = 'artists' }: { initialView?: Libra
         </ThemedText>
 
         <ThemedView type="backgroundElement" style={styles.segmented}>
+          <SegmentButton label="Songs" active={view === 'songs'} onPress={() => setView('songs')} />
           <SegmentButton label="Artists" active={view === 'artists'} onPress={() => setView('artists')} />
           <SegmentButton label="Genres" active={view === 'genres'} onPress={() => setView('genres')} />
         </ThemedView>
 
-        {view === 'artists' ? (
+        {view === 'songs' ? (
+          <AllSongsList />
+        ) : view === 'artists' ? (
           <QueryState
             query={artistSectionsQuery}
             isEmpty={(sections) => sections.every((section) => section.artists.length === 0)}

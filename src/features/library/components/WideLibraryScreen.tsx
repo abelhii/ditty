@@ -13,6 +13,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Radius, Spacing, WideContentPadding, WideMaxContentWidth } from '@/constants/theme';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
+import { AllSongsList } from '@/features/library/components/AllSongsList';
 import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
 import { useGenres } from '@/features/library/hooks/use-genres';
 import {
@@ -28,9 +29,10 @@ import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 import { useTheme } from '@/hooks/use-theme';
 
-type LibraryFilter = 'playlists' | 'albums' | 'artists' | 'allArtists' | 'genres';
+type LibraryFilter = 'allSongs' | 'playlists' | 'albums' | 'artists' | 'allArtists' | 'genres';
 
 const FILTERS: { value: LibraryFilter; label: string }[] = [
+  { value: 'allSongs', label: 'All songs' },
   { value: 'playlists', label: 'Playlists' },
   { value: 'albums', label: 'Albums' },
   { value: 'artists', label: 'Artists' },
@@ -45,7 +47,7 @@ export function WideLibraryScreen() {
   const theme = useTheme();
   const createPlaylist = useCreatePlaylist();
   const [creating, setCreating] = useState(false);
-  const [filter, setFilter] = useState<LibraryFilter>('playlists');
+  const [filter, setFilter] = useState<LibraryFilter>('allSongs');
 
   return (
     <ThemedView style={styles.container}>
@@ -98,6 +100,8 @@ export function WideLibraryScreen() {
 /** Each filter owns its query, so only the one on screen is fetched. */
 function FilterTable({ filter }: { filter: LibraryFilter }) {
   switch (filter) {
+    case 'allSongs':
+      return <AllSongsList />;
     case 'playlists':
       return <PlaylistsTable />;
     case 'albums':
