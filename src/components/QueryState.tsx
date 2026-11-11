@@ -45,7 +45,7 @@ export function QueryState<T>({ query, emptyMessage, isEmpty, children }: QueryS
       <ThemedView style={styles.centered}>
         <ThemedText type="small" themeColor="textSecondary" style={styles.message}>
           {offline
-            ? "You're offline and haven't viewed this yet."
+            ? "You're offline and haven't viewed this yet. Downloaded music is still available."
             : query.error instanceof Error
               ? query.error.message
               : 'Something went wrong.'}

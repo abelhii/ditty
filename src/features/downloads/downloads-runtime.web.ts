@@ -1,4 +1,4 @@
-import type { Track } from '@/api/types';
+import type { Album, Track } from '@/api/types';
 import type { CollectionKind } from '@/features/downloads/downloads-db';
 
 /** Web has no file download (see downloads-runtime.ts) — every operation is a no-op. */
@@ -12,3 +12,6 @@ export function removeCollectionDownload(
   _collectionId: string,
   _trackIds: string[],
 ): void {}
+export function getDownloadedAlbum(_albumId: string): { album: Album; tracks: Track[] } | null {
+  return null;
+}

@@ -17,6 +17,7 @@ import { Notice } from '@/components/Notice';
 import { ThemedView } from '@/components/ThemedView';
 import { WidePlayer } from '@/components/WidePlayer';
 import { hydrateDownloads } from '@/features/downloads/downloads-runtime';
+import { startOfflineWatcher } from '@/features/downloads/offline-watcher';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -45,6 +46,8 @@ export default function TabLayout() {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  useEffect(() => startOfflineWatcher(), []);
 
   useEffect(() => {
     hydrateDownloads();

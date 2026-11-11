@@ -65,3 +65,10 @@ already known) that recomputes the token and lets playback, the Queue, and the c
 carry on untouched. Distinct from **Login** (cold start, no prior credentials) and **Logout**
 (deliberate teardown that clears the Queue and cache). Triggered only by a Subsonic auth error
 (code 40/41) on a fetch-layer request — never by a connectivity failure. Introduced in step 8b.
+
+**Offline mode**:
+The state in which only downloaded Tracks play: on when the user switched it on in Settings *or* the
+device has no connection. Playback skips Tracks that aren't downloaded and their rows are greyed out.
+Distinct from offline *browsing* (the persisted query cache, ADR 0002), which is always on, and from a
+stream error on a connection the app believed was fine, which still halts (ADR 0007). See
+`docs/adr/0011-offline-mode-skips-undownloaded-tracks.md`.

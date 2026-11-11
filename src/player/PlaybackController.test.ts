@@ -6,6 +6,8 @@ import * as PlaybackController from '@/player/PlaybackController';
 import { createQueueState, setRepeat } from '@/player/QueueManager';
 import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
+import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
+import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { usePlayerStore } from '@/player/use-player-store';
 
 jest.mock('@/api/subsonic/endpoints/discovery');
@@ -25,6 +27,8 @@ beforeEach(() => {
   useAutoDjStore.getState().reset();
   useAutoDjSettingsStore.getState().reset();
   usePlayerStore.getState().reset();
+  useOfflineStore.setState({ manual: false, deviceOffline: false });
+  useDownloadsStore.setState({ items: {}, downloadedIds: {} });
   useAuthStore.setState({
     credentials: { serverUrl: 'https://x', username: 'u', token: 't', salt: 's' },
   } as never);
@@ -150,5 +154,47 @@ describe('setVolume', () => {
     expect(usePlayerStore.getState().volume).toBe(1);
     PlaybackController.setVolume(-0.2);
     expect(usePlayerStore.getState().volume).toBe(0);
+  });
+});
+
+describe('Offline mode playback', () => {
+  const four = () => ['a', 'b', 'c', 'd'].map((id) => track(id));
+
+  it('does not skip anything when Offline mode is off', () => {
+    PlaybackController.play(four(), 0);
+    PlaybackController.skipNext();
+    expect(usePlayerStore.getState().queue.currentIndex).toBe(1);
+  });
+
+  it('skips tracks that are not downloaded on next', () => {
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: { a: true, d: true } });
+    PlaybackController.play(four(), 0);
+    PlaybackController.skipNext();
+    expect(usePlayerStore.getState().queue.currentIndex).toBe(3);
+  });
+
+  it('starts at the next downloaded track when the requested one is not', () => {
+    useOfflineStore.setState({ deviceOffline: true });
+    useDownloadsStore.setState({ downloadedIds: { c: true } });
+    PlaybackController.play(four(), 0);
+    expect(usePlayerStore.getState().queue.currentIndex).toBe(2);
+    expect(usePlayerStore.getState().desiredPlaying).toBe(true);
+  });
+
+  it('skips undownloaded tracks on previous', () => {
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: { a: true, d: true } });
+    PlaybackController.play(four(), 3);
+    PlaybackController.skipPrevious();
+    expect(usePlayerStore.getState().queue.currentIndex).toBe(0);
+  });
+
+  it('finishes the queue when nothing after the current track is downloaded', () => {
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: { a: true } });
+    PlaybackController.play(four(), 0);
+    PlaybackController.skipNext();
+    expect(usePlayerStore.getState().desiredPlaying).toBe(false);
   });
 });

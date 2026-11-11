@@ -3,7 +3,10 @@ import { getRandomSongs, getSimilarSongs2 } from '@/api/subsonic/endpoints/disco
 import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { showNotice } from '@/components/use-notice-store';
+import { isOfflineMode, useOfflineStore } from '@/features/downloads/use-offline-store';
+import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
 import { BATCH_SIZE, pickNextBatch, REFILL_THRESHOLD } from '@/player/auto-dj';
+import { stepToPlayable } from '@/player/offline-skip';
 import * as QueueManager from '@/player/QueueManager';
 import type { RepeatMode } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
@@ -22,9 +25,19 @@ function currentQueue(): QueueManager.QueueState {
   return usePlayerStore.getState().queue;
 }
 
-/** Replaces the queue and starts playback at `startIndex`. */
+/** In Offline mode only downloaded Tracks can play; otherwise everything is assumed streamable
+ *  (a stream failure is handled by the halt-and-retry path, ADR 0007). */
+function isPlayableNow(track: Track): boolean {
+  if (!isOfflineMode(useOfflineStore.getState())) return true;
+  return useDownloadsStore.getState().downloadedIds[track.id] === true;
+}
+
+/** Replaces the queue and starts playback at `startIndex` — or at the next downloaded Track when
+ *  Offline mode is on and the requested one isn't. */
 export function play(tracks: Track[], startIndex = 0): void {
-  const queue = QueueManager.createQueueState(tracks, startIndex);
+  let queue = QueueManager.createQueueState(tracks, startIndex);
+  const start = QueueManager.getCurrentTrack(queue);
+  if (start && !isPlayableNow(start)) queue = stepToPlayable(queue, QueueManager.next, isPlayableNow);
   usePlayerStore.setState({ queue, desiredPlaying: tracks.length > 0 });
 }
 
@@ -81,7 +94,7 @@ export function resume(): void {
 }
 
 export function skipNext(): void {
-  const queue = QueueManager.next(currentQueue());
+  const queue = stepToPlayable(currentQueue(), QueueManager.next, isPlayableNow);
   usePlayerStore.setState({
     queue,
     desiredPlaying: QueueManager.getCurrentTrack(queue) !== undefined,
@@ -100,7 +113,9 @@ export function jumpTo(index: number): void {
 }
 
 export function skipPrevious(): void {
-  usePlayerStore.setState({ queue: QueueManager.previous(currentQueue()) });
+  usePlayerStore.setState({
+    queue: stepToPlayable(currentQueue(), QueueManager.previous, isPlayableNow),
+  });
 }
 
 export function seekTo(seconds: number): void {

@@ -1,9 +1,11 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { TrackRow } from '@/components/TrackRow';
 import { Colors } from '@/constants/theme';
+import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
+import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { usePlayerStore } from '@/player/use-player-store';
 import { createQueueState } from '@/player/QueueManager';
@@ -34,6 +36,8 @@ function setCurrentTrack(current: Track | null) {
 }
 
 beforeEach(() => {
+  useOfflineStore.setState({ manual: false, deviceOffline: false });
+  useDownloadsStore.setState({ items: {}, downloadedIds: {} });
   setCurrentTrack(null);
   usePlaybackStatusStore.setState({ status: 'idle' });
 });
@@ -93,5 +97,31 @@ describe('TrackRow', () => {
   it('names the overflow button after the track', async () => {
     await renderRow({});
     expect(screen.getByRole('button', { name: 'More options for Song' })).toBeTruthy();
+  });
+});
+
+describe('TrackRow offline', () => {
+  it('stays tappable online', async () => {
+    const onPress = jest.fn();
+    await render(<TrackRow track={track} onPress={onPress} onOverflowPress={() => {}} />);
+    await fireEvent.press(screen.getByText('Song'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores taps on a track that is not downloaded while offline', async () => {
+    useOfflineStore.setState({ manual: true });
+    const onPress = jest.fn();
+    await render(<TrackRow track={track} onPress={onPress} onOverflowPress={() => {}} />);
+    await fireEvent.press(screen.getByText('Song'));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it('stays tappable while offline once the track is downloaded', async () => {
+    useOfflineStore.setState({ deviceOffline: true });
+    useDownloadsStore.setState({ downloadedIds: { t1: true } });
+    const onPress = jest.fn();
+    await render(<TrackRow track={track} onPress={onPress} onOverflowPress={() => {}} />);
+    await fireEvent.press(screen.getByText('Song'));
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

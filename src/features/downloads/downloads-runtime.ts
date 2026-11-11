@@ -8,6 +8,7 @@ import { showNotice } from '@/components/use-notice-store';
 import { parseApiErrorBody } from '@/features/downloads/api-error-body';
 import { createDownloadManager } from '@/features/downloads/download-manager';
 import { audioFileName, coverFileName, serverKey } from '@/features/downloads/download-paths';
+import { albumFromDownloads } from '@/features/downloads/offline-album';
 import { removableCovers } from '@/features/downloads/download-rows';
 import type { DownloadRecord } from '@/features/downloads/download-rows';
 import {
@@ -141,4 +142,10 @@ export function removeCollectionDownload(
   if (!server) return;
   for (const id of trackIds) manager.cancel(id);
   deleteRecords(server, releaseCollection(server, kind, collectionId));
+}
+
+/** An album rebuilt from downloaded tracks (see `albumFromDownloads`), or null. */
+export function getDownloadedAlbum(albumId: string) {
+  const server = currentServer();
+  return server ? albumFromDownloads(albumId, listDownloads(server)) : null;
 }

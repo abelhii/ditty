@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Switch } from 'react-native';
+import { Platform, Pressable, StyleSheet, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/auth/use-auth-store';
@@ -15,6 +15,7 @@ import { SegmentedChoice } from '@/features/settings/components/SegmentedChoice'
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useThemePreferenceStore, type ThemePreference } from '@/hooks/use-theme-preference-store';
+import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { useAutoDjSettingsStore, type AutoDjSource } from '@/player/use-auto-dj-settings-store';
 
 const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
@@ -43,6 +44,8 @@ export default function SettingsScreen() {
   const preference = useThemePreferenceStore((state) => state.preference);
   const setPreference = useThemePreferenceStore((state) => state.setPreference);
   const autoDj = useAutoDjSettingsStore();
+  const offlineManual = useOfflineStore((state) => state.manual);
+  const setOfflineManual = useOfflineStore((state) => state.setManual);
 
   const serverInfo = credentials && (
     <ThemedView type="backgroundElement" style={wide ? undefined : styles.serverInfo}>
@@ -120,6 +123,23 @@ export default function SettingsScreen() {
     </ThemedView>
   );
 
+  const offlineSection = Platform.OS !== 'web' && (
+    <ThemedView style={styles.appearance}>
+      {!wide && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Offline
+        </ThemedText>
+      )}
+      <ThemedView type={wide ? 'background' : 'backgroundElement'} style={styles.autoDjRow}>
+        <ThemedText type="small">Offline mode</ThemedText>
+        <Switch accessibilityLabel="Offline mode" value={offlineManual} onValueChange={setOfflineManual} />
+      </ThemedView>
+      <ThemedText type="small" themeColor="textSecondary">
+        Plays only downloaded music. Turns on automatically when there is no connection.
+      </ThemedText>
+    </ThemedView>
+  );
+
   const logOut = (
     <Pressable
       style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
@@ -153,6 +173,7 @@ export default function SettingsScreen() {
             <ThemedView type="backgroundElement" style={[styles.card, styles.cardPlayback]}>
               <ThemedText type="smallBold">Playback</ThemedText>
               {autoDjSection}
+              {offlineSection}
             </ThemedView>
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText type="smallBold">Account</ThemedText>
@@ -171,6 +192,7 @@ export default function SettingsScreen() {
         {serverInfo}
         {appearance}
         {autoDjSection}
+        {offlineSection}
         {logOut}
       </SafeAreaView>
     </ThemedView>
