@@ -1,6 +1,6 @@
 import { useRouter, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,6 +24,14 @@ import {
   playlistRows,
   type LibraryRow,
 } from '@/features/library/library-rows';
+import { ListControls } from '@/features/library/components/ListControls';
+import {
+  filterRows,
+  ROW_SORTS,
+  sortRows,
+  type RowSortKey,
+  type SortDirection,
+} from '@/features/library/list-sort';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
@@ -189,11 +197,18 @@ type TableProps = {
   onRefresh: () => void;
 };
 
-function Table({ rows, emptyMessage, refreshing, onRefresh }: TableProps) {
+function Table({ rows: allRows, emptyMessage, refreshing, onRefresh }: TableProps) {
   const router = useRouter();
   const theme = useTheme();
   const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<RowSortKey>('default');
+  const [direction, setDirection] = useState<SortDirection>('asc');
+  const rows = useMemo(
+    () => sortRows(filterRows(allRows, query), sort, direction),
+    [allRows, query, sort, direction],
+  );
 
   const coverUri = (row: LibraryRow) =>
     credentials && row.coverArtId
@@ -208,6 +223,18 @@ function Table({ rows, emptyMessage, refreshing, onRefresh }: TableProps) {
       onRefresh={onRefresh}
       contentContainerStyle={{ paddingBottom: listBottomInset }}
       ListHeaderComponent={
+        <>
+        <ListControls
+          style={styles.controls}
+          query={query}
+          onQueryChange={setQuery}
+          placeholder="Filter this list"
+          sortOptions={ROW_SORTS}
+          sort={sort}
+          onSortChange={setSort}
+          direction={direction}
+          onDirectionChange={setDirection}
+        />
         <ThemedView style={[styles.row, styles.headerRow, { borderBottomColor: theme.border }]}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.indexCell}>
             #
@@ -225,11 +252,12 @@ function Table({ rows, emptyMessage, refreshing, onRefresh }: TableProps) {
             Date added
           </ThemedText>
         </ThemedView>
+        </>
       }
       ListEmptyComponent={
         emptyMessage ? (
           <ThemedText type="small" themeColor="textSecondary" style={styles.empty}>
-            {emptyMessage}
+            {query.trim() ? 'Nothing matches.' : emptyMessage}
           </ThemedText>
         ) : null
       }
@@ -340,6 +368,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.pill,
+  },
+  controls: {
+    paddingHorizontal: 0,
   },
   row: {
     flexDirection: 'row',
