@@ -1,16 +1,23 @@
 import type { Track } from '@/api/types';
 
-/** How many Tracks the Most played section shows. */
-export const MOST_PLAYED_TRACK_COUNT = 10;
+export type MostPlayedLimits = {
+  /** How many of the frequently played albums are searched for Tracks. */
+  albums: number;
+  /** How many ranked Tracks are kept. */
+  tracks: number;
+};
 
-/** How many of the frequently played albums are searched for Tracks. */
-export const MOST_PLAYED_ALBUM_COUNT = 10;
+/** The short list on Home. */
+export const MOST_PLAYED_HOME: MostPlayedLimits = { albums: 10, tracks: 5 };
+
+/** The dedicated Most played screen. The album count is the whole Frequently played shelf. */
+export const MOST_PLAYED_FULL: MostPlayedLimits = { albums: 20, tracks: 50 };
 
 /**
  * Ranks Tracks by play count, highest first. Tracks with a missing or zero count are dropped, and
  * the same Track appearing twice is kept once. Ties keep their input order.
  */
-export function rankMostPlayed(tracks: Track[], limit = MOST_PLAYED_TRACK_COUNT): Track[] {
+export function rankMostPlayed(tracks: Track[], limit = MOST_PLAYED_FULL.tracks): Track[] {
   const seen = new Set<string>();
   return tracks
     .filter((track) => {

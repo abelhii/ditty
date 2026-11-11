@@ -5,21 +5,22 @@ import { queryKeys } from '@/api/query-keys';
 import { getAlbum } from '@/api/subsonic/endpoints/browsing';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { useAlbumShelf } from '@/features/home/hooks/use-album-shelf';
-import { MOST_PLAYED_ALBUM_COUNT, rankMostPlayed } from '@/features/home/most-played';
+import { type MostPlayedLimits, rankMostPlayed } from '@/features/home/most-played';
 import type { Shelf } from '@/features/home/shelves';
 
 /**
  * The most played Tracks, ranked by each Track's own play count. Subsonic has no such endpoint, so
  * this takes the top albums from the Frequently played shelf and ranks their Tracks. A hot Track on a
  * low-play album can be missed. Albums go through the same cached `getAlbum` query as album detail.
- * `refresh` refetches the shelf and then those albums, so new plays show up.
+ * `limits` must be a stable object (a module constant). `refresh` refetches the shelf and then
+ * those albums, so new plays show up.
  */
-export function useMostPlayedTracks(frequentShelf: Shelf) {
+export function useMostPlayedTracks(frequentShelf: Shelf, limits: MostPlayedLimits) {
   const credentials = useAuthStore((state) => state.credentials);
   const queryClient = useQueryClient();
   const shelf = useAlbumShelf(frequentShelf);
   const [refreshing, setRefreshing] = useState(false);
-  const topAlbums = (shelf.data ?? []).slice(0, MOST_PLAYED_ALBUM_COUNT);
+  const topAlbums = (shelf.data ?? []).slice(0, limits.albums);
 
   const tracks = useQueries({
     queries: topAlbums.map((album) => ({
@@ -30,7 +31,11 @@ export function useMostPlayedTracks(frequentShelf: Shelf) {
       },
       enabled: credentials !== null,
     })),
-    combine: (results) => rankMostPlayed(results.flatMap((result) => result.data?.tracks ?? [])),
+    combine: (results) =>
+      rankMostPlayed(
+        results.flatMap((result) => result.data?.tracks ?? []),
+        limits.tracks,
+      ),
   });
 
   const { refetch } = shelf;
@@ -40,13 +45,13 @@ export function useMostPlayedTracks(frequentShelf: Shelf) {
       const { data } = await refetch();
       await Promise.all(
         (data ?? [])
-          .slice(0, MOST_PLAYED_ALBUM_COUNT)
+          .slice(0, limits.albums)
           .map((album) => queryClient.invalidateQueries({ queryKey: queryKeys.album(album.id) })),
       );
     } finally {
       setRefreshing(false);
     }
-  }, [refetch, queryClient]);
+  }, [refetch, queryClient, limits.albums]);
 
   return { tracks, refresh, refreshing };
 }
