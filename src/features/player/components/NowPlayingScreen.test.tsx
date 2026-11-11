@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react-native';
+import { BackHandler } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
@@ -44,6 +45,23 @@ beforeEach(() => {
 });
 
 describe('NowPlayingScreen', () => {
+  it('closes on Android back, Queue first when it is open', async () => {
+    let pressBack: () => boolean | null | undefined = () => false;
+    jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, handler) => {
+      pressBack = () => handler(undefined as never);
+      return { remove: () => {} };
+    });
+    await render(<NowPlayingScreen />);
+    await act(async () => usePlayerUiStore.setState({ queueOpen: true }));
+
+    await act(async () => pressBack());
+    expect(usePlayerUiStore.getState()).toMatchObject({ nowPlayingOpen: true, queueOpen: false });
+
+    await act(async () => pressBack());
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 300)));
+    expect(usePlayerUiStore.getState().nowPlayingOpen).toBe(false);
+  });
+
   it('puts the artwork, transport and Queue button in a scroll container, so short viewports can reach them', async () => {
     await render(<NowPlayingScreen />);
 

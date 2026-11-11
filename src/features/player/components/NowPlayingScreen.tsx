@@ -1,6 +1,6 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, Dimensions, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Animated, BackHandler, Dimensions, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -40,7 +40,7 @@ const REPEAT_LABEL: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repe
 /**
  * Full-screen player, shown as a JS overlay above the tab bar (ADR 0005 extends the MiniPlayer's
  * overlay approach to now-playing/queue rather than a native modal route). Slides up on open,
- * swipe-down on the grabber to dismiss. Big artwork, metadata, scrubber + transport, shuffle/repeat
+ * swipe down anywhere (or Android back) to dismiss. Big artwork, metadata, scrubber + transport, shuffle/repeat
  * toggles, and an open-queue button. The favourite/add-to-playlist actions arrive in step 7b.
  */
 export function NowPlayingScreen() {
@@ -80,10 +80,15 @@ export function NowPlayingScreen() {
     }).start(() => closeNowPlaying());
   }, [translateY, closeNowPlaying]);
 
-  const grabber = useMemo(
+  // A downward drag anywhere on the screen dismisses it. Captured ahead of the ScrollView only for
+  // a mostly-vertical drag while the content is scrolled to the top, so scrolling a short viewport
+  // and the horizontal scrubber/volume sliders keep working.
+  const [atTop, setAtTop] = useState(true);
+  const swipe = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) => gesture.dy > 4,
+        onMoveShouldSetPanResponderCapture: (_, gesture) =>
+          atTop && gesture.dy > 8 && gesture.dy > Math.abs(gesture.dx) * 1.5,
         onPanResponderMove: (_, gesture) => translateY.setValue(Math.max(0, gesture.dy)),
         onPanResponderRelease: (_, gesture) => {
           if (gesture.dy > DISMISS_THRESHOLD) {
@@ -93,8 +98,20 @@ export function NowPlayingScreen() {
           }
         },
       }),
-    [translateY, dismiss],
+    [translateY, dismiss, atTop],
   );
+
+  // Android back closes the Queue if it is open on top, otherwise the player.
+  useEffect(() => {
+    if (!nowPlayingOpen) return;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      const ui = usePlayerUiStore.getState();
+      if (ui.queueOpen) ui.closeQueue();
+      else dismiss();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [nowPlayingOpen, dismiss]);
 
   if (!nowPlayingOpen || !currentTrack) return null;
 
@@ -105,7 +122,9 @@ export function NowPlayingScreen() {
 
   return (
     <PlayerOverlay onRequestClose={dismiss}>
-      <Animated.View style={[styles.overlay, { transform: [{ translateY }] }]}>
+      <Animated.View
+        style={[styles.overlay, { transform: [{ translateY }] }]}
+        {...(wide ? {} : swipe.panHandlers)}>
         <View style={styles.fill}>
           <View
             style={[
@@ -113,7 +132,7 @@ export function NowPlayingScreen() {
               wide && styles.contentWide,
               { paddingTop: insets.top, paddingBottom: insets.bottom },
             ]}>
-            <View style={styles.grabberArea} {...(wide ? {} : grabber.panHandlers)}>
+            <View style={styles.grabberArea}>
               {!wide && <View style={styles.grabber} />}
               <Pressable
                 hitSlop={12}
@@ -128,7 +147,13 @@ export function NowPlayingScreen() {
             {/* Scrolls when the content is taller than the viewport (e.g. a landscape phone), so
                 the transport and Queue button stay reachable; centred when it fits. */}
             <View style={wide ? styles.wideRow : styles.fill}>
-            <ScrollView style={styles.scroll} contentContainerStyle={styles.body}>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.body}
+              scrollEventThrottle={16}
+              onScroll={(event) => {
+                setAtTop(event.nativeEvent.contentOffset.y <= 0);
+              }}>
               <CoverArtImage
                 uri={coverArtUri || undefined}
                 style={wide ? styles.artWide : styles.art}
@@ -332,7 +357,7 @@ const styles = StyleSheet.create({
   },
   grabberArea: {
     alignItems: 'center',
-    paddingVertical: Spacing.two,
+    paddingVertical: Spacing.three,
   },
   grabber: {
     width: 40,
