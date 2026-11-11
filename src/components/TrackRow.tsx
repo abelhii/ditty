@@ -8,6 +8,8 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Radius, Spacing } from '@/constants/theme';
 import { DownloadBadge } from '@/features/downloads/components/DownloadBadge';
+import { useTrackDownloadState } from '@/features/downloads/hooks/use-download-state';
+import { useOfflineMode } from '@/features/downloads/use-offline-store';
 import { useTheme } from '@/hooks/use-theme';
 import { useIsCurrentTrack } from '@/player/hooks/use-is-current-track';
 
@@ -34,11 +36,18 @@ export function TrackRow({
 }: TrackRowProps) {
   const theme = useTheme();
   const isPlaying = useIsCurrentTrack(track.id);
+  // Offline, only downloaded tracks can play — grey the rest out and make them inert.
+  const offline = useOfflineMode();
+  const downloadState = useTrackDownloadState(track.id);
+  const unavailable = offline && downloadState.kind !== 'downloaded';
 
   return (
     <Pressable
+      disabled={unavailable}
+      accessibilityState={{ disabled: unavailable }}
       style={(state) => [
         styles.row,
+        unavailable && styles.unavailable,
         // Pressed beats hover beats playing. `hovered` is only set by react-native-web.
         isPlaying && { backgroundColor: theme.rowPlaying },
         (state as { hovered?: boolean }).hovered && { backgroundColor: theme.rowHover },
@@ -97,6 +106,9 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.four,
+  },
+  unavailable: {
+    opacity: 0.4,
   },
   position: {
     width: Spacing.four,
