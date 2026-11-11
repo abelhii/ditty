@@ -23,8 +23,6 @@ type TrackRowProps = {
   position?: number;
   /** Cover art URL, used for the leading thumbnail when `position` is omitted. */
   coverArtUri?: string;
-  /** Extra text after the artist on the subtitle line, e.g. "12 plays". */
-  detail?: string;
   onPress: () => void;
   onOverflowPress: () => void;
 };
@@ -33,7 +31,6 @@ export function TrackRow({
   track,
   position,
   coverArtUri,
-  detail,
   onPress,
   onOverflowPress,
 }: TrackRowProps) {
@@ -73,7 +70,7 @@ export function TrackRow({
           {track.title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {detail ? `${track.artist} · ${detail}` : track.artist}
+          {track.artist}
         </ThemedText>
       </ThemedView>
       <DownloadBadge trackId={track.id} />
