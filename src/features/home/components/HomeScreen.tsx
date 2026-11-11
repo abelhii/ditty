@@ -9,6 +9,7 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
+import { MostPlayedTracks } from '@/features/home/components/MostPlayedTracks';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
 import { WideHome } from '@/features/home/components/WideHome';
 import { homeShelves } from '@/features/home/shelves';
@@ -84,6 +85,7 @@ function NarrowHome() {
             <AlbumShelf shelf={recentlyAdded} onSeeAll={() => router.push('/library')} />
           )}
           {frequentlyPlayed && <AlbumShelf shelf={frequentlyPlayed} />}
+          {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
           {explore && <UnheardTracks shelf={explore} />}
         </ScrollView>
       </SafeAreaView>

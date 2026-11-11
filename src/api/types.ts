@@ -25,6 +25,8 @@ export type Track = {
   samplingRate?: number;
   /** Whether the user has favourited (starred) this track — see CONTEXT.md's Favourite. */
   starred: boolean;
+  /** Times played, when the server reports it. Absent otherwise. */
+  playCount?: number;
 };
 
 export type Artist = {
