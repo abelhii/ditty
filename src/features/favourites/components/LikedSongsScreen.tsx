@@ -46,11 +46,11 @@ export function LikedSongsScreen() {
               refreshing={favouritesQuery.isFetching}
               onRefresh={() => favouritesQuery.refetch()}
               ListEmptyComponent={<EmptyMessage text="No starred songs." />}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <TrackRow
                   track={item}
                   coverArtUri={coverUri(item.coverArtId, CoverArtSize.list)}
-                  onPress={() => PlaybackController.playNow(item)}
+                  onPress={() => PlaybackController.play(tracks, index)}
                   onOverflowPress={() => setMenuTrack(item)}
                 />
               )}

@@ -19,6 +19,9 @@ different things to the Queue.
 
 A search song tap therefore *always* produces sound, and *never* discards an existing Queue.
 
+**Liked Songs** is a cohesive list like an album, not an exploratory context: tapping a row calls
+`play(likedSongs, index)` and replaces the Queue (it previously used `playNow`).
+
 ## Considered Options
 
 **Make search taps queue-replacing too** (reuse `play(songResults, index)`, the songs section
