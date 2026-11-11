@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, SectionList, StyleSheet } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, SectionList, StyleSheet, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -13,9 +13,11 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { AllSongsList } from '@/features/library/components/AllSongsList';
+import { AlphabetIndex } from '@/features/library/components/AlphabetIndex';
 import { ListControls } from '@/features/library/components/ListControls';
 import { useArtistSections } from '@/features/library/hooks/use-artist-sections';
 import { useGenres } from '@/features/library/hooks/use-genres';
+import { firstIndexByLetter, indexLetter } from '@/features/library/alphabet-index';
 import {
   ARTIST_SORTS,
   filterArtists,
@@ -23,6 +25,7 @@ import {
   type ArtistSortKey,
   type SortDirection,
 } from '@/features/library/list-sort';
+import { retryAfterEstimate } from '@/features/library/scroll-to-index';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type LibraryView = 'songs' | 'artists' | 'genres';
@@ -55,9 +58,45 @@ export function ArtistsScreen({ initialView = 'songs' }: { initialView?: Library
     [artistSectionsQuery.data, query],
   );
   const flatArtists = useMemo(
-    () => sortArtists(sections.flatMap((section) => section.data), sort, direction),
+    () =>
+      sortArtists(
+        sections.flatMap((section) => section.data),
+        sort,
+        direction,
+      ),
     [sections, sort, direction],
   );
+
+  const sectionListRef = useRef<SectionList<Artist, { title: string; data: Artist[] }>>(null);
+  const flatListRef = useRef<FlatList<Artist>>(null);
+  // Sections jump by section (the server's own grouping); a flat name sort jumps by first letter.
+  const sectionStarts = useMemo(() => {
+    const starts = new Map<string, number>();
+    sections.forEach((section, index) => {
+      const letter = indexLetter(section.title);
+      if (!starts.has(letter)) starts.set(letter, index);
+    });
+    return starts;
+  }, [sections]);
+  const flatStarts = useMemo(
+    () => (sort === 'name' ? firstIndexByLetter(flatArtists, (artist) => artist.name) : null),
+    [flatArtists, sort],
+  );
+  const railLetters = sort === 'default' ? sectionStarts : flatStarts;
+
+  const lastLetter = useRef('');
+  const jumpToLetter = (letter: string) => {
+    lastLetter.current = letter;
+    if (sort === 'default') {
+      const sectionIndex = sectionStarts.get(letter);
+      if (sectionIndex !== undefined) {
+        sectionListRef.current?.scrollToLocation({ sectionIndex, itemIndex: 0, animated: false });
+      }
+    } else {
+      const index = flatStarts?.get(letter);
+      if (index !== undefined) flatListRef.current?.scrollToIndex({ index, animated: false });
+    }
+  };
 
   const renderArtist = ({ item }: { item: Artist }) =>
     credentials ? (
@@ -102,40 +141,67 @@ export function ArtistsScreen({ initialView = 'songs' }: { initialView?: Library
             <QueryState
               query={artistSectionsQuery}
               isEmpty={() => sections.length === 0}
-              emptyMessage={query.trim() ? 'No artists match.' : 'No artists found.'}>
-              {() =>
-                sort === 'default' ? (
-                  <SectionList<Artist, { title: string; data: Artist[] }>
-                    sections={sections}
-                    keyExtractor={(artist) => artist.id}
-                    renderItem={renderArtist}
-                    renderSectionHeader={({ section }) => (
-                      <ThemedView style={styles.sectionHeader}>
-                        <ThemedText type="smallBold" themeColor="textSecondary">
-                          {section.title}
-                        </ThemedText>
-                      </ThemedView>
-                    )}
-                    stickySectionHeadersEnabled
-                    contentContainerStyle={listContentStyle}
-                    refreshing={artistSectionsQuery.isFetching}
-                    onRefresh={() => artistSectionsQuery.refetch()}
-                  />
-                ) : (
-                  <FlatList<Artist>
-                    data={flatArtists}
-                    keyExtractor={(artist) => artist.id}
-                    renderItem={renderArtist}
-                    contentContainerStyle={listContentStyle}
-                    refreshing={artistSectionsQuery.isFetching}
-                    onRefresh={() => artistSectionsQuery.refetch()}
-                  />
-                )
-              }
+              emptyMessage={query.trim() ? 'No artists match.' : 'No artists found.'}
+            >
+              {() => (
+                <View style={styles.listWrap}>
+                  {sort === 'default' ? (
+                    <SectionList<Artist, { title: string; data: Artist[] }>
+                      ref={sectionListRef}
+                      sections={sections}
+                      keyExtractor={(artist) => artist.id}
+                      renderItem={renderArtist}
+                      renderSectionHeader={({ section }) => (
+                        <ThemedView style={styles.sectionHeader}>
+                          <ThemedText type="smallBold" themeColor="textSecondary">
+                            {section.title}
+                          </ThemedText>
+                        </ThemedView>
+                      )}
+                      stickySectionHeadersEnabled
+                      contentContainerStyle={listContentStyle}
+                      refreshing={artistSectionsQuery.isFetching}
+                      onRefresh={() => artistSectionsQuery.refetch()}
+                      onScrollToIndexFailed={(info) =>
+                        retryAfterEstimate(
+                          info,
+                          (y) =>
+                            sectionListRef.current?.getScrollResponder()?.scrollTo({ y, animated: false }),
+                          () => jumpToLetter(lastLetter.current),
+                        )
+                      }
+                    />
+                  ) : (
+                    <FlatList<Artist>
+                      ref={flatListRef}
+                      data={flatArtists}
+                      keyExtractor={(artist) => artist.id}
+                      renderItem={renderArtist}
+                      contentContainerStyle={listContentStyle}
+                      refreshing={artistSectionsQuery.isFetching}
+                      onRefresh={() => artistSectionsQuery.refetch()}
+                      onScrollToIndexFailed={(info) =>
+                        retryAfterEstimate(
+                          info,
+                          (offset) => flatListRef.current?.scrollToOffset({ offset, animated: false }),
+                          () => jumpToLetter(lastLetter.current),
+                        )
+                      }
+                    />
+                  )}
+                  {railLetters ? (
+                    <AlphabetIndex available={new Set(railLetters.keys())} onSelect={jumpToLetter} />
+                  ) : null}
+                </View>
+              )}
             </QueryState>
           </>
         ) : (
-          <QueryState query={genresQuery} isEmpty={(genres) => genres.length === 0} emptyMessage="No genres found.">
+          <QueryState
+            query={genresQuery}
+            isEmpty={(genres) => genres.length === 0}
+            emptyMessage="No genres found."
+          >
             {(genres) => (
               <FlatList
                 data={genres}
@@ -164,19 +230,9 @@ function toListSections(sections: ArtistSection[]) {
     .map((section) => ({ title: section.letter, data: section.artists }));
 }
 
-function SegmentButton({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
+function SegmentButton({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.segmentButton, pressed && styles.pressed]}
-      onPress={onPress}>
+    <Pressable style={({ pressed }) => [styles.segmentButton, pressed && styles.pressed]} onPress={onPress}>
       <ThemedView type={active ? 'backgroundSelected' : undefined} style={styles.segmentButtonInner}>
         <ThemedText type="smallBold" themeColor={active ? 'text' : 'textSecondary'}>
           {label}
@@ -217,6 +273,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     alignItems: 'center',
     borderRadius: Spacing.two,
+  },
+  listWrap: {
+    flex: 1,
   },
   sectionHeader: {
     paddingHorizontal: Spacing.four,

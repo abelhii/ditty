@@ -1,7 +1,7 @@
 import { useRouter, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -24,7 +24,9 @@ import {
   playlistRows,
   type LibraryRow,
 } from '@/features/library/library-rows';
+import { AlphabetIndex } from '@/features/library/components/AlphabetIndex';
 import { ListControls } from '@/features/library/components/ListControls';
+import { firstIndexByLetter } from '@/features/library/alphabet-index';
 import {
   filterRows,
   ROW_SORTS,
@@ -32,6 +34,7 @@ import {
   type RowSortKey,
   type SortDirection,
 } from '@/features/library/list-sort';
+import { retryAfterEstimate } from '@/features/library/scroll-to-index';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
@@ -210,17 +213,39 @@ function Table({ rows: allRows, emptyMessage, refreshing, onRefresh }: TableProp
     [allRows, query, sort, direction],
   );
 
+  const listRef = useRef<FlatList<LibraryRow>>(null);
+  const targetIndex = useRef(0);
+  const starts = useMemo(
+    () => (sort === 'title' ? firstIndexByLetter(rows, (row) => row.title) : null),
+    [rows, sort],
+  );
+  const jumpToLetter = (letter: string) => {
+    const index = starts?.get(letter);
+    if (index === undefined) return;
+    targetIndex.current = index;
+    listRef.current?.scrollToIndex({ index, animated: false });
+  };
+
   const coverUri = (row: LibraryRow) =>
     credentials && row.coverArtId
       ? getCoverArtUrl(credentials.serverUrl, row.coverArtId, credentials, CoverArtSize.list)
       : undefined;
 
   return (
+    <View style={styles.listWrap}>
     <FlatList<LibraryRow>
+      ref={listRef}
       data={rows}
       keyExtractor={(row) => row.key}
       refreshing={refreshing}
       onRefresh={onRefresh}
+      onScrollToIndexFailed={(info) =>
+        retryAfterEstimate(
+          info,
+          (offset) => listRef.current?.scrollToOffset({ offset, animated: false }),
+          () => listRef.current?.scrollToIndex({ index: targetIndex.current, animated: false }),
+        )
+      }
       contentContainerStyle={{ paddingBottom: listBottomInset }}
       ListHeaderComponent={
         <>
@@ -305,6 +330,8 @@ function Table({ rows: allRows, emptyMessage, refreshing, onRefresh }: TableProp
         </Pressable>
       )}
     />
+    {starts ? <AlphabetIndex available={new Set(starts.keys())} onSelect={jumpToLetter} /> : null}
+    </View>
   );
 }
 
@@ -368,6 +395,9 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.pill,
+  },
+  listWrap: {
+    flex: 1,
   },
   controls: {
     paddingHorizontal: 0,
