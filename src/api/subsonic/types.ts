@@ -41,10 +41,20 @@ export type SubsonicSong = {
   bitDepth?: number;
   /** Sample rate in Hz, e.g. 44100. OpenSubsonic extension — not every server reports it. */
   samplingRate?: number;
+  /** OpenSubsonic extension — gain in dB and linear peak from the file's ReplayGain tags. Omitted
+   *  by servers (and for untagged files) when unavailable. */
+  replayGain?: SubsonicReplayGain;
   /** ISO timestamp set when the item is starred; absent/undefined when not starred. */
   starred?: string;
   /** Times the user has played this song, when the server reports it (Navidrome does). */
   playCount?: number;
+};
+
+export type SubsonicReplayGain = {
+  trackGain?: number;
+  albumGain?: number;
+  trackPeak?: number;
+  albumPeak?: number;
 };
 
 export type SubsonicArtist = {

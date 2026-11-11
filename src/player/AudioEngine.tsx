@@ -13,6 +13,8 @@ import * as PlaybackController from "@/player/PlaybackController";
 import { getCurrentTrack } from "@/player/QueueManager";
 import { usePlaybackStatusStore } from "@/player/use-playback-status-store";
 import { resolveTrackSource } from "@/player/track-source";
+import { levellingGain } from "@/player/replay-gain";
+import { useLevellingSettingsStore } from "@/player/use-levelling-settings-store";
 import { usePlayerStore } from "@/player/use-player-store";
 import { isOffline } from "@/utils/network";
 
@@ -47,6 +49,7 @@ export function AudioEngine() {
   const seekRequest = usePlayerStore((state) => state.seekRequest);
   const retryNonce = usePlayerStore((state) => state.retryNonce);
   const volume = usePlayerStore((state) => state.volume);
+  const levellingMode = useLevellingSettingsStore((state) => state.mode);
 
   const player = useAudioPlayer(null, { updateInterval: 1000 });
   const status = useAudioPlayerStatus(player);
@@ -110,9 +113,11 @@ export function AudioEngine() {
   }, [player, queue.repeat]);
 
   useEffect(() => {
+    // expo-audio volume is capped at 1, so ReplayGain levelling can only attenuate (issue #73).
     // eslint-disable-next-line react-hooks/immutability -- same native SharedObject property as `loop`
-    player.volume = volume;
-  }, [player, volume]);
+    player.volume = volume * levellingGain(currentTrack?.replayGain, levellingMode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed by track identity, not the whole object
+  }, [player, volume, levellingMode, currentTrack?.id]);
 
   useEffect(() => {
     if (seekRequest === null) return;

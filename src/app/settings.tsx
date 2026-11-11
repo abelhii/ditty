@@ -19,11 +19,19 @@ import { DownloadsSettings } from '@/features/downloads/components/DownloadsSett
 import { getDownloadSummary } from '@/features/downloads/downloads-runtime';
 import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { useAutoDjSettingsStore, type AutoDjSource } from '@/player/use-auto-dj-settings-store';
+import { useLevellingSettingsStore } from '@/player/use-levelling-settings-store';
+import type { LevellingMode } from '@/player/replay-gain';
 
 const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
+];
+
+const LEVELLING_OPTIONS: { value: LevellingMode; label: string }[] = [
+  { value: 'off', label: 'Off' },
+  { value: 'track', label: 'Track' },
+  { value: 'album', label: 'Album' },
 ];
 
 const SOURCE_OPTIONS: { value: AutoDjSource; label: string }[] = [
@@ -46,6 +54,8 @@ export default function SettingsScreen() {
   const preference = useThemePreferenceStore((state) => state.preference);
   const setPreference = useThemePreferenceStore((state) => state.setPreference);
   const autoDj = useAutoDjSettingsStore();
+  const levellingMode = useLevellingSettingsStore((state) => state.mode);
+  const setLevellingMode = useLevellingSettingsStore((state) => state.setMode);
   const offlineManual = useOfflineStore((state) => state.manual);
   const setOfflineManual = useOfflineStore((state) => state.setManual);
 
@@ -125,6 +135,26 @@ export default function SettingsScreen() {
     </ThemedView>
   );
 
+  const levellingSection = (
+    <ThemedView style={styles.appearance}>
+      {!wide && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Volume levelling
+        </ThemedText>
+      )}
+      <SegmentedChoice
+        label="Volume levelling"
+        options={LEVELLING_OPTIONS}
+        value={levellingMode}
+        onChange={setLevellingMode}
+      />
+      <ThemedText type="small" themeColor="textSecondary">
+        Turns down louder tracks using ReplayGain tags from your server. Tracks without tags play
+        unchanged.
+      </ThemedText>
+    </ThemedView>
+  );
+
   const offlineSection = Platform.OS !== 'web' && (
     <ThemedView style={styles.appearance}>
       {!wide && (
@@ -189,6 +219,7 @@ export default function SettingsScreen() {
             </ThemedView>
             <ThemedView type="backgroundElement" style={[styles.card, styles.cardPlayback]}>
               <ThemedText type="smallBold">Playback</ThemedText>
+              {levellingSection}
               {autoDjSection}
               {offlineSection}
               {downloadsSection}
@@ -209,6 +240,7 @@ export default function SettingsScreen() {
         <ThemedText type="title">Settings</ThemedText>
         {serverInfo}
         {appearance}
+        {levellingSection}
         {autoDjSection}
         {offlineSection}
         {downloadsSection}

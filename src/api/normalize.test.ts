@@ -156,6 +156,12 @@ describe('normalizeTrack', () => {
     });
   });
 
+  it('passes ReplayGain tags through', () => {
+    expect(
+      normalizeTrack({ id: 's1', title: 'x', replayGain: { trackGain: -7.2, trackPeak: 0.98 } }).replayGain,
+    ).toEqual({ trackGain: -7.2, trackPeak: 0.98 });
+  });
+
   it('marks starred when the raw song carries a starred timestamp', () => {
     expect(normalizeTrack({ id: 's1', title: 'x', starred: '2026-07-29T00:00:00Z' }).starred).toBe(true);
   });
