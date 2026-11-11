@@ -1,4 +1,4 @@
-import { openDatabaseSync } from 'expo-sqlite';
+import { openDatabaseSync, type SQLiteDatabase } from 'expo-sqlite';
 
 import type { Track } from '@/api/types';
 import { parseRow } from '@/features/downloads/download-rows';
@@ -9,32 +9,40 @@ import type { DownloadRecord, DownloadRow } from '@/features/downloads/download-
  * durability; the query cache is not enough). Separate database from the KV store that backs the
  * query cache. Native only — see downloads-db.web.ts.
  */
-const db = openDatabaseSync('downloads.db');
+let database: SQLiteDatabase | null = null;
 
-db.execSync(`
-  CREATE TABLE IF NOT EXISTS downloads (
-    server_key TEXT NOT NULL,
-    track_id TEXT NOT NULL,
-    track_json TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    cover_path TEXT,
-    size_bytes INTEGER NOT NULL,
-    state TEXT NOT NULL,
-    PRIMARY KEY (server_key, track_id)
-  );
-  CREATE TABLE IF NOT EXISTS download_collections (
-    server_key TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    collection_id TEXT NOT NULL,
-    track_id TEXT NOT NULL,
-    PRIMARY KEY (server_key, kind, collection_id, track_id)
-  );
-`);
+/** Opened (and the schema created) on first use rather than at import, so merely importing this
+ *  module — e.g. from the auth store or a test — never touches native SQLite. */
+function getDb(): SQLiteDatabase {
+  if (!database) {
+    database = openDatabaseSync('downloads.db');
+    database.execSync(`
+      CREATE TABLE IF NOT EXISTS downloads (
+        server_key TEXT NOT NULL,
+        track_id TEXT NOT NULL,
+        track_json TEXT NOT NULL,
+        file_path TEXT NOT NULL,
+        cover_path TEXT,
+        size_bytes INTEGER NOT NULL,
+        state TEXT NOT NULL,
+        PRIMARY KEY (server_key, track_id)
+      );
+      CREATE TABLE IF NOT EXISTS download_collections (
+        server_key TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        collection_id TEXT NOT NULL,
+        track_id TEXT NOT NULL,
+        PRIMARY KEY (server_key, kind, collection_id, track_id)
+      );
+    `);
+  }
+  return database;
+}
 
 export type CollectionKind = 'album' | 'playlist' | 'track';
 
 export function saveDownload(server: string, record: DownloadRecord): void {
-  db.runSync(
+  getDb().runSync(
     `INSERT OR REPLACE INTO downloads
        (server_key, track_id, track_json, file_path, cover_path, size_bytes, state)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -49,7 +57,7 @@ export function saveDownload(server: string, record: DownloadRecord): void {
 }
 
 export function getDownload(server: string, trackId: string): DownloadRecord | null {
-  const row = db.getFirstSync<DownloadRow>(
+  const row = getDb().getFirstSync<DownloadRow>(
     'SELECT * FROM downloads WHERE server_key = ? AND track_id = ?',
     server,
     trackId,
@@ -58,7 +66,7 @@ export function getDownload(server: string, trackId: string): DownloadRecord | n
 }
 
 export function listDownloads(server: string): DownloadRecord[] {
-  return db
+  return getDb()
     .getAllSync<DownloadRow>('SELECT * FROM downloads WHERE server_key = ?', server)
     .map(parseRow)
     .filter((record): record is DownloadRecord => record !== null);
@@ -71,7 +79,7 @@ export function addMembership(
   collectionId: string,
   track: Track,
 ): void {
-  db.runSync(
+  getDb().runSync(
     `INSERT OR IGNORE INTO download_collections (server_key, kind, collection_id, track_id)
      VALUES (?, ?, ?, ?)`,
     server,
@@ -91,14 +99,14 @@ export function releaseCollection(
   collectionId: string,
 ): DownloadRecord[] {
   let orphaned: DownloadRecord[] = [];
-  db.withTransactionSync(() => {
-    db.runSync(
+  getDb().withTransactionSync(() => {
+    getDb().runSync(
       'DELETE FROM download_collections WHERE server_key = ? AND kind = ? AND collection_id = ?',
       server,
       kind,
       collectionId,
     );
-    orphaned = db
+    orphaned = getDb()
       .getAllSync<DownloadRow>(
         `SELECT d.* FROM downloads d
          WHERE d.server_key = ?
@@ -114,7 +122,7 @@ export function releaseCollection(
 }
 
 export function listDownloadedIds(server: string): string[] {
-  return db
+  return getDb()
     .getAllSync<{ track_id: string }>(
       "SELECT track_id FROM downloads WHERE server_key = ? AND state = 'complete'",
       server,
@@ -125,16 +133,16 @@ export function listDownloadedIds(server: string): string[] {
 /** Drops every collection's claim on one track — "remove this download" from a track row means
  *  gone, even if an album or playlist had also asked for it. */
 export function releaseTrack(server: string, trackId: string): void {
-  db.runSync('DELETE FROM download_collections WHERE server_key = ? AND track_id = ?', server, trackId);
+  getDb().runSync('DELETE FROM download_collections WHERE server_key = ? AND track_id = ?', server, trackId);
 }
 
 export function deleteDownload(server: string, trackId: string): void {
-  db.runSync('DELETE FROM downloads WHERE server_key = ? AND track_id = ?', server, trackId);
+  getDb().runSync('DELETE FROM downloads WHERE server_key = ? AND track_id = ?', server, trackId);
 }
 
 export function clearServer(server: string): void {
-  db.withTransactionSync(() => {
-    db.runSync('DELETE FROM downloads WHERE server_key = ?', server);
-    db.runSync('DELETE FROM download_collections WHERE server_key = ?', server);
+  getDb().withTransactionSync(() => {
+    getDb().runSync('DELETE FROM downloads WHERE server_key = ?', server);
+    getDb().runSync('DELETE FROM download_collections WHERE server_key = ?', server);
   });
 }

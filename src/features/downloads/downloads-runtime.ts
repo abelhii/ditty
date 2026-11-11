@@ -1,4 +1,5 @@
 import { File } from 'expo-file-system';
+import * as Network from 'expo-network';
 
 import { SubsonicApiError } from '@/api/subsonic/errors';
 import { getCoverArtUrl, CoverArtSize, getDownloadUrl } from '@/api/subsonic/endpoints/media';
@@ -8,6 +9,9 @@ import { showNotice } from '@/components/use-notice-store';
 import { parseApiErrorBody } from '@/features/downloads/api-error-body';
 import { createDownloadManager } from '@/features/downloads/download-manager';
 import { audioFileName, coverFileName, serverKey } from '@/features/downloads/download-paths';
+import { groupByAlbum } from '@/features/downloads/album-groups';
+import type { DownloadGroup } from '@/features/downloads/album-groups';
+import { clearServerDownloads } from '@/features/downloads/clear-downloads';
 import { albumFromDownloads } from '@/features/downloads/offline-album';
 import { removableCovers } from '@/features/downloads/download-rows';
 import type { DownloadRecord } from '@/features/downloads/download-rows';
@@ -27,6 +31,8 @@ import {
   ensureServerDirectory,
   fileSize,
 } from '@/features/downloads/downloads-files';
+import { useDownloadSettingsStore } from '@/features/downloads/use-download-settings-store';
+import { isBlockedByWifiOnly } from '@/features/downloads/wifi-only';
 import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
 
 /** Error bodies are a few hundred bytes; audio is never this small, so only tiny files are read. */
@@ -92,10 +98,24 @@ const manager = createDownloadManager({
 // Re-authentication replaces the token the parked queue was signed with; continue once it succeeds.
 useAuthStore.subscribe((state, previous) => {
   if (previous.reauthRequired && !state.reauthRequired) manager.resume();
+  // Logout deletes the downloads (see clear-downloads.ts); stop anything still in flight so it can't
+  // write a file back afterwards.
+  if (previous.status === 'authenticated' && state.status !== 'authenticated') manager.cancelAll();
 });
 
 export function downloadTracks(kind: CollectionKind, collectionId: string, tracks: Track[]): void {
-  manager.enqueue(kind, collectionId, tracks);
+  void (async () => {
+    // Wi-Fi only is checked when the download is requested; a connection that flips to cellular
+    // mid-queue is not re-checked.
+    if (useDownloadSettingsStore.getState().wifiOnly) {
+      const state = await Network.getNetworkStateAsync().catch(() => null);
+      if (isBlockedByWifiOnly(true, state?.type)) {
+        showNotice('Downloads are set to Wi-Fi only. Connect to Wi-Fi or change this in Settings.');
+        return;
+      }
+    }
+    manager.enqueue(kind, collectionId, tracks);
+  })();
 }
 
 export function cancelDownload(trackId: string): void {
@@ -148,4 +168,27 @@ export function removeCollectionDownload(
 export function getDownloadedAlbum(albumId: string) {
   const server = currentServer();
   return server ? albumFromDownloads(albumId, listDownloads(server)) : null;
+}
+
+export type DownloadSummary = { groups: DownloadGroup[]; totalBytes: number };
+
+/** What is downloaded right now, grouped by album, for the storage screen. */
+export function getDownloadSummary(): DownloadSummary {
+  const server = currentServer();
+  const records = server ? listDownloads(server) : [];
+  const groups = groupByAlbum(records);
+  return { groups, totalBytes: groups.reduce((sum, g) => sum + g.sizeBytes, 0) };
+}
+
+/** Removes the given tracks' downloads entirely. */
+export function removeTrackDownloads(trackIds: string[]): void {
+  for (const id of trackIds) removeTrackDownload(id);
+}
+
+/** Cancels everything in flight and deletes every download for the signed-in server. */
+export function removeAllDownloads(): void {
+  const credentials = useAuthStore.getState().credentials;
+  if (!credentials) return;
+  manager.cancelAll();
+  clearServerDownloads(credentials.serverUrl, credentials.username);
 }

@@ -15,3 +15,13 @@ export function removeCollectionDownload(
 export function getDownloadedAlbum(_albumId: string): { album: Album; tracks: Track[] } | null {
   return null;
 }
+
+export type DownloadSummary = {
+  groups: { key: string; albumName: string; artist: string; trackIds: string[]; sizeBytes: number }[];
+  totalBytes: number;
+};
+export function getDownloadSummary(): DownloadSummary {
+  return { groups: [], totalBytes: 0 };
+}
+export function removeTrackDownloads(_trackIds: string[]): void {}
+export function removeAllDownloads(): void {}
