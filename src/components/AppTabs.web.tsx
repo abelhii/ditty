@@ -41,6 +41,7 @@ function useIsWide() {
 const TabIcons: Record<string, SymbolViewProps["name"]> = {
   Home: { ios: "house", android: "home", web: "home" },
   Library: { ios: "books.vertical", android: "library_books", web: "library_books" },
+  Likes: { ios: "heart", android: "favorite", web: "favorite" },
   Search: { ios: "magnifyingglass", android: "search", web: "search" },
   Settings: { ios: "slider.horizontal.3", android: "tune", web: "tune" },
 };
@@ -70,6 +71,9 @@ export default function AppTabs() {
           </TabTrigger>
           <TabTrigger name="library" href="/library" asChild>
             <TabButton>Library</TabButton>
+          </TabTrigger>
+          <TabTrigger name="likes" href="/likes" asChild>
+            <TabButton>Likes</TabButton>
           </TabTrigger>
           {wide && <SidebarPlaylists />}
           <TabTrigger name="search" href="/search" asChild>

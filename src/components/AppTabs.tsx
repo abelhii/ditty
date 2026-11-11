@@ -27,6 +27,13 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="books.vertical" md="library_books" />
       </NativeTabs.Trigger>
 
+      {/* Your Likes (Liked Songs) — a tab of its own; Home's card and the My Music rows still open it
+          inside their own stacks. */}
+      <NativeTabs.Trigger name="likes">
+        <NativeTabs.Trigger.Label>Likes</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="heart" md="favorite" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="search">
         <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
         {/* No search PNG in the icon set — use the platform's built-in search glyph (SF Symbol on

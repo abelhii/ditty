@@ -18,6 +18,7 @@ async function renderTabBar(width: number) {
     <CustomTabList>
       <TabButton isFocused>Home</TabButton>
       <TabButton>Library</TabButton>
+      <TabButton>Likes</TabButton>
       <TabButton>Search</TabButton>
       <TabButton>Settings</TabButton>
     </CustomTabList>,
@@ -31,6 +32,7 @@ describe('web tab bar', () => {
     await renderTabBar(width);
 
     expect(screen.queryByText('Sicmu')).toBeNull();
+    expect(screen.getByText('Likes')).toBeOnTheScreen();
     expect(screen.getByText('Search')).toBeOnTheScreen();
     expect(screen.getByText('Settings')).toBeOnTheScreen();
   });
@@ -41,6 +43,7 @@ describe('web tab bar', () => {
     expect(screen.getByText('Sicmu')).toBeOnTheScreen();
     expect(screen.getByText('Home')).toBeOnTheScreen();
     expect(screen.getByText('Library')).toBeOnTheScreen();
+    expect(screen.getByText('Likes')).toBeOnTheScreen();
     // Search is the top bar's job on wide; Settings becomes the account row.
     expect(screen.queryByText('Search')).toBeNull();
     expect(screen.getByLabelText('Settings')).toBeOnTheScreen();
