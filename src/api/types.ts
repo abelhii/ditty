@@ -23,8 +23,17 @@ export type Track = {
   bitDepth?: number;
   /** Sample rate in Hz, e.g. 44100, when the server reports it (OpenSubsonic extension). */
   samplingRate?: number;
+  /** ReplayGain tags (gain in dB, peak linear), when the server reports them. */
+  replayGain?: ReplayGain;
   /** Whether the user has favourited (starred) this track — see CONTEXT.md's Favourite. */
   starred: boolean;
+};
+
+export type ReplayGain = {
+  trackGain?: number;
+  albumGain?: number;
+  trackPeak?: number;
+  albumPeak?: number;
 };
 
 export type Artist = {
