@@ -71,3 +71,13 @@ export function reconcile(records: DownloadRecord[], filesOnDisk: string[]): Rec
     orphanFiles: filesOnDisk.filter((path) => !known.has(path)),
   };
 }
+
+/**
+ * Cover art files that can be deleted once `removed` downloads are gone: those no remaining download
+ * still points at. An album's tracks share one cover file, so removing one track must not delete it.
+ */
+export function removableCovers(removed: DownloadRecord[], remaining: DownloadRecord[]): string[] {
+  const stillUsed = new Set(remaining.map((r) => r.coverPath).filter((c): c is string => c !== null));
+  const covers = new Set(removed.map((r) => r.coverPath).filter((c): c is string => c !== null));
+  return [...covers].filter((cover) => !stillUsed.has(cover));
+}

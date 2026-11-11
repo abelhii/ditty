@@ -1,11 +1,13 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { downloadTracks, removeTrackDownload } from '@/features/downloads/downloads-runtime';
+import { useTrackDownloadState } from '@/features/downloads/hooks/use-download-state';
 import { useStar, useUnstar } from '@/features/favourites/hooks/use-star';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { useTheme } from '@/hooks/use-theme';
@@ -30,6 +32,7 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
   const star = useStar();
   const unstar = useUnstar();
   const [addTrack, setAddTrack] = useState<Track | null>(null);
+  const downloadState = useTrackDownloadState(track?.id);
 
   return (
     <>
@@ -79,6 +82,26 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
                 onClose();
               }}
             />
+            {Platform.OS !== 'web' &&
+              (downloadState.kind === 'downloaded' ? (
+                <MenuOption
+                  label="Remove download"
+                  icon={{ ios: 'trash', android: 'delete', web: 'delete' }}
+                  onPress={() => {
+                    if (track) removeTrackDownload(track.id);
+                    onClose();
+                  }}
+                />
+              ) : downloadState.kind === 'idle' || downloadState.kind === 'failed' ? (
+                <MenuOption
+                  label="Download"
+                  icon={{ ios: 'arrow.down.circle', android: 'download', web: 'download' }}
+                  onPress={() => {
+                    if (track) downloadTracks('track', track.id, [track]);
+                    onClose();
+                  }}
+                />
+              ) : null)}
             {onRemoveFromPlaylist && (
               <MenuOption
                 label="Remove from this playlist"
