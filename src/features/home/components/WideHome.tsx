@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
+import type { Album } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { AlbumGridGap } from '@/components/album-grid';
 import { AlbumTile } from '@/components/AlbumTile';
@@ -12,6 +13,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { WideTopBar } from '@/components/WideTopBar';
 import { Radius, Spacing, WideMaxContentWidth } from '@/constants/theme';
+import { Carousel } from '@/features/home/components/Carousel';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { ExploreArtists } from '@/features/home/components/ExploreArtists';
 import { MostPlayedTracks } from '@/features/home/components/MostPlayedTracks';
@@ -32,7 +34,7 @@ const PLAYLIST_CARD_COUNT = 5;
 /**
  * Home in the wide layout (the "Web home" design): a top bar whose search field opens Search, the
  * greeting, then Jump back in (Your Likes + playlists), Recently added, Explore artists and
- * "Tunes you haven't heard". Album and artist rows reflow between 6, 4 and 3 columns with width.
+ * "Tunes you haven't heard". Album and artist rows size their tiles to 6, 4 or 3 columns with width, and scroll past that.
  */
 export function WideHome() {
   const router = useRouter();
@@ -42,14 +44,14 @@ export function WideHome() {
   const { width } = useWindowDimensions();
   const credentials = useAuthStore((state) => state.credentials);
   const playlists = usePlaylists().data ?? [];
-  const { contentWidth, columns, tileWidth } = wideHomeLayout(width);
+  const { contentWidth, tileWidth } = wideHomeLayout(width);
   const cardWidth = (contentWidth - Spacing.three * (JUMP_BACK_COLUMNS - 1)) / JUMP_BACK_COLUMNS;
 
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
   const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
   const explore = shelves.find((shelf) => shelf.id === 'explore');
   const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
-  const albums = useAlbumShelf(recentlyAdded ?? shelves[0]).data?.slice(0, columns) ?? [];
+  const recentlyAddedShelf = useAlbumShelf(recentlyAdded ?? shelves[0]);
 
   return (
     <ThemedView style={styles.container}>
@@ -95,25 +97,29 @@ export function WideHome() {
             </ThemedView>
           </ThemedView>
 
-          {credentials && albums.length > 0 && (
-            <ThemedView style={styles.section}>
-              <ThemedText type="defaultBold">Recently added</ThemedText>
-              <ThemedView style={styles.row}>
-                {albums.map((album, index) => (
-                  <AlbumTile
-                    key={album.id}
-                    album={album}
-                    width={tileWidth}
-                    round={index === 0}
-                    coverArtUri={getCoverArtUrl(credentials.serverUrl, album.coverArtId, credentials, CoverArtSize.grid)}
-                    onPress={() => router.push(`/home/album/${album.id}`)}
-                  />
-                ))}
-              </ThemedView>
-            </ThemedView>
+          {credentials && (
+            <Carousel<Album>
+              title="Recently added"
+              data={recentlyAddedShelf.data}
+              loading={recentlyAddedShelf.isLoading}
+              loadingHeight={tileWidth}
+              gap={AlbumGridGap}
+              keyExtractor={(album) => album.id}
+              onRefresh={() => void recentlyAddedShelf.refetch()}
+              refreshing={recentlyAddedShelf.isFetching}
+              renderItem={({ item, index }) => (
+                <AlbumTile
+                  album={item}
+                  width={tileWidth}
+                  round={index === 0}
+                  coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.grid)}
+                  onPress={() => router.push(`/home/album/${item.id}`)}
+                />
+              )}
+            />
           )}
 
-          <ExploreArtists count={columns} tileWidth={tileWidth} />
+          <ExploreArtists tileWidth={tileWidth} />
           {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
           {explore && <UnheardTracks shelf={explore} />}
         </ScrollView>
@@ -143,10 +149,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.three,
-  },
-  row: {
-    flexDirection: 'row',
-    gap: AlbumGridGap,
   },
   likesIcon: {
     width: LIKES_ICON_SIZE,

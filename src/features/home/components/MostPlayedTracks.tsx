@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { View } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import { useAuthStore } from '@/auth/use-auth-store';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
-import { TrackRow } from '@/components/TrackRow';
-import { Spacing } from '@/constants/theme';
+import { Carousel } from '@/features/home/components/Carousel';
+import { TrackTile } from '@/features/home/components/TrackTile';
 import { useMostPlayedTracks } from '@/features/home/hooks/use-most-played-tracks';
 import type { Shelf } from '@/features/home/shelves';
 import * as PlaybackController from '@/player/PlaybackController';
+
+const TILE_WIDTH = 96;
 
 type MostPlayedTracksProps = {
   /** The Frequently played shelf, whose albums are searched for the most played Tracks. */
@@ -19,43 +19,38 @@ type MostPlayedTracksProps = {
 };
 
 /**
- * The "Most played" list: Tracks ranked by play count. Tapping a row replaces the queue with the
- * list, starting at that Track. Renders nothing until there is play history.
+ * The "Most played" carousel: songs ranked by play count, as a horizontal list with scroll and
+ * refresh controls. Tapping a tile replaces the queue with the list, starting at that Track;
+ * long-press opens the Track's actions. Renders nothing until there is play history.
  */
 export function MostPlayedTracks({ shelf }: MostPlayedTracksProps) {
   const credentials = useAuthStore((state) => state.credentials);
-  const tracks = useMostPlayedTracks(shelf);
+  const { tracks, refresh, refreshing } = useMostPlayedTracks(shelf);
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
   if (!credentials || tracks.length === 0) return null;
 
   return (
-    <ThemedView style={styles.section}>
-      <ThemedText type="defaultBold" style={styles.title}>
-        Most played
-      </ThemedText>
-      <ThemedView>
-        {tracks.map((track, index) => (
-          <TrackRow
-            key={track.id}
-            track={track}
-            coverArtUri={getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)}
-            detail={`${track.playCount} ${track.playCount === 1 ? 'play' : 'plays'}`}
+    <View>
+      <Carousel<Track>
+        title="Most played"
+        data={tracks}
+        loadingHeight={TILE_WIDTH}
+        keyExtractor={(track) => track.id}
+        onRefresh={() => void refresh()}
+        refreshing={refreshing}
+        renderItem={({ item, index }) => (
+          <TrackTile
+            track={item}
+            width={TILE_WIDTH}
+            coverArtUri={getCoverArtUrl(credentials.serverUrl, item.coverArtId, credentials, CoverArtSize.list)}
+            detail={`${item.playCount} ${item.playCount === 1 ? 'play' : 'plays'}`}
             onPress={() => PlaybackController.play(tracks, index)}
-            onOverflowPress={() => setMenuTrack(track)}
+            onLongPress={() => setMenuTrack(item)}
           />
-        ))}
-      </ThemedView>
+        )}
+      />
       <TrackActionsMenu track={menuTrack} onClose={() => setMenuTrack(null)} />
-    </ThemedView>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    gap: Spacing.two,
-  },
-  title: {
-    paddingHorizontal: Spacing.four,
-  },
-});
