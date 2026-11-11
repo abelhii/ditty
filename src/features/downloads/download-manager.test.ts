@@ -219,4 +219,17 @@ describe('download manager', () => {
     await flush();
     expect(h.gates).toHaveLength(0);
   });
+
+  it('cancelAll drops queued jobs and aborts active ones', async () => {
+    const h = harness({ concurrency: 1 });
+    h.manager.enqueue('album', 'al', [track('a'), track('b')]);
+    await flush();
+    h.manager.cancelAll();
+    await flush();
+    expect(h.items.get('b')).toBeNull();
+    expect(h.items.get('a')).toBeNull();
+    expect(h.gates).toHaveLength(1);
+    expect(h.gates[0].signal.aborted).toBe(true);
+    expect(h.saved).toHaveLength(0);
+  });
 });

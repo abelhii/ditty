@@ -184,6 +184,12 @@ export function createDownloadManager(deps: DownloadManagerDeps) {
       active.get(trackId)?.controller.abort();
     },
 
+    /** Cancels everything queued or active — used when the session ends. */
+    cancelAll(): void {
+      for (const job of pending.splice(0)) deps.setItem(job.track.id, null);
+      for (const job of active.values()) job.controller.abort();
+    },
+
     /** Continues a queue parked by an auth rejection, after Re-authentication. */
     resume(): void {
       paused = false;

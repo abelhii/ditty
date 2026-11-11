@@ -7,6 +7,7 @@ import {
   readPersistedCredentials,
   writePersistedCredentials,
 } from '@/auth/credential-storage';
+import { clearServerDownloads } from '@/features/downloads/clear-downloads';
 import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
 import { usePlayerStore } from '@/player/use-player-store';
@@ -90,6 +91,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
+    // Downloaded files are server-specific, like the queue and cache cleared below.
+    const { credentials } = get();
+    if (credentials) clearServerDownloads(credentials.serverUrl, credentials.username);
     await clearPersistedCredentials();
     // Cache keys aren't scoped by server/user, so a second account would otherwise see the
     // first account's cached library until every query happened to refetch.

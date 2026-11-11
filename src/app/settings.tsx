@@ -1,4 +1,4 @@
-import { Platform, Pressable, StyleSheet, Switch } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/auth/use-auth-store';
@@ -15,6 +15,8 @@ import { SegmentedChoice } from '@/features/settings/components/SegmentedChoice'
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useThemePreferenceStore, type ThemePreference } from '@/hooks/use-theme-preference-store';
+import { DownloadsSettings } from '@/features/downloads/components/DownloadsSettings';
+import { getDownloadSummary } from '@/features/downloads/downloads-runtime';
 import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { useAutoDjSettingsStore, type AutoDjSource } from '@/player/use-auto-dj-settings-store';
 
@@ -140,10 +142,25 @@ export default function SettingsScreen() {
     </ThemedView>
   );
 
+  const downloadsSection = Platform.OS !== 'web' && <DownloadsSettings wide={wide} />;
+
+  // Logging out deletes this server's downloads (they're server-specific, like the queue), so ask
+  // first when there is anything to lose.
+  function confirmLogout() {
+    if (Platform.OS === 'web' || getDownloadSummary().groups.length === 0) {
+      logout();
+      return;
+    }
+    Alert.alert('Log out?', 'Downloaded music will be deleted from this device.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log out', style: 'destructive', onPress: () => logout() },
+    ]);
+  }
+
   const logOut = (
     <Pressable
       style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
-      onPress={() => logout()}>
+      onPress={confirmLogout}>
       <ThemedText style={{ color: theme.accentDeep }}>Log out</ThemedText>
     </Pressable>
   );
@@ -174,6 +191,7 @@ export default function SettingsScreen() {
               <ThemedText type="smallBold">Playback</ThemedText>
               {autoDjSection}
               {offlineSection}
+              {downloadsSection}
             </ThemedView>
             <ThemedView type="backgroundElement" style={styles.card}>
               <ThemedText type="smallBold">Account</ThemedText>
@@ -193,6 +211,7 @@ export default function SettingsScreen() {
         {appearance}
         {autoDjSection}
         {offlineSection}
+        {downloadsSection}
         {logOut}
       </SafeAreaView>
     </ThemedView>

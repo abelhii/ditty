@@ -1,0 +1,122 @@
+import { useMemo } from 'react';
+import { Alert, Pressable, StyleSheet, Switch } from 'react-native';
+
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { Radius, Spacing } from '@/constants/theme';
+import {
+  getDownloadSummary,
+  removeAllDownloads,
+  removeTrackDownloads,
+} from '@/features/downloads/downloads-runtime';
+import { availableBytes } from '@/features/downloads/downloads-files';
+import { formatBytes } from '@/features/downloads/storage-usage';
+import { useDownloadSettingsStore } from '@/features/downloads/use-download-settings-store';
+import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
+import { useTheme } from '@/hooks/use-theme';
+
+type DownloadsSettingsProps = {
+  /** Wide layout draws the rows on the page background inside a card. */
+  wide: boolean;
+};
+
+/** Storage use, free space, per-album delete, "Remove all downloads" and the Wi-Fi-only switch. */
+export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
+  const theme = useTheme();
+  const wifiOnly = useDownloadSettingsStore((state) => state.wifiOnly);
+  const setWifiOnly = useDownloadSettingsStore((state) => state.setWifiOnly);
+  const downloadedIds = useDownloadsStore((state) => state.downloadedIds);
+
+  // The DB is the source of truth; the downloaded-id index changing is the cue to re-read it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const summary = useMemo(() => getDownloadSummary(), [downloadedIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const free = useMemo(() => availableBytes(), [downloadedIds]);
+
+  const rowType = wide ? 'background' : 'backgroundElement';
+
+  function confirmRemoveAll() {
+    Alert.alert('Remove all downloads?', 'Downloaded music will be deleted from this device.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove all', style: 'destructive', onPress: removeAllDownloads },
+    ]);
+  }
+
+  return (
+    <ThemedView style={styles.section}>
+      {!wide && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Downloads
+        </ThemedText>
+      )}
+      <ThemedView type={rowType} style={styles.row}>
+        <ThemedText type="small">Wi-Fi only</ThemedText>
+        <Switch accessibilityLabel="Download on Wi-Fi only" value={wifiOnly} onValueChange={setWifiOnly} />
+      </ThemedView>
+      <ThemedText type="small" themeColor="textSecondary">
+        {formatBytes(summary.totalBytes)} used · {formatBytes(free)} free
+      </ThemedText>
+
+      {summary.groups.length === 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Nothing downloaded yet.
+        </ThemedText>
+      ) : (
+        <>
+          {summary.groups.map((group) => (
+            <ThemedView key={group.key} type={rowType} style={styles.row}>
+              <ThemedView style={styles.groupText}>
+                <ThemedText type="small" numberOfLines={1}>
+                  {group.albumName}
+                </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                  {group.artist} · {group.trackIds.length} {group.trackIds.length === 1 ? 'track' : 'tracks'} ·{' '}
+                  {formatBytes(group.sizeBytes)}
+                </ThemedText>
+              </ThemedView>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Remove downloads for ${group.albumName}`}
+                hitSlop={8}
+                onPress={() => removeTrackDownloads(group.trackIds)}>
+                <ThemedText type="small" style={{ color: theme.accentDeep }}>
+                  Remove
+                </ThemedText>
+              </Pressable>
+            </ThemedView>
+          ))}
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => pressed && styles.pressed}
+            onPress={confirmRemoveAll}>
+            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+              Remove all downloads
+            </ThemedText>
+          </Pressable>
+        </>
+      )}
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: {
+    gap: Spacing.two,
+    backgroundColor: 'transparent',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    borderRadius: Radius.md,
+    padding: Spacing.three,
+  },
+  groupText: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+});
