@@ -25,3 +25,7 @@ export function getDownloadSummary(): DownloadSummary {
 }
 export function removeTrackDownloads(_trackIds: string[]): void {}
 export function removeAllDownloads(): void {}
+export async function syncDownloads(_force = false): Promise<void> {}
+export function startDownloadSync(): () => void {
+  return () => {};
+}

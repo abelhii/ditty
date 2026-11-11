@@ -8,6 +8,7 @@ import {
   getDownloadSummary,
   removeAllDownloads,
   removeTrackDownloads,
+  syncDownloads,
 } from '@/features/downloads/downloads-runtime';
 import { availableBytes } from '@/features/downloads/downloads-files';
 import { formatBytes } from '@/features/downloads/storage-usage';
@@ -25,6 +26,8 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
   const theme = useTheme();
   const wifiOnly = useDownloadSettingsStore((state) => state.wifiOnly);
   const setWifiOnly = useDownloadSettingsStore((state) => state.setWifiOnly);
+  const autoFavourites = useDownloadSettingsStore((state) => state.autoDownloadFavourites);
+  const setAutoFavourites = useDownloadSettingsStore((state) => state.setAutoDownloadFavourites);
   const downloadedIds = useDownloadsStore((state) => state.downloadedIds);
 
   // The DB is the source of truth; the downloaded-id index changing is the cue to re-read it.
@@ -53,6 +56,20 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
         <ThemedText type="small">Wi-Fi only</ThemedText>
         <Switch accessibilityLabel="Download on Wi-Fi only" value={wifiOnly} onValueChange={setWifiOnly} />
       </ThemedView>
+      <ThemedView type={rowType} style={styles.row}>
+        <ThemedText type="small">Auto-download Favourites</ThemedText>
+        <Switch
+          accessibilityLabel="Auto-download Favourites"
+          value={autoFavourites}
+          onValueChange={(value) => {
+            setAutoFavourites(value);
+            if (value) void syncDownloads(true);
+          }}
+        />
+      </ThemedView>
+      <ThemedText type="small" themeColor="textSecondary">
+        Downloaded playlists stay in step with the server when you&apos;re online.
+      </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {formatBytes(summary.totalBytes)} used · {formatBytes(free)} free
       </ThemedText>

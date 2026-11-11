@@ -39,7 +39,7 @@ function getDb(): SQLiteDatabase {
   return database;
 }
 
-export type CollectionKind = 'album' | 'playlist' | 'track';
+export type CollectionKind = 'album' | 'playlist' | 'track' | 'favourites';
 
 export function saveDownload(server: string, record: DownloadRecord): void {
   getDb().runSync(
@@ -106,17 +106,73 @@ export function releaseCollection(
       kind,
       collectionId,
     );
-    orphaned = getDb()
-      .getAllSync<DownloadRow>(
-        `SELECT d.* FROM downloads d
-         WHERE d.server_key = ?
-           AND NOT EXISTS (
-             SELECT 1 FROM download_collections c
-             WHERE c.server_key = d.server_key AND c.track_id = d.track_id)`,
+    orphaned = orphanedDownloads(server);
+  });
+  return orphaned;
+}
+
+/** Downloads no collection claims any more. */
+function orphanedDownloads(server: string): DownloadRecord[] {
+  return getDb()
+    .getAllSync<DownloadRow>(
+      `SELECT d.* FROM downloads d
+       WHERE d.server_key = ?
+         AND NOT EXISTS (
+           SELECT 1 FROM download_collections c
+           WHERE c.server_key = d.server_key AND c.track_id = d.track_id)`,
+      server,
+    )
+    .map(parseRow)
+    .filter((record): record is DownloadRecord => record !== null);
+}
+
+/** Ids of every collection of `kind` that has asked for downloads. */
+export function listCollectionIds(server: string, kind: CollectionKind): string[] {
+  return getDb()
+    .getAllSync<{ collection_id: string }>(
+      'SELECT DISTINCT collection_id FROM download_collections WHERE server_key = ? AND kind = ?',
+      server,
+      kind,
+    )
+    .map((row) => row.collection_id);
+}
+
+/** Ids of the tracks one collection has asked for. */
+export function listCollectionTrackIds(
+  server: string,
+  kind: CollectionKind,
+  collectionId: string,
+): string[] {
+  return getDb()
+    .getAllSync<{ track_id: string }>(
+      'SELECT track_id FROM download_collections WHERE server_key = ? AND kind = ? AND collection_id = ?',
+      server,
+      kind,
+      collectionId,
+    )
+    .map((row) => row.track_id);
+}
+
+/** Drops one collection's claim on specific tracks and returns the downloads nothing claims now. */
+export function releaseTracksFromCollection(
+  server: string,
+  kind: CollectionKind,
+  collectionId: string,
+  trackIds: string[],
+): DownloadRecord[] {
+  let orphaned: DownloadRecord[] = [];
+  getDb().withTransactionSync(() => {
+    for (const trackId of trackIds) {
+      getDb().runSync(
+        `DELETE FROM download_collections
+         WHERE server_key = ? AND kind = ? AND collection_id = ? AND track_id = ?`,
         server,
-      )
-      .map(parseRow)
-      .filter((record): record is DownloadRecord => record !== null);
+        kind,
+        collectionId,
+        trackId,
+      );
+    }
+    orphaned = orphanedDownloads(server);
   });
   return orphaned;
 }

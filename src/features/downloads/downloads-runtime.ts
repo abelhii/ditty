@@ -1,6 +1,8 @@
 import { File } from 'expo-file-system';
 import * as Network from 'expo-network';
 
+import { getStarred } from '@/api/subsonic/endpoints/annotations';
+import { getPlaylist } from '@/api/subsonic/endpoints/playlists';
 import { SubsonicApiError } from '@/api/subsonic/errors';
 import { getCoverArtUrl, CoverArtSize, getDownloadUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
@@ -19,10 +21,13 @@ import {
   addMembership,
   deleteDownload,
   getDownload,
+  listCollectionIds,
+  listCollectionTrackIds,
   listDownloadedIds,
   listDownloads,
   releaseCollection,
   releaseTrack,
+  releaseTracksFromCollection,
   saveDownload,
 } from '@/features/downloads/downloads-db';
 import type { CollectionKind } from '@/features/downloads/downloads-db';
@@ -33,6 +38,8 @@ import {
 } from '@/features/downloads/downloads-files';
 import { useDownloadSettingsStore } from '@/features/downloads/use-download-settings-store';
 import { isBlockedByWifiOnly } from '@/features/downloads/wifi-only';
+import { staleMembers } from '@/features/downloads/sync-diff';
+import { isOfflineMode, useOfflineStore } from '@/features/downloads/use-offline-store';
 import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
 
 /** Error bodies are a few hundred bytes; audio is never this small, so only tiny files are read. */
@@ -103,16 +110,19 @@ useAuthStore.subscribe((state, previous) => {
   if (previous.status === 'authenticated' && state.status !== 'authenticated') manager.cancelAll();
 });
 
+/** Wi-Fi only is checked when a download is requested; a connection that flips to cellular
+ *  mid-queue is not re-checked. */
+async function blockedByWifiOnly(): Promise<boolean> {
+  if (!useDownloadSettingsStore.getState().wifiOnly) return false;
+  const state = await Network.getNetworkStateAsync().catch(() => null);
+  return isBlockedByWifiOnly(true, state?.type);
+}
+
 export function downloadTracks(kind: CollectionKind, collectionId: string, tracks: Track[]): void {
   void (async () => {
-    // Wi-Fi only is checked when the download is requested; a connection that flips to cellular
-    // mid-queue is not re-checked.
-    if (useDownloadSettingsStore.getState().wifiOnly) {
-      const state = await Network.getNetworkStateAsync().catch(() => null);
-      if (isBlockedByWifiOnly(true, state?.type)) {
-        showNotice('Downloads are set to Wi-Fi only. Connect to Wi-Fi or change this in Settings.');
-        return;
-      }
+    if (await blockedByWifiOnly()) {
+      showNotice('Downloads are set to Wi-Fi only. Connect to Wi-Fi or change this in Settings.');
+      return;
     }
     manager.enqueue(kind, collectionId, tracks);
   })();
@@ -191,4 +201,75 @@ export function removeAllDownloads(): void {
   if (!credentials) return;
   manager.cancelAll();
   clearServerDownloads(credentials.serverUrl, credentials.username);
+}
+
+const FAVOURITES_ID = 'starred';
+const MIN_SYNC_INTERVAL_MS = 60 * 60 * 1000;
+let syncing = false;
+let lastSyncAt = 0;
+
+/** Brings one downloaded collection in line with the server's current track list: requests new
+ *  tracks, releases dropped ones and deletes whatever nothing else claims. */
+function syncCollection(
+  server: string,
+  kind: CollectionKind,
+  collectionId: string,
+  serverTracks: Track[],
+): void {
+  const stale = staleMembers(listCollectionTrackIds(server, kind, collectionId), serverTracks.map((t) => t.id));
+  if (stale.length > 0) {
+    for (const id of stale) manager.cancel(id);
+    deleteRecords(server, releaseTracksFromCollection(server, kind, collectionId, stale));
+  }
+  manager.enqueue(kind, collectionId, serverTracks);
+}
+
+/**
+ * Re-diffs downloaded playlists (and, when enabled, Favourites) against the server. Skipped in
+ * Offline mode, on cellular with Wi-Fi only on, and when run again within an hour unless `force`.
+ * A playlist the server no longer has (Subsonic error 70) has its downloads released; any other
+ * failure leaves that playlist untouched until the next sync.
+ */
+export async function syncDownloads(force = false): Promise<void> {
+  const credentials = useAuthStore.getState().credentials;
+  if (!credentials || syncing) return;
+  if (isOfflineMode(useOfflineStore.getState())) return;
+  if (!force && Date.now() - lastSyncAt < MIN_SYNC_INTERVAL_MS) return;
+  if (await blockedByWifiOnly()) return;
+
+  syncing = true;
+  try {
+    const server = serverKey(credentials.serverUrl, credentials.username);
+    for (const playlistId of listCollectionIds(server, 'playlist')) {
+      try {
+        const { tracks } = await getPlaylist(credentials.serverUrl, credentials, playlistId);
+        syncCollection(server, 'playlist', playlistId, tracks);
+      } catch (error) {
+        if (error instanceof SubsonicApiError && error.code === 70) {
+          deleteRecords(server, releaseCollection(server, 'playlist', playlistId));
+        }
+      }
+    }
+
+    if (useDownloadSettingsStore.getState().autoDownloadFavourites) {
+      try {
+        const { tracks } = await getStarred(credentials.serverUrl, credentials);
+        syncCollection(server, 'favourites', FAVOURITES_ID, tracks);
+      } catch {
+        // Unreachable server: try again next sync.
+      }
+    }
+    lastSyncAt = Date.now();
+  } finally {
+    syncing = false;
+  }
+}
+
+/** Syncs now and again whenever Offline mode switches off (connection back / toggle). Returns an
+ *  unsubscribe. */
+export function startDownloadSync(): () => void {
+  void syncDownloads();
+  return useOfflineStore.subscribe((state, previous) => {
+    if (isOfflineMode(previous) && !isOfflineMode(state)) void syncDownloads(true);
+  });
 }
