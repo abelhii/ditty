@@ -1,11 +1,9 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
 import { ALPHABET, letterAt } from '@/features/library/alphabet-index';
-
-const LETTER_HEIGHT = 16;
-const RAIL_HEIGHT = ALPHABET.length * LETTER_HEIGHT;
 
 type AlphabetIndexProps = {
   /** Letters that have rows; the others are dimmed and ignored. */
@@ -13,11 +11,14 @@ type AlphabetIndexProps = {
   onSelect: (letter: string) => void;
 };
 
-/** A vertical A-Z rail down the right edge of a list: tap or drag along it to jump. The rail is
- *  one touch target (letters ignore touches) so a drag reads the finger's position. */
+/** A vertical A-Z rail down the right edge of a list, spanning its full height with the letters
+ *  spread evenly: tap or drag along it to jump. The rail is one touch target (letters ignore
+ *  touches) so a drag reads the finger's position. */
 export function AlphabetIndex({ available, onSelect }: AlphabetIndexProps) {
+  const [height, setHeight] = useState(0);
   const select = (y: number) => {
-    const letter = letterAt(y, LETTER_HEIGHT);
+    if (height === 0) return;
+    const letter = letterAt(y, height / ALPHABET.length);
     if (available.has(letter)) onSelect(letter);
   };
 
@@ -26,21 +27,22 @@ export function AlphabetIndex({ available, onSelect }: AlphabetIndexProps) {
       accessibilityRole="adjustable"
       accessibilityLabel="Jump to letter"
       style={styles.rail}
+      onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
       onStartShouldSetResponder={() => true}
       onMoveShouldSetResponder={() => true}
       onResponderGrant={(event) => select(event.nativeEvent.locationY)}
       onResponderMove={(event) => select(event.nativeEvent.locationY)}
     >
       {ALPHABET.map((letter) => (
-        <ThemedText
-          key={letter}
-          type="small"
-          themeColor={available.has(letter) ? 'text' : 'textSecondary'}
-          pointerEvents="none"
-          style={[styles.letter, !available.has(letter) && styles.dimmed]}
-        >
-          {letter}
-        </ThemedText>
+        <View key={letter} pointerEvents="none" style={styles.slot}>
+          <ThemedText
+            type="small"
+            themeColor={available.has(letter) ? 'text' : 'textSecondary'}
+            style={[styles.letter, !available.has(letter) && styles.dimmed]}
+          >
+            {letter}
+          </ThemedText>
+        </View>
       ))}
     </View>
   );
@@ -50,16 +52,18 @@ const styles = StyleSheet.create({
   rail: {
     position: 'absolute',
     right: Spacing.one,
-    top: '50%',
-    height: RAIL_HEIGHT,
-    marginTop: -RAIL_HEIGHT / 2,
+    top: 0,
+    bottom: 0,
     width: 20,
   },
+  slot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   letter: {
-    height: LETTER_HEIGHT,
-    lineHeight: LETTER_HEIGHT,
     fontSize: 11,
-    textAlign: 'center',
+    lineHeight: 12,
     fontWeight: '600',
   },
   dimmed: {

@@ -6,7 +6,8 @@ import { AlphabetIndex } from '@/features/library/components/AlphabetIndex';
 jest.mock('@/global.css', () => ({}));
 jest.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => 'light' }));
 
-// Each letter is 16 tall, '#' first: y 17 is 'A', y 33 is 'B'.
+// The rail is 27 letters across its height; at 16 per letter '#' is first: y 17 is 'A', y 33 is 'B'.
+const layout = { nativeEvent: { layout: { height: 27 * 16 } } };
 const touch = (y: number) => ({ nativeEvent: { locationY: y } });
 
 describe('AlphabetIndex', () => {
@@ -14,6 +15,7 @@ describe('AlphabetIndex', () => {
     const onSelect = jest.fn();
     await render(<AlphabetIndex available={new Set(['A', 'B'])} onSelect={onSelect} />);
     const rail = screen.getByLabelText('Jump to letter');
+    await fireEvent(rail, 'layout', layout);
 
     await fireEvent(rail, 'responderGrant', touch(17));
     await fireEvent(rail, 'responderMove', touch(33));
@@ -25,7 +27,9 @@ describe('AlphabetIndex', () => {
     const onSelect = jest.fn();
     await render(<AlphabetIndex available={new Set(['B'])} onSelect={onSelect} />);
 
-    await fireEvent(screen.getByLabelText('Jump to letter'), 'responderGrant', touch(17));
+    const rail = screen.getByLabelText('Jump to letter');
+    await fireEvent(rail, 'layout', layout);
+    await fireEvent(rail, 'responderGrant', touch(17));
 
     expect(onSelect).not.toHaveBeenCalled();
   });
