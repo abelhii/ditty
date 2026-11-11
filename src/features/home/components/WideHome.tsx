@@ -14,6 +14,7 @@ import { WideTopBar } from '@/components/WideTopBar';
 import { Radius, Spacing, WideMaxContentWidth } from '@/constants/theme';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { ExploreArtists } from '@/features/home/components/ExploreArtists';
+import { MostPlayedTracks } from '@/features/home/components/MostPlayedTracks';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
 import { greetingForHour } from '@/features/home/greeting';
 import { useAlbumShelf } from '@/features/home/hooks/use-album-shelf';
@@ -47,6 +48,7 @@ export function WideHome() {
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
   const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
   const explore = shelves.find((shelf) => shelf.id === 'explore');
+  const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
   const albums = useAlbumShelf(recentlyAdded ?? shelves[0]).data?.slice(0, columns) ?? [];
 
   return (
@@ -112,6 +114,7 @@ export function WideHome() {
           )}
 
           <ExploreArtists count={columns} tileWidth={tileWidth} />
+          {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
           {explore && <UnheardTracks shelf={explore} />}
         </ScrollView>
       </SafeAreaView>

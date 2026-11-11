@@ -43,6 +43,8 @@ export type SubsonicSong = {
   samplingRate?: number;
   /** ISO timestamp set when the item is starred; absent/undefined when not starred. */
   starred?: string;
+  /** Times the user has played this song, when the server reports it (Navidrome does). */
+  playCount?: number;
 };
 
 export type SubsonicArtist = {

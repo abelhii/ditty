@@ -135,6 +135,11 @@ describe('normalizeTrack', () => {
     });
   });
 
+  it('carries playCount through, and leaves it absent when the server omits it', () => {
+    expect(normalizeTrack({ id: 's1', title: 'T', playCount: 7 }).playCount).toBe(7);
+    expect(normalizeTrack({ id: 's1', title: 'T' }).playCount).toBeUndefined();
+  });
+
   it('defaults artist, album, and duration when missing', () => {
     expect(normalizeTrack({ id: 's1', title: 'Untitled' })).toEqual({
       id: 's1',
