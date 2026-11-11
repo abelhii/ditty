@@ -10,17 +10,19 @@ jest.mock('@/features/downloads/downloads-files', () => ({ availableBytes: () =>
 
 const mockRemoveTracks = jest.fn();
 const mockRemoveAll = jest.fn();
+const mockSync = jest.fn();
 let mockSummary = { groups: [] as unknown[], totalBytes: 0 };
 jest.mock('@/features/downloads/downloads-runtime', () => ({
   getDownloadSummary: () => mockSummary,
   removeTrackDownloads: (ids: string[]) => mockRemoveTracks(ids),
   removeAllDownloads: () => mockRemoveAll(),
+  syncDownloads: (force: boolean) => mockSync(force),
 }));
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockSummary = { groups: [], totalBytes: 0 };
-  useDownloadSettingsStore.setState({ wifiOnly: true });
+  useDownloadSettingsStore.setState({ wifiOnly: true, autoDownloadFavourites: false });
 });
 
 describe('DownloadsSettings', () => {
@@ -47,5 +49,17 @@ describe('DownloadsSettings', () => {
     await render(<DownloadsSettings wide={false} />);
     await fireEvent(screen.getByLabelText('Download on Wi-Fi only'), 'valueChange', false);
     expect(useDownloadSettingsStore.getState().wifiOnly).toBe(false);
+  });
+
+  it('turns on Auto-download Favourites and syncs immediately; turning it off does not sync', async () => {
+    await render(<DownloadsSettings wide={false} />);
+    await fireEvent(screen.getByLabelText('Auto-download Favourites'), 'valueChange', true);
+    expect(useDownloadSettingsStore.getState().autoDownloadFavourites).toBe(true);
+    expect(mockSync).toHaveBeenCalledWith(true);
+
+    mockSync.mockClear();
+    await fireEvent(screen.getByLabelText('Auto-download Favourites'), 'valueChange', false);
+    expect(useDownloadSettingsStore.getState().autoDownloadFavourites).toBe(false);
+    expect(mockSync).not.toHaveBeenCalled();
   });
 });
