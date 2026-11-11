@@ -68,8 +68,11 @@ export const persistOptions: PersistQueryClientProviderProps['persistOptions'] =
   dehydrateOptions: {
     // Search results are live "ask the server now" queries — persisting them would bloat the KV
     // cache with transient entries and surface confusing stale offline results. Keep everything
-    // else on the default (successful queries persist). See Build Order step 6.
+    // else on the default (successful queries persist). See Build Order step 6. The all-songs
+    // pages are excluded too: a large library would blow past the KV cache's size.
     shouldDehydrateQuery: (query) =>
-      query.queryKey[0] !== 'search' && defaultShouldDehydrateQuery(query),
+      query.queryKey[0] !== 'search' &&
+      query.queryKey[0] !== 'allSongs' &&
+      defaultShouldDehydrateQuery(query),
   },
 };

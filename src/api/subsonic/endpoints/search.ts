@@ -42,3 +42,33 @@ export async function search3(
     tracks: (searchResult3.song ?? []).map(normalizeTrack),
   };
 }
+
+/** Songs per `search3` page when browsing every song. 500 is the page size sync clients use against
+ *  Navidrome; the server accepts it and a full page means there may be another. */
+export const ALL_SONGS_PAGE_SIZE = 500;
+
+/**
+ * One page of every song on the server. Subsonic has no "all songs" endpoint, so this uses the
+ * `search3` empty-query browse-all convention (Navidrome supports it with `songOffset` paging). A
+ * server that doesn't support it returns no songs, which the screen shows as empty. Order is the
+ * server's, not guaranteed — callers sort.
+ */
+export async function getAllSongsPage(
+  serverUrl: string,
+  auth: SubsonicAuth,
+  offset: number,
+): Promise<Track[]> {
+  const { searchResult3 } = await request<GetSearch3Response>(
+    serverUrl,
+    'search3',
+    {
+      query: '',
+      artistCount: 0,
+      albumCount: 0,
+      songCount: ALL_SONGS_PAGE_SIZE,
+      songOffset: offset,
+    },
+    auth,
+  );
+  return (searchResult3.song ?? []).map(normalizeTrack);
+}
