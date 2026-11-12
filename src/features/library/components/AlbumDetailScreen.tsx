@@ -15,6 +15,7 @@ import { TrackActionsMenu } from '@/components/TrackActionsMenu';
 import { TrackRow } from '@/components/TrackRow';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { DownloadCollectionButton } from '@/features/downloads/components/DownloadCollectionButton';
+import { useHasPlayableTracks } from '@/features/downloads/hooks/use-has-playable-tracks';
 import { useAlbum } from '@/features/library/hooks/use-album';
 import * as PlaybackController from '@/player/PlaybackController';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
@@ -32,6 +33,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
   const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
   const albumQuery = useAlbum(albumId);
+  const canPlay = useHasPlayableTracks(albumQuery.data?.tracks);
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
   return (
@@ -49,6 +51,8 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                   contentContainerStyle={{
                     paddingBottom: insets.bottom + listBottomInset,
                   }}
+                  refreshing={albumQuery.isFetching}
+                  onRefresh={() => albumQuery.refetch()}
                   ListHeaderComponent={
                     <ThemedView style={styles.header}>
                       <CoverArtImage
@@ -75,7 +79,8 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                         <Pressable
                           accessibilityRole="button"
                           accessibilityLabel="Play album"
-                          style={({ pressed }) => pressed && styles.pressed}
+                          accessibilityState={{ disabled: !canPlay }}
+                          style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
                           onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
                           <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
                             <ThemedText type="smallBold">Play</ThemedText>
@@ -138,6 +143,10 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.7,
+  },
+  // Greyed, but still tappable so PlaybackController's Notice can say why nothing plays.
+  unavailable: {
+    opacity: 0.4,
   },
   playButtonInner: {
     paddingVertical: Spacing.two,

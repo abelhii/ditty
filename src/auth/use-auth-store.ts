@@ -7,6 +7,7 @@ import {
   readPersistedCredentials,
   writePersistedCredentials,
 } from '@/auth/credential-storage';
+import { loginErrorMessage } from '@/auth/login-error';
 import { clearServerDownloads } from '@/features/downloads/clear-downloads';
 import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
@@ -84,8 +85,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await writePersistedCredentials(JSON.stringify(credentials));
       set({ status: 'authenticated', credentials, error: null });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed.';
-      set({ status: 'unauthenticated', credentials: null, error: message });
+      set({ status: 'unauthenticated', credentials: null, error: loginErrorMessage(err, serverUrlInput) });
       throw err;
     }
   },

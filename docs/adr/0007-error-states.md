@@ -91,3 +91,12 @@ callback-plumbing to the Notice store.
 - Mutation hooks each declare `meta: { action }`; their `onError` rollback logic is untouched.
 - **Deferred to later steps:** auto-advance/skip on playback failure, a proactive offline banner,
   and (still, from 8a) cross-device sync and intra-track position resume.
+
+## Addendum: connection-failure classification and `QueryState` wording
+
+`request()` now aborts after 15s and classifies failures: `SubsonicNetworkError` (no response; `kind`
+is `'unreachable'` or `'timeout'`) versus `SubsonicHttpError` (the server answered with a non-2xx
+status or a non-Subsonic body, e.g. a reverse proxy's 502 page). `QueryState` now uses the
+connectivity probe as this ADR anticipated: a `SubsonicNetworkError` reads "You're offline" only when
+the probe says the device is offline; otherwise it says the server can't be reached (or timed out).
+The mutation Notice wording still keys off the error class only.

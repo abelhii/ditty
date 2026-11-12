@@ -2,12 +2,14 @@ import * as Crypto from 'expo-crypto';
 import { md5 } from 'js-md5';
 import { Platform } from 'react-native';
 
-import { SubsonicApiError, SubsonicNetworkError } from '@/api/subsonic/errors';
+import { SubsonicApiError, SubsonicHttpError, SubsonicNetworkError } from '@/api/subsonic/errors';
 import type { SubsonicAuth, SubsonicEnvelope } from '@/api/subsonic/types';
 
 // Bumping this requires checking the target server actually supports the newer API version.
 const API_VERSION = '1.16.1';
 const CLIENT_NAME = 'ditty';
+/** How long a request may take (headers and body) before it is aborted as a timeout. */
+export const REQUEST_TIMEOUT_MS = 15_000;
 
 /**
  * Normalizes user-entered server URLs: trims whitespace, defaults to https when no scheme
@@ -91,18 +93,36 @@ export async function request<T = Record<string, never>>(
 ): Promise<T> {
   const url = buildRequestUrl(serverUrl, endpoint, params, auth);
 
-  let response: Response;
-  try {
-    response = await fetch(url);
-  } catch (cause) {
-    throw new SubsonicNetworkError(cause);
-  }
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, REQUEST_TIMEOUT_MS);
 
+  let response: Response;
   let body: SubsonicEnvelope<T>;
   try {
-    body = await response.json();
-  } catch (cause) {
-    throw new SubsonicNetworkError(cause);
+    try {
+      response = await fetch(url, { signal: controller.signal });
+    } catch (cause) {
+      throw new SubsonicNetworkError(cause, timedOut ? 'timeout' : 'unreachable');
+    }
+
+    // An error status can still carry a Subsonic JSON envelope, so only give up on it if the
+    // body isn't one.
+    try {
+      body = await response.json();
+    } catch (cause) {
+      if (timedOut) throw new SubsonicNetworkError(cause, 'timeout');
+      throw new SubsonicHttpError(response.status, cause);
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (!body?.['subsonic-response']) {
+    throw new SubsonicHttpError(response.status);
   }
 
   const envelope = body['subsonic-response'];
