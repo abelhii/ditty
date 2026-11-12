@@ -36,9 +36,15 @@ export function VolumeSlider({ volume, onChange }: VolumeSliderProps) {
         tintColor={theme.textSecondary}
       />
       <View
+        accessible
         accessibilityRole="adjustable"
         accessibilityLabel="Volume"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(volume * 100) }}
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={(event) => {
+          const delta = event.nativeEvent.actionName === 'increment' ? 0.1 : event.nativeEvent.actionName === 'decrement' ? -0.1 : 0;
+          if (delta !== 0) onChange(Math.min(1, Math.max(0, Math.round((volume + delta) * 10) / 10)));
+        }}
         style={styles.track}
         onLayout={(event: LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}
         onStartShouldSetResponder={() => true}

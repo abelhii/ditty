@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
-import { LayoutChangeEvent, PanResponder, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { LayoutChangeEvent, PanResponder, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
 import { Colors, PlayerSurface, ProgressBarHeight, Radius, Spacing } from '@/constants/theme';
+import { SEEK_STEP_SECONDS, seekValueText, steppedSeek } from '@/features/player/seek-step';
 import { useTheme } from '@/hooks/use-theme';
 import { formatTime } from '@/player/hooks/use-progress';
 
@@ -53,10 +54,57 @@ export function Scrubber({ position, duration, fraction, onSeek, variant = 'play
     setWidth(event.nativeEvent.layout.width);
   }
 
+  // Screen-reader increment/decrement (and web arrow keys) seek in fixed steps from the live position.
+  // Rapid repeats build on the last requested target until the live position catches up.
+  const requested = useRef<number | null>(null);
+  useEffect(() => {
+    requested.current = null;
+  }, [position]);
+  function step(delta: number) {
+    const target = steppedSeek(requested.current ?? position, duration, delta);
+    if (target === null) return;
+    requested.current = target;
+    onSeek(target);
+  }
+
+  const keyboardProps =
+    Platform.OS === 'web'
+      ? {
+          focusable: true,
+          onKeyDown: (event: { key: string; preventDefault: () => void }) => {
+            const delta =
+              event.key === 'ArrowRight' || event.key === 'ArrowUp'
+                ? SEEK_STEP_SECONDS
+                : event.key === 'ArrowLeft' || event.key === 'ArrowDown'
+                  ? -SEEK_STEP_SECONDS
+                  : 0;
+            if (delta === 0) return;
+            event.preventDefault();
+            step(delta);
+          },
+        }
+      : null;
+
   const textColor = surface ? { color: theme.textSecondary } : undefined;
 
   const track = (
-    <View style={surface ? styles.trackInline : styles.track} onLayout={onLayout} {...responder.panHandlers}>
+    <View
+      accessible
+      accessibilityRole="adjustable"
+      accessibilityLabel="Seek"
+      accessibilityValue={{ text: seekValueText(shownPosition, duration, formatTime) }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'increment') step(SEEK_STEP_SECONDS);
+        else if (event.nativeEvent.actionName === 'decrement') step(-SEEK_STEP_SECONDS);
+      }}
+      // Taller touch area (44pt) without changing the layout box or drawn bar; vertical only, so the
+      // x-coordinate seek maths is unaffected.
+      hitSlop={{ top: 8, bottom: 8 }}
+      style={surface ? styles.trackInline : styles.track}
+      onLayout={onLayout}
+      {...keyboardProps}
+      {...responder.panHandlers}>
       <View
         style={[
           styles.trackBackground,

@@ -53,7 +53,12 @@ export function MiniPlayer() {
 
   return (
     <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
-      <Pressable style={styles.pressable} onPress={openNowPlaying}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Now playing: ${currentTrack.title} by ${currentTrack.artist}`}
+        accessibilityHint="Opens the full player"
+        style={styles.pressable}
+        onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
           <View style={styles.text}>

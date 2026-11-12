@@ -202,6 +202,7 @@ export default function SettingsScreen() {
         onCancel={() => setLogoutWarning(null)}
       />
       <Pressable
+        accessibilityRole="button"
         style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
         onPress={confirmLogout}>
         <ThemedText themeColor="danger">Log out</ThemedText>

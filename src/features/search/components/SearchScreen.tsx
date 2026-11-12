@@ -267,7 +267,7 @@ function RecentSearches({
         <ThemedText type="smallBold" themeColor="textSecondary">
           Recent
         </ThemedText>
-        <Pressable hitSlop={8} onPress={onClear}>
+        <Pressable accessibilityRole="button" hitSlop={8} onPress={onClear}>
           <ThemedText type="small" themeColor="textSecondary">
             Clear
           </ThemedText>
@@ -276,6 +276,7 @@ function RecentSearches({
       {recents.map((recentTerm) => (
         <Pressable
           key={recentTerm}
+          accessibilityRole="button"
           style={({ pressed }) => [styles.recentRow, pressed && styles.pressed]}
           onPress={() => onRerun(recentTerm)}
         >

@@ -47,6 +47,7 @@ export function TrackRow({
   return (
     <Pressable
       disabled={unavailable}
+      accessibilityRole="button"
       accessibilityState={{ disabled: unavailable }}
       style={(state) => [
         styles.row,
