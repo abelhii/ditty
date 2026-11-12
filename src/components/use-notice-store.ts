@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 
-/** An optional action a Notice can carry. 8b populates this nowhere — the primitive reserves the
- *  slot per ADR 0007, but every 8b mutation already fires from a visible, re-tappable affordance,
- *  so none needs a Retry here. */
+/** An optional action a Notice can carry. Used for Queue-removal Undo (ADR 0007 amendment);
+ *  failure Notices carry none — their redo affordance is already on screen. */
 export type NoticeAction = { label: string; onPress: () => void };
 
 export type Notice = {

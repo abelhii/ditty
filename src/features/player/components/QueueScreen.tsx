@@ -135,6 +135,10 @@ export function QueueList({ palette }: QueueListProps) {
 
   const onJump = useCallback((index: number) => PlaybackController.jumpTo(index), []);
   const onRemove = useCallback((index: number) => PlaybackController.removeFromQueue(index), []);
+  const onMove = useCallback(
+    (from: number, to: number) => PlaybackController.reorderQueue(from, to),
+    [],
+  );
 
   return (
     <ScrollView
@@ -160,6 +164,8 @@ export function QueueList({ palette }: QueueListProps) {
           dragY={dragY}
           onJump={onJump}
           onRemove={onRemove}
+          onMove={onMove}
+          lastIndex={tracks.length - 1}
           onDragStart={onDragStart}
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
@@ -189,6 +195,8 @@ type QueueRowProps = {
   dragY: Animated.Value;
   onJump: (index: number) => void;
   onRemove: (index: number) => void;
+  onMove: (from: number, to: number) => void;
+  lastIndex: number;
   onDragStart: (index: number) => void;
   onDragMove: (index: number, dy: number) => void;
   onDragEnd: (index: number) => void;
@@ -206,6 +214,8 @@ function QueueRow({
   dragY,
   onJump,
   onRemove,
+  onMove,
+  lastIndex,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -232,6 +242,13 @@ function QueueRow({
       }),
     [index, onRemove, translateX],
   );
+
+  // Non-gesture paths for the swipe and the drag handle (screen readers, switch/keyboard users).
+  const accessibilityActions = [
+    ...(index > 0 ? [{ name: 'moveUp', label: 'Move up' }] : []),
+    ...(index < lastIndex ? [{ name: 'moveDown', label: 'Move down' }] : []),
+    { name: 'remove', label: 'Remove from Queue' },
+  ];
 
   const drag = useMemo(
     () =>
@@ -276,6 +293,20 @@ function QueueRow({
         {...swipe.panHandlers}>
         <Pressable
           onPress={() => onJump(index)}
+          accessibilityActions={accessibilityActions}
+          onAccessibilityAction={(event) => {
+            switch (event.nativeEvent.actionName) {
+              case 'moveUp':
+                onMove(index, index - 1);
+                break;
+              case 'moveDown':
+                onMove(index, index + 1);
+                break;
+              case 'remove':
+                onRemove(index);
+                break;
+            }
+          }}
           style={({ pressed }) => [styles.rowInner, pressed && styles.pressed]}>
           <CoverArtImage uri={coverArtUri} style={[styles.thumbnail, isPlayed && styles.dimmed]} />
           <View style={[styles.text, isPlayed && styles.dimmed]}>

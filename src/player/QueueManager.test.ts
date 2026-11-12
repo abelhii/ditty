@@ -3,6 +3,7 @@ import {
   createQueueState,
   enqueue,
   getCurrentTrack,
+  insertAt,
   jumpTo,
   next,
   playNext,
@@ -269,5 +270,28 @@ describe('restoreQueue', () => {
     expect(restored.shuffle).toBe(true);
     expect(restored.repeat).toBe('all');
     expect(restored.originalOrder.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('insertAt', () => {
+  it('undoes removeAt, keeping the current track current', () => {
+    const start = createQueueState(tracks, 2);
+    const restored = insertAt(removeAt(start, 0), tracks[0], 0);
+    expect(restored.tracks).toEqual(start.tracks);
+    expect(restored.currentIndex).toBe(2);
+  });
+
+  it('does not move the current index for a restore after it', () => {
+    const start = createQueueState(tracks, 0);
+    const restored = insertAt(removeAt(start, 2), tracks[2], 2);
+    expect(restored.tracks).toEqual(start.tracks);
+    expect(restored.currentIndex).toBe(0);
+  });
+
+  it('clamps an out-of-range index and revives an empty queue', () => {
+    const empty = removeAt(createQueueState([tracks[0]], 0), 0);
+    const restored = insertAt(empty, tracks[0], 5);
+    expect(restored.tracks).toEqual([tracks[0]]);
+    expect(restored.currentIndex).toBe(0);
   });
 });

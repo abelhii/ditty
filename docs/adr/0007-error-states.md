@@ -16,7 +16,7 @@ internally: build two foundations first, then wire three consumers onto them.
   by a small store and mounted once near the root — same layering as the MiniPlayer
   (`docs/adr/0005-miniplayer-js-overlay-not-native-accessory.md`). It carries an optional action
   slot, but 8b populates it nowhere. **Notice is reserved for actions with no surface of their own
-  to report into** (i.e. mutations) — distinct from `QueryState`'s full-surface error and from the
+  to report into** (i.e. mutations; since widened — see the amendment at the end) — distinct from `QueryState`'s full-surface error and from the
   blocking re-auth modal.
 - **`utils/network.ts` connectivity probe.** A thin wrapper over `expo-network`
   (`getNetworkStateAsync` / `useNetworkState`; iOS/Android/Web). **Re-justified relative to ADR
@@ -91,3 +91,11 @@ callback-plumbing to the Notice store.
 - Mutation hooks each declare `meta: { action }`; their `onError` rollback logic is untouched.
 - **Deferred to later steps:** auto-advance/skip on playback failure, a proactive offline banner,
   and (still, from 8a) cross-device sync and intra-track position resume.
+
+## Amendment: success confirmations and Undo
+
+Notice is no longer failure-only. An action that closes its own surface and leaves nothing visible
+behind (Track row menu: Play next, Add to Queue, Add to/Remove from Favourites) confirms with a
+short Notice, as does removing a Track from the Queue. The action slot is now used once: the
+Queue-removal Notice carries "Undo", which puts the Track back at its previous position. Retry on
+failure Notices is still rejected (above); Undo differs because nothing on screen offers the redo.

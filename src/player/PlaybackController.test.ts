@@ -198,3 +198,21 @@ describe('Offline mode playback', () => {
     expect(usePlayerStore.getState().desiredPlaying).toBe(false);
   });
 });
+
+describe('removeFromQueue', () => {
+  it('shows an Undo notice that restores the track at its previous index', () => {
+    PlaybackController.play([track('a'), track('b'), track('c')], 0);
+    PlaybackController.removeFromQueue(1);
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['a', 'c']);
+    expect(showNotice).toHaveBeenCalledWith('Removed from Queue', { label: 'Undo', onPress: expect.any(Function) });
+
+    (showNotice as jest.Mock).mock.calls[0][1].onPress();
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('shows no notice for an out-of-range index', () => {
+    PlaybackController.play([track('a')], 0);
+    PlaybackController.removeFromQueue(5);
+    expect(showNotice).not.toHaveBeenCalled();
+  });
+});

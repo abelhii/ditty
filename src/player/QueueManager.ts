@@ -136,6 +136,17 @@ export function removeAt(state: QueueState, index: number): QueueState {
   return { ...state, tracks, originalOrder, currentIndex };
 }
 
+/** Puts a previously removed track back at `index` (clamped), keeping the current track current —
+ *  the undo of `removeAt`. */
+export function insertAt(state: QueueState, track: Track, index: number): QueueState {
+  const at = Math.max(0, Math.min(index, state.tracks.length));
+  const tracks = [...state.tracks.slice(0, at), track, ...state.tracks.slice(at)];
+  let currentIndex = state.currentIndex;
+  if (currentIndex === -1) currentIndex = 0;
+  else if (at <= currentIndex) currentIndex += 1;
+  return { ...state, tracks, originalOrder: [...state.originalOrder, track], currentIndex };
+}
+
 /** Moves the current position to `index` within the existing queue, leaving the track order
  *  untouched — the queue view's "tap a track to jump to it". Contrast `play`/`createQueueState`,
  *  which build a brand-new queue. Out-of-range indices are ignored. */

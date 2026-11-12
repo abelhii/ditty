@@ -154,7 +154,15 @@ export function playNext(track: Track): void {
 }
 
 export function removeFromQueue(index: number): void {
+  const removed = currentQueue().tracks[index];
   usePlayerStore.setState({ queue: QueueManager.removeAt(currentQueue(), index) });
+  if (!removed) return;
+  showNotice('Removed from Queue', {
+    label: 'Undo',
+    onPress: () => {
+      usePlayerStore.setState({ queue: QueueManager.insertAt(currentQueue(), removed, index) });
+    },
+  });
 }
 
 export function reorderQueue(fromIndex: number, toIndex: number): void {

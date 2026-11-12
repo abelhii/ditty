@@ -41,7 +41,13 @@ export function Notice() {
             {current.message}
           </ThemedText>
           {current.action && (
-            <Pressable hitSlop={8} onPress={current.action.onPress}>
+            <Pressable
+              hitSlop={8}
+              accessibilityRole="button"
+              onPress={() => {
+                current.action?.onPress();
+                dismiss();
+              }}>
               <ThemedText type="smallBold">{current.action.label}</ThemedText>
             </Pressable>
           )}
