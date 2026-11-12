@@ -61,7 +61,7 @@ export function MiniPlayer() {
               {currentTrack.title}
             </ThemedText>
             {status === 'error' ? (
-              <ThemedText type="small" numberOfLines={1} style={styles.error}>
+              <ThemedText type="small" themeColor="danger" numberOfLines={1}>
                 {playbackErrorMessage(errorOffline)}
               </ThemedText>
             ) : (
@@ -205,9 +205,6 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     gap: Spacing.half,
-  },
-  error: {
-    color: '#e5484d',
   },
   control: {
     width: 32,

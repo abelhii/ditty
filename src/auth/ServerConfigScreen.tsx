@@ -118,8 +118,7 @@ export function ServerConfigScreen() {
             {error && (
               <ThemedText
                 type="small"
-                themeColor="text"
-                style={styles.error}
+                themeColor="danger"
                 accessibilityRole="alert"
                 accessibilityLiveRegion="polite">
                 {error}
@@ -141,7 +140,7 @@ export function ServerConfigScreen() {
                   },
                   !canSubmit && styles.buttonDisabled,
                 ]}>
-                <ThemedText type="smallBold" style={{ color: theme.tint }}>
+                <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
                   Connect
                 </ThemedText>
               </Pressable>
@@ -173,7 +172,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     fontSize: 16,
   },
-  error: { color: '#e5484d' },
   button: {
     alignItems: 'center',
     borderRadius: Spacing.two,

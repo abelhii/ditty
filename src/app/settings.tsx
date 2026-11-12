@@ -1,5 +1,5 @@
-import { Alert, Platform, Pressable, StyleSheet, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuthStore } from '@/auth/use-auth-store';
 import { ThemedText } from '@/components/ThemedText';
@@ -13,6 +13,7 @@ import {
 } from '@/constants/theme';
 import { SegmentedChoice } from '@/features/settings/components/SegmentedChoice';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
+import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 import { useTheme } from '@/hooks/use-theme';
 import { useThemePreferenceStore, type ThemePreference } from '@/hooks/use-theme-preference-store';
 import { DownloadsSettings } from '@/features/downloads/components/DownloadsSettings';
@@ -49,6 +50,8 @@ const RANDOMNESS_OPTIONS: { value: number; label: string }[] = [
 export default function SettingsScreen() {
   const theme = useTheme();
   const wide = useIsWideLayout();
+  const insets = useSafeAreaInsets();
+  const listBottomInset = useListBottomInset();
   const logout = useAuthStore((state) => state.logout);
   const credentials = useAuthStore((state) => state.credentials);
   const preference = useThemePreferenceStore((state) => state.preference);
@@ -88,7 +91,7 @@ export default function SettingsScreen() {
               accessibilityState={{ selected }}
               onPress={() => setPreference(option.value)}
               style={[styles.segment, selected && { backgroundColor: theme.accent }]}>
-              <ThemedText type="small" style={selected ? { color: theme.tint } : undefined}>
+              <ThemedText type="small" style={selected ? { color: theme.onAccent } : undefined}>
                 {option.label}
               </ThemedText>
             </Pressable>
@@ -191,44 +194,48 @@ export default function SettingsScreen() {
     <Pressable
       style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
       onPress={confirmLogout}>
-      <ThemedText style={{ color: theme.accentDeep }}>Log out</ThemedText>
+      <ThemedText themeColor="danger">Log out</ThemedText>
     </Pressable>
   );
+
+  const scrollContent = [styles.scrollContent, { paddingBottom: insets.bottom + listBottomInset }];
 
   if (wide) {
     const username = credentials?.username;
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={[styles.safeArea, styles.safeAreaWide]}>
-          <ThemedText type="title">Settings</ThemedText>
-          <ThemedView type="backgroundElement" style={styles.profile}>
-            <ThemedView style={[styles.avatar, { backgroundColor: theme.accent }]}>
-              <ThemedText type="subtitle" style={{ color: theme.tint }}>
-                {username?.charAt(0).toUpperCase() ?? ''}
-              </ThemedText>
+        <SafeAreaView style={[styles.safeArea, styles.safeAreaWide]} edges={['top', 'left', 'right']}>
+          <ScrollView contentContainerStyle={scrollContent}>
+            <ThemedText type="title">Settings</ThemedText>
+            <ThemedView type="backgroundElement" style={styles.profile}>
+              <ThemedView style={[styles.avatar, { backgroundColor: theme.accent }]}>
+                <ThemedText type="subtitle" style={{ color: theme.onAccent }}>
+                  {username?.charAt(0).toUpperCase() ?? ''}
+                </ThemedText>
+              </ThemedView>
+              <ThemedView style={styles.profileText}>
+                <ThemedText type="smallBold">{username ?? ''}</ThemedText>
+                {serverInfo}
+              </ThemedView>
             </ThemedView>
-            <ThemedView style={styles.profileText}>
-              <ThemedText type="smallBold">{username ?? ''}</ThemedText>
-              {serverInfo}
+            <ThemedView style={styles.cards}>
+              <ThemedView type="backgroundElement" style={styles.card}>
+                <ThemedText type="smallBold">Appearance</ThemedText>
+                {appearance}
+              </ThemedView>
+              <ThemedView type="backgroundElement" style={[styles.card, styles.cardPlayback]}>
+                <ThemedText type="smallBold">Playback</ThemedText>
+                {levellingSection}
+                {autoDjSection}
+                {offlineSection}
+                {downloadsSection}
+              </ThemedView>
+              <ThemedView type="backgroundElement" style={styles.card}>
+                <ThemedText type="smallBold">Account</ThemedText>
+                {logOut}
+              </ThemedView>
             </ThemedView>
-          </ThemedView>
-          <ThemedView style={styles.cards}>
-            <ThemedView type="backgroundElement" style={styles.card}>
-              <ThemedText type="smallBold">Appearance</ThemedText>
-              {appearance}
-            </ThemedView>
-            <ThemedView type="backgroundElement" style={[styles.card, styles.cardPlayback]}>
-              <ThemedText type="smallBold">Playback</ThemedText>
-              {levellingSection}
-              {autoDjSection}
-              {offlineSection}
-              {downloadsSection}
-            </ThemedView>
-            <ThemedView type="backgroundElement" style={styles.card}>
-              <ThemedText type="smallBold">Account</ThemedText>
-              {logOut}
-            </ThemedView>
-          </ThemedView>
+          </ScrollView>
         </SafeAreaView>
       </ThemedView>
     );
@@ -236,15 +243,17 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="title">Settings</ThemedText>
-        {serverInfo}
-        {appearance}
-        {levellingSection}
-        {autoDjSection}
-        {offlineSection}
-        {downloadsSection}
-        {logOut}
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView contentContainerStyle={scrollContent}>
+          <ThemedText type="title">Settings</ThemedText>
+          {serverInfo}
+          {appearance}
+          {levellingSection}
+          {autoDjSection}
+          {offlineSection}
+          {downloadsSection}
+          {logOut}
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -258,10 +267,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
-    gap: Spacing.four,
     alignSelf: 'center',
     maxWidth: MaxContentWidth,
     width: '100%',
+  },
+  scrollContent: {
+    gap: Spacing.four,
   },
   serverInfo: {
     borderRadius: Radius.md,
