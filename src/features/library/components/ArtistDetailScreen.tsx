@@ -58,8 +58,6 @@ export function ArtistDetailScreen({ artistId, basePath = '/library' }: ArtistDe
                 paddingBottom: insets.bottom + listBottomInset,
                 gap: AlbumGridGap,
               }}
-              refreshing={artistQuery.isFetching}
-              onRefresh={() => artistQuery.refetch()}
               ListHeaderComponent={
                 <ThemedView style={styles.header}>
                   <CoverArtImage

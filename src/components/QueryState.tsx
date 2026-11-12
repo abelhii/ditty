@@ -60,7 +60,12 @@ export function QueryState<T>({ query, emptyMessage, isEmpty, children }: QueryS
 
 /** Full-surface error with Retry. A `SubsonicNetworkError` means "no response", so the device
  *  connectivity probe decides whether to blame the device or the server (ADR 0007). */
-export function QueryErrorView({ error, onRetry }: { error: unknown; onRetry: () => void }) {
+type QueryErrorViewProps = {
+  error: unknown;
+  onRetry: () => void;
+};
+
+export function QueryErrorView({ error, onRetry }: QueryErrorViewProps) {
   const isNetworkError = error instanceof SubsonicNetworkError;
   const [deviceOffline, setDeviceOffline] = useState<boolean | null>(null);
 

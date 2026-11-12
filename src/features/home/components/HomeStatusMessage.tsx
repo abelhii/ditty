@@ -21,6 +21,15 @@ export function HomeStatusMessage({ status, onRetry }: HomeStatusMessageProps) {
       </ThemedView>
     );
   }
+  if (status.kind === 'paused') {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.message}>
+          Can&apos;t load Home without a connection. It will load when you&apos;re back online.
+        </ThemedText>
+      </ThemedView>
+    );
+  }
   if (status.kind === 'empty') {
     return (
       <ThemedView style={styles.container}>

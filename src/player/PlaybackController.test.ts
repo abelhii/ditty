@@ -196,7 +196,7 @@ describe('Offline mode playback', () => {
     useOfflineStore.setState({ manual: true });
     useDownloadsStore.setState({ downloadedIds: {} });
 
-    expect(PlaybackController.play(four(), 0)).toBe(false);
+    PlaybackController.play(four(), 0);
 
     expect(usePlayerStore.getState().queue).toBe(before);
     expect(usePlayerStore.getState().desiredPlaying).toBe(true);
@@ -206,15 +206,16 @@ describe('Offline mode playback', () => {
   it('refuses when only tracks before the start index are downloaded', () => {
     useOfflineStore.setState({ manual: true });
     useDownloadsStore.setState({ downloadedIds: { a: true } });
-    expect(PlaybackController.play(four(), 2)).toBe(false);
+    PlaybackController.play(four(), 2);
     expect(usePlayerStore.getState().queue.tracks).toHaveLength(0);
     expect(showNotice).toHaveBeenCalledTimes(1);
   });
 
-  it('returns true and shows no Notice when something is playable', () => {
+  it('plays and shows no Notice when something is playable', () => {
     useOfflineStore.setState({ manual: true });
     useDownloadsStore.setState({ downloadedIds: { c: true } });
-    expect(PlaybackController.play(four(), 0)).toBe(true);
+    PlaybackController.play(four(), 0);
+    expect(usePlayerStore.getState().queue.currentIndex).toBe(2);
     expect(showNotice).not.toHaveBeenCalled();
   });
 

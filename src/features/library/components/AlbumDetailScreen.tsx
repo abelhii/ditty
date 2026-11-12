@@ -50,10 +50,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                   keyExtractor={(track) => track.id}
                   contentContainerStyle={{
                     paddingBottom: insets.bottom + listBottomInset,
-                  }}
-                  refreshing={albumQuery.isFetching}
-                  onRefresh={() => albumQuery.refetch()}
-                  ListHeaderComponent={
+                  }}                  ListHeaderComponent={
                     <ThemedView style={styles.header}>
                       <CoverArtImage
                         uri={
@@ -79,7 +76,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                         <Pressable
                           accessibilityRole="button"
                           accessibilityLabel="Play album"
-                          accessibilityState={{ disabled: !canPlay }}
+                          accessibilityHint={canPlay ? undefined : "Nothing in this album is downloaded"}
                           style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
                           onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
                           <ThemedView type="backgroundSelected" style={styles.playButtonInner}>

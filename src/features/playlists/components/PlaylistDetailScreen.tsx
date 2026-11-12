@@ -62,10 +62,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
               <FlatList<Track>
                 data={tracks}
                 keyExtractor={(track, index) => `${track.id}-${index}`}
-                contentContainerStyle={{ paddingBottom: insets.bottom + listBottomInset }}
-                refreshing={playlistQuery.isFetching}
-                onRefresh={() => playlistQuery.refetch()}
-                ListHeaderComponent={
+                contentContainerStyle={{ paddingBottom: insets.bottom + listBottomInset }}                ListHeaderComponent={
                   <ThemedView style={styles.header}>
                     <CoverArtImage
                       uri={
@@ -88,7 +85,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Play Playlist"
-                        accessibilityState={{ disabled: !canPlay }}
+                        accessibilityHint={canPlay ? undefined : 'Nothing in this Playlist is downloaded'}
                         style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
                         onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
                         <ThemedView type="backgroundSelected" style={styles.playButtonInner}>

@@ -22,6 +22,20 @@ describe('homeStatus', () => {
     expect(homeStatus([ok([]), ok([]), ok([])])).toEqual({ kind: 'empty' });
   });
 
+  it('is paused, not empty, when a Shelf is waiting for a connection with no data', () => {
+    expect(homeStatus([{ isLoading: false, isPaused: true, error: null, data: undefined }, ok([])])).toEqual({
+      kind: 'paused',
+    });
+  });
+
+  it('prefers an error over paused', () => {
+    const error = new Error('x');
+    expect(homeStatus([{ isLoading: false, isPaused: true, error: null, data: undefined }, failed(error)])).toEqual({
+      kind: 'failed',
+      error,
+    });
+  });
+
   it('treats a Shelf with no data and no error as empty', () => {
     expect(homeStatus([{ isLoading: false, error: null, data: undefined }])).toEqual({ kind: 'empty' });
   });

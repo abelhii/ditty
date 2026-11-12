@@ -26,6 +26,12 @@ export class SubsonicApiError extends Error {
   }
 }
 
+/** True when the server couldn't be used at all: no response, or a reply that isn't Subsonic (a
+ *  proxy's 502 page). Callers that fall back to local data (e.g. a downloaded album) use this. */
+export function isServerUnreachable(error: unknown): boolean {
+  return error instanceof SubsonicNetworkError || error instanceof SubsonicHttpError;
+}
+
 export type SubsonicNetworkErrorKind = 'unreachable' | 'timeout';
 
 /** `fetch` itself failed: no response at all. `timeout` means the request was aborted for taking
