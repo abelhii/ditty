@@ -61,12 +61,12 @@ export function TextPromptModal({
               onSubmitEditing={submit}
             />
             <ThemedView style={styles.buttons}>
-              <Pressable hitSlop={8} onPress={onClose}>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={onClose}>
                 <ThemedText type="small" themeColor="textSecondary">
                   Cancel
                 </ThemedText>
               </Pressable>
-              <Pressable hitSlop={8} onPress={submit} disabled={value.trim().length === 0}>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={submit} disabled={value.trim().length === 0}>
                 <ThemedText type="smallBold" themeColor={value.trim() ? 'text' : 'textSecondary'}>
                   {submitLabel}
                 </ThemedText>

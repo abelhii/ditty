@@ -85,7 +85,7 @@ export function AddToPlaylistSheet({ track, onClose }: AddToPlaylistSheetProps) 
                   returnKeyType="done"
                   onSubmitEditing={createAndAdd}
                 />
-                <Pressable hitSlop={8} onPress={createAndAdd} disabled={newName.trim().length === 0}>
+                <Pressable accessibilityRole="button" hitSlop={8} onPress={createAndAdd} disabled={newName.trim().length === 0}>
                   <ThemedText type="smallBold" themeColor={newName.trim() ? 'text' : 'textSecondary'}>
                     Create
                   </ThemedText>
@@ -93,6 +93,7 @@ export function AddToPlaylistSheet({ track, onClose }: AddToPlaylistSheetProps) 
               </ThemedView>
             ) : (
               <Pressable
+                accessibilityRole="button"
                 style={({ pressed }) => [styles.option, pressed && styles.pressed]}
                 onPress={() => setCreating(true)}>
                 <SymbolView name={{ ios: 'plus', android: 'add', web: 'add' }} size={20} tintColor={theme.text} />
@@ -107,6 +108,7 @@ export function AddToPlaylistSheet({ track, onClose }: AddToPlaylistSheetProps) 
                 (playlistsQuery.data ?? []).map((playlist) => (
                   <Pressable
                     key={playlist.id}
+                    accessibilityRole="button"
                     style={({ pressed }) => [styles.option, pressed && styles.pressed]}
                     onPress={() => addTo(playlist.id)}>
                     {addedId === playlist.id ? (

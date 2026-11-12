@@ -16,16 +16,36 @@ type AlphabetIndexProps = {
  *  touches) so a drag reads the finger's position. */
 export function AlphabetIndex({ available, onSelect }: AlphabetIndexProps) {
   const [height, setHeight] = useState(0);
+  const [current, setCurrent] = useState<string | null>(null);
+  const jump = (letter: string) => {
+    setCurrent(letter);
+    onSelect(letter);
+  };
   const select = (y: number) => {
     if (height === 0) return;
     const letter = letterAt(y, height / ALPHABET.length);
-    if (available.has(letter)) onSelect(letter);
+    if (available.has(letter)) jump(letter);
+  };
+  // Screen-reader increment/decrement: step to the next/previous letter that has rows.
+  const step = (direction: 1 | -1) => {
+    const letters = ALPHABET.filter((letter) => available.has(letter));
+    if (letters.length === 0) return;
+    const index = current ? letters.indexOf(current) : -1;
+    const next =
+      index === -1 ? (direction === 1 ? 0 : letters.length - 1) : Math.min(letters.length - 1, Math.max(0, index + direction));
+    jump(letters[next]);
   };
 
   return (
     <View
       accessibilityRole="adjustable"
       accessibilityLabel="Jump to letter"
+      accessibilityValue={{ text: current ?? undefined }}
+      accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === 'increment') step(1);
+        else if (event.nativeEvent.actionName === 'decrement') step(-1);
+      }}
       style={styles.rail}
       onLayout={(event) => setHeight(event.nativeEvent.layout.height)}
       onStartShouldSetResponder={() => true}

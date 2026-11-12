@@ -189,6 +189,7 @@ export default function SettingsScreen() {
 
   const logOut = (
     <Pressable
+      accessibilityRole="button"
       style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
       onPress={confirmLogout}>
       <ThemedText style={{ color: theme.accentDeep }}>Log out</ThemedText>

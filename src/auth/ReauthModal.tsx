@@ -68,7 +68,7 @@ export function ReauthModal() {
           )}
 
           <ThemedView type="backgroundElement" style={styles.actions}>
-            <Pressable hitSlop={8} onPress={() => logout()} disabled={isSubmitting}>
+            <Pressable accessibilityRole="button" hitSlop={8} onPress={() => logout()} disabled={isSubmitting}>
               <ThemedText type="small" themeColor="textSecondary">
                 Sign out
               </ThemedText>
@@ -76,7 +76,7 @@ export function ReauthModal() {
             {isSubmitting ? (
               <ActivityIndicator />
             ) : (
-              <Pressable hitSlop={8} onPress={handleSubmit} disabled={!password}>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={handleSubmit} disabled={!password}>
                 <ThemedText type="smallBold" themeColor={password ? 'text' : 'textSecondary'}>
                   Continue
                 </ThemedText>
