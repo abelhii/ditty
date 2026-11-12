@@ -5,7 +5,7 @@ import { Modal, Platform, Pressable, StyleSheet } from 'react-native';
 import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { showNotice } from '@/components/use-notice-store';
+import { showConfirmation } from '@/components/use-notice-store';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { downloadTracks, removeTrackDownload } from '@/features/downloads/downloads-runtime';
 import { useTrackDownloadState } from '@/features/downloads/hooks/use-download-state';
@@ -48,7 +48,7 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
                   if (track) {
                     unstar.mutate(
                       { kind: 'song', item: track },
-                      { onSuccess: () => showNotice('Removed from Favourites') },
+                      { onSuccess: () => showConfirmation('Removed from Favourites') },
                     );
                   }
                   onClose();
@@ -62,7 +62,7 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
                   if (track) {
                     star.mutate(
                       { kind: 'song', item: track },
-                      { onSuccess: () => showNotice('Added to Favourites') },
+                      { onSuccess: () => showConfirmation('Added to Favourites') },
                     );
                   }
                   onClose();
@@ -83,7 +83,7 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
               onPress={() => {
                 if (track) {
                   PlaybackController.playNext(track);
-                  showNotice('Playing next');
+                  showConfirmation('Playing next');
                 }
                 onClose();
               }}
@@ -94,7 +94,7 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
               onPress={() => {
                 if (track) {
                   PlaybackController.addToQueue(track);
-                  showNotice('Added to Queue');
+                  showConfirmation('Added to Queue');
                 }
                 onClose();
               }}

@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import type { Track } from '@/api/types';
 import { TrackActionsMenu } from '@/components/TrackActionsMenu';
-import { showNotice } from '@/components/use-notice-store';
+import { showConfirmation } from '@/components/use-notice-store';
 import * as PlaybackController from '@/player/PlaybackController';
 
 jest.mock('@/global.css', () => ({}));
@@ -13,7 +13,7 @@ jest.mock('react-native-reanimated', () => ({
 }));
 jest.mock('@/hooks/use-color-scheme', () => ({ useColorScheme: () => 'light' }));
 jest.mock('@/api/kv-storage', () => ({ getItem: () => null, setItem: () => {}, removeItem: () => {} }));
-jest.mock('@/components/use-notice-store', () => ({ showNotice: jest.fn() }));
+jest.mock('@/components/use-notice-store', () => ({ showConfirmation: jest.fn() }));
 jest.mock('@/player/PlaybackController', () => ({ playNext: jest.fn(), addToQueue: jest.fn() }));
 jest.mock('@/features/downloads/hooks/use-download-state', () => ({
   useTrackDownloadState: () => ({ kind: 'unavailable' }),
@@ -36,7 +36,7 @@ describe('TrackActionsMenu feedback', () => {
     await fireEvent.press(screen.getByText('Add to queue'));
 
     expect(PlaybackController.addToQueue).toHaveBeenCalledWith(track);
-    expect(showNotice).toHaveBeenCalledWith('Added to Queue');
+    expect(showConfirmation).toHaveBeenCalledWith('Added to Queue');
   });
 
   it('confirms Play next', async () => {
@@ -44,16 +44,16 @@ describe('TrackActionsMenu feedback', () => {
     await fireEvent.press(screen.getByText('Play next'));
 
     expect(PlaybackController.playNext).toHaveBeenCalledWith(track);
-    expect(showNotice).toHaveBeenCalledWith('Playing next');
+    expect(showConfirmation).toHaveBeenCalledWith('Playing next');
   });
 
   it('confirms a Favourite only once the star succeeds', async () => {
     await render(<TrackActionsMenu track={track} onClose={() => {}} />);
     await fireEvent.press(screen.getByText('Add to Favourites'));
 
-    expect(showNotice).not.toHaveBeenCalled();
+    expect(showConfirmation).not.toHaveBeenCalled();
     mockMutate.mock.calls[0][1].onSuccess();
-    expect(showNotice).toHaveBeenCalledWith('Added to Favourites');
+    expect(showConfirmation).toHaveBeenCalledWith('Added to Favourites');
   });
 
   it('confirms removing a Favourite once the unstar succeeds', async () => {
@@ -61,6 +61,6 @@ describe('TrackActionsMenu feedback', () => {
     await fireEvent.press(screen.getByText('Remove from Favourites'));
 
     mockMutate.mock.calls[0][1].onSuccess();
-    expect(showNotice).toHaveBeenCalledWith('Removed from Favourites');
+    expect(showConfirmation).toHaveBeenCalledWith('Removed from Favourites');
   });
 });
