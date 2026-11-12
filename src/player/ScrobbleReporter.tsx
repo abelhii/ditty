@@ -11,7 +11,7 @@ import { usePlayerStore } from '@/player/use-player-store';
 
 /**
  * Reports plays to the server so Home's play-based shelves (Frequently played) see this app's
- * listening. Reads only the observed playback state (it never touches the player, ADR 0001); the
+ * listening. Reads only the observed playback state (it never touches the player); the
  * decision of when a play counts lives in the pure `scrobble-tracker`. Mount once next to
  * `AudioEngine`. Failures are dropped: scrobbling must never interrupt playback, and offline
  * queueing is out of scope.

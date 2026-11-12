@@ -6,7 +6,7 @@ export type Track = {
   artist: string;
   album: string;
   /** The album this track belongs to — used to start a queue from the album when a search song is
-   *  tapped with no queue playing (see docs/adr/0004-search-tap-preserves-queue.md). */
+   *  tapped with no queue playing. */
   albumId?: string;
   /** Seeds Auto-DJ's similar-songs lookup. Absent on Tracks persisted before this field existed. */
   artistId?: string;

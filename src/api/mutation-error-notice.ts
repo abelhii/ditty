@@ -2,7 +2,7 @@ import { SubsonicNetworkError } from '@/api/subsonic/errors';
 
 /**
  * The wording for a failed-mutation `Notice`, fired centrally from the global `MutationCache.onError`
- * (ADR 0007). Keyed off the error *class*, consistent with `QueryState`: a `SubsonicNetworkError`
+ * Keyed off the error *class*, consistent with `QueryState`: a `SubsonicNetworkError`
  * (offline / unreachable) reads as "not saved", anything else as a generic "couldn't {action}".
  * `action` comes from the per-mutation `meta: { action }`.
  *

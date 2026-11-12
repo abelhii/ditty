@@ -5,7 +5,7 @@ import { getCurrentTrack } from '@/player/QueueManager';
 /**
  * Applies `step` (QueueManager's `next`/`previous`, or the identity when starting a queue) and keeps
  * stepping while the landed-on Track isn't playable — used in Offline mode to skip Tracks that were
- * never downloaded, instead of halting on a stream error (ADR 0011).
+ * never downloaded, instead of halting on a stream error.
  *
  * Bounded by the queue length so a queue with nothing playable can't spin, and stops when a step
  * doesn't move (repeat-one, or `previous` at the start). If nothing playable is reachable the last

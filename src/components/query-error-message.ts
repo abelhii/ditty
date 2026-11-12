@@ -2,7 +2,7 @@ import { SubsonicNetworkError } from '@/api/subsonic/errors';
 
 /**
  * The wording for a failed query with nothing cached to show. A `SubsonicNetworkError` only says
- * "no response", so `deviceOffline` (the connectivity probe, ADR 0007) decides between "you're
+ * "no response", so `deviceOffline` (the connectivity probe) decides between "you're
  * offline" and "the server is the problem". Every other error carries its own message (the server
  * answered, so it is not a connectivity problem).
  */

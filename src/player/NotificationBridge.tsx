@@ -25,8 +25,8 @@ const STATE_FOR_STATUS: Record<PlaybackStatus, PlaybackState> = {
  * longer registers the player with the lock screen — the two must not both own the session.
  *
  * Same reactive pattern as the web counterpart (NotificationBridge.web.tsx): subscribe to the
- * stores, forward each OS button into the same `PlaybackController` entry points the UI uses
- * (docs/adr/0001-player-state-flows-through-store.md). Play/pause therefore go through the store
+ * stores, forward each OS button into the same `PlaybackController` entry points the UI uses.
+ * Play/pause therefore go through the store
  * and AudioEngine drives the player.
  */
 export function NotificationBridge() {

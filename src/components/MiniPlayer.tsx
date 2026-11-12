@@ -28,7 +28,7 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 /**
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform
- * (see docs/adr/0005-miniplayer-js-overlay-not-native-accessory.md), mounted as a sibling of
+ * (not a native accessory), mounted as a sibling of
  * NativeTabs in _layout.tsx (the wide layout swaps in WidePlayer instead). Artwork + title/artist + previous / play-pause / next + a hairline progress line;
  * tapping the bar expands the now-playing overlay. Hidden when there's nothing playing or when
  * now-playing is already open.
@@ -123,7 +123,7 @@ export function SkipButton({ name, label, onPress, selected }: SkipButtonProps) 
 }
 
 /** Shared play/pause control — a spinner while the track is loading, a Retry glyph when the track
- *  has halted on an error (ADR 0007), otherwise a play/pause glyph reflecting the observed status.
+ *  has halted on an error, otherwise a play/pause glyph reflecting the observed status.
  *  `tintColor` overrides the default theme-driven tint (used on the full player's accent-filled
  *  button, which sits on a fixed dark surface — see NowPlayingScreen). */
 export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintColor?: string }) {

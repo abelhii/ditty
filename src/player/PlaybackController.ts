@@ -18,7 +18,6 @@ import { usePlayerStore } from '@/player/use-player-store';
  * The public API for playback — called by the UI and by NotificationBridge, never by
  * AudioEngine directly. Every function here only writes proposed state into
  * `usePlayerStore`; AudioEngine reacts to it and writes back what actually happened.
- * See docs/adr/0001-player-state-flows-through-store.md.
  */
 
 function currentQueue(): QueueManager.QueueState {
@@ -26,7 +25,7 @@ function currentQueue(): QueueManager.QueueState {
 }
 
 /** In Offline mode only downloaded Tracks can play; otherwise everything is assumed streamable
- *  (a stream failure is handled by the halt-and-retry path, ADR 0007). */
+ *  (a stream failure is handled by the halt-and-retry path). */
 function isPlayableNow(track: Track): boolean {
   if (!isOfflineMode(useOfflineStore.getState())) return true;
   return useDownloadsStore.getState().downloadedIds[track.id] === true;
@@ -51,7 +50,7 @@ export function play(tracks: Track[], startIndex = 0): void {
 
 /**
  * Plays `track` now *without destroying an existing queue* — search's exploratory song tap, as
- * opposed to album detail's queue-replacing `play` (rationale: docs/adr/0004-search-tap-preserves-queue.md).
+ * opposed to album detail's queue-replacing `play`.
  * - Queue already playing → insert at the current position and play immediately; the previously-
  *   playing track becomes next, the rest of the queue preserved.
  * - No queue → start one from the tapped song's album (a richer queue than a lone track), falling
@@ -130,8 +129,8 @@ export function seekTo(seconds: number): void {
   usePlayerStore.getState().requestSeek(seconds);
 }
 
-/** Retries the current track after a playback error (see the transport's Retry affordance, ADR
- *  0007). Forces AudioEngine to re-fetch the same stream and resume, moving `status` off `'error'`
+/** Retries the current track after a playback error (see the transport's Retry affordance).
+ *  Forces AudioEngine to re-fetch the same stream and resume, moving `status` off `'error'`
  *  back to `'loading'`. */
 export function retry(): void {
   if (!QueueManager.getCurrentTrack(currentQueue())) return;

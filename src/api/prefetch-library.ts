@@ -8,7 +8,7 @@ import { homeShelves } from '@/features/home/shelves';
 
 /** Prefetches the top-level "Your Library" lists right after login, so those screens feel
  *  instant. Everything else (an artist's albums, an album's tracks) is fetched lazily on
- *  navigation — see docs/adr/0002-no-local-library-mirror.md. */
+ *  navigation. */
 export function prefetchLibrary(serverUrl: string, auth: SubsonicAuth): void {
   queryClient.prefetchQuery({ queryKey: queryKeys.artists(), queryFn: () => getArtists(serverUrl, auth) });
   queryClient.prefetchQuery({

@@ -9,11 +9,10 @@ const PERSIST_KEY = 'music-player-queue';
 const PERSIST_VERSION = 1;
 
 /**
- * The *proposed* half of playback state (ADR 0001). `PlaybackController` only ever writes these
+ * The *proposed* half of playback state. `PlaybackController` only ever writes these
  * fields (queue, desiredPlaying, seekRequest); the *observed* fields (status, position) live in
  * `usePlaybackStatusStore` so the ~1/sec position tick during playback never reaches this store's
- * `persist` middleware. See docs/adr/0001-player-state-flows-through-store.md and
- * docs/adr/0006-local-only-queue-persistence.md.
+ * `persist` middleware.
  */
 type PlayerState = {
   queue: QueueState;
@@ -45,7 +44,7 @@ type PlayerState = {
 };
 
 /** Only the queue is durable across restarts — shuffle/repeat/originalOrder ride inside it.
- *  desiredPlaying is deliberately *not* persisted: restore is always paused (ADR 0006). */
+ *  desiredPlaying is deliberately *not* persisted: restore is always paused. */
 type PersistedPlayerState = { queue: QueueState };
 
 /**
@@ -95,7 +94,7 @@ export const usePlayerStore = create<PlayerState>()(
       storage: jsonStorage,
       partialize: (state): PersistedPlayerState => ({ queue: state.queue }),
       // A version bump (a future Track-shape change) resets to an empty queue rather than
-      // migrating stale data — real migrate() handlers are deferred (ADR 0006).
+      // migrating stale data — real migrate() handlers are deferred.
       migrate: () => ({ queue: createQueueState([]) }),
       // Restore paused, from the current track's start: desiredPlaying stays at its initial
       // `false`, and a queue that finished last session re-cues from its top (index clamp).

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-/** An optional action a Notice can carry. Used for Queue-removal Undo (ADR 0007 amendment);
+/** An optional action a Notice can carry. Used for Queue-removal Undo;
  *  failure Notices carry none — their redo affordance is already on screen. */
 export type NoticeAction = { label: string; onPress: () => void };
 
@@ -21,9 +21,9 @@ let nextId = 1;
 
 /**
  * Drives the app-level `Notice` — one transient, auto-dismissing, non-blocking message, mounted
- * once near the root (same layering as the MiniPlayer, see ADR 0005). Reserved for background
+ * once near the root (same layering as the MiniPlayer). Reserved for background
  * actions with no surface of their own to report into (a failed star / playlist edit), distinct
- * from `QueryState`'s full-surface error and from the blocking re-auth modal. See ADR 0007.
+ * from `QueryState`'s full-surface error and from the blocking re-auth modal.
  */
 export const useNoticeStore = create<NoticeState>((set) => ({
   current: null,
