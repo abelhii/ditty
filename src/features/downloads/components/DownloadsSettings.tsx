@@ -15,7 +15,6 @@ import { availableBytes } from '@/features/downloads/downloads-files';
 import { formatBytes } from '@/features/downloads/storage-usage';
 import { useDownloadSettingsStore } from '@/features/downloads/use-download-settings-store';
 import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
-import { useTheme } from '@/hooks/use-theme';
 
 type DownloadsSettingsProps = {
   /** Wide layout draws the rows on the page background inside a card. */
@@ -26,7 +25,6 @@ type PendingRemoval = { kind: 'album'; name: string; trackIds: string[] } | { ki
 
 /** Storage use, free space, per-album delete, "Remove all downloads" and the Wi-Fi-only switch. */
 export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
-  const theme = useTheme();
   const wifiOnly = useDownloadSettingsStore((state) => state.wifiOnly);
   const setWifiOnly = useDownloadSettingsStore((state) => state.setWifiOnly);
   const autoFavourites = useDownloadSettingsStore((state) => state.autoDownloadFavourites);
@@ -110,7 +108,7 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
                 accessibilityLabel={`Remove downloads for ${group.albumName}`}
                 hitSlop={8}
                 onPress={() => setPending({ kind: 'album', name: group.albumName, trackIds: group.trackIds })}>
-                <ThemedText type="small" style={{ color: theme.accentDeep }}>
+                <ThemedText type="small" themeColor="danger">
                   Remove
                 </ThemedText>
               </Pressable>
@@ -120,7 +118,7 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
             accessibilityRole="button"
             style={({ pressed }) => pressed && styles.pressed}
             onPress={() => setPending({ kind: 'all' })}>
-            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+            <ThemedText type="small" themeColor="danger">
               Remove all downloads
             </ThemedText>
           </Pressable>

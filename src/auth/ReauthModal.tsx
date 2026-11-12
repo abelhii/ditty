@@ -86,7 +86,7 @@ export function ReauthModal() {
             />
 
             {reauthError && (
-              <ThemedText type="small" style={styles.error}>
+              <ThemedText type="small" themeColor="danger">
                 {reauthError}
               </ThemedText>
             )}
@@ -143,9 +143,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
-  },
-  error: {
-    color: '#e5484d',
   },
   actions: {
     flexDirection: 'row',
