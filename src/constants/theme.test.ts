@@ -24,6 +24,7 @@ const PAIRS: [ThemeColor, ThemeColor][] = [
   ['danger', 'backgroundSelected'],
   ['danger', 'tint'],
   ['onAccent', 'accent'],
+  ['onAccent', 'accentDeep'],
 ];
 
 describe('theme text contrast (WCAG AA, 4.5:1)', () => {
