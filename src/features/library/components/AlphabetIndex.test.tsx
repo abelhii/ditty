@@ -33,4 +33,17 @@ describe('AlphabetIndex', () => {
 
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it('is accessible and steps through letters that have rows on increment/decrement', async () => {
+    const onSelect = jest.fn();
+    await render(<AlphabetIndex available={new Set(['A', 'C', 'M'])} onSelect={onSelect} />);
+    const rail = screen.getByLabelText('Jump to letter');
+    expect(rail.props.accessible).toBe(true);
+
+    await fireEvent(rail, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    await fireEvent(rail, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    await fireEvent(rail, 'accessibilityAction', { nativeEvent: { actionName: 'decrement' } });
+
+    expect(onSelect.mock.calls.map((call) => call[0])).toEqual(['A', 'C', 'A']);
+  });
 });

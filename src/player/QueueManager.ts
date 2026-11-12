@@ -122,7 +122,9 @@ export function removeAt(state: QueueState, index: number): QueueState {
 
   const removed = state.tracks[index];
   const tracks = state.tracks.filter((_, i) => i !== index);
-  const originalOrder = state.originalOrder.filter((t) => t !== removed);
+  // Drop only one entry: the same Track object can be queued more than once.
+  const originalIndex = state.originalOrder.indexOf(removed);
+  const originalOrder = state.originalOrder.filter((_, i) => i !== originalIndex);
 
   let currentIndex = state.currentIndex;
   if (tracks.length === 0) {
@@ -133,6 +135,24 @@ export function removeAt(state: QueueState, index: number): QueueState {
     currentIndex = clampIndex(currentIndex, tracks.length);
   }
 
+  return { ...state, tracks, originalOrder, currentIndex };
+}
+
+/** Puts a previously removed track back at `index` (clamped), keeping the current track current —
+ *  the undo of `removeAt`. `originalIndex` puts it back in the shuffle-off order too (default: end). */
+export function insertAt(
+  state: QueueState,
+  track: Track,
+  index: number,
+  originalIndex: number = state.originalOrder.length,
+): QueueState {
+  const at = Math.max(0, Math.min(index, state.tracks.length));
+  const tracks = [...state.tracks.slice(0, at), track, ...state.tracks.slice(at)];
+  let currentIndex = state.currentIndex;
+  if (currentIndex === -1) currentIndex = 0;
+  else if (at <= currentIndex) currentIndex += 1;
+  const o = Math.max(0, Math.min(originalIndex, state.originalOrder.length));
+  const originalOrder = [...state.originalOrder.slice(0, o), track, ...state.originalOrder.slice(o)];
   return { ...state, tracks, originalOrder, currentIndex };
 }
 

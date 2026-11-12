@@ -26,11 +26,17 @@ import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
 type MyMusicFilter = 'playlists' | 'albums' | 'artists';
 
+type MyMusicScreenProps = {
+  /** Stack the detail screens open in: '/my-music' for its own (hidden) tab, '/home' when opened
+   *  from Home's "See all" so Back returns to Home. */
+  basePath?: '/my-music' | '/home';
+};
+
 /** The My Music tab (Build Order step 7b, merged with the old Favourites screen per the v4 restyle
  *  — see PLAN.md step 7b amendment): a pinned Liked Songs shortcut, then Playlists / Albums /
  *  Artists behind a filter-chip row — one entity type visible at a time, since favourites can grow
  *  large (contrast Search's combined scroll). Deliberately *not* named "Library" — see CONTEXT.md. */
-export function MyMusicScreen() {
+export function MyMusicScreen({ basePath = '/my-music' }: MyMusicScreenProps) {
   const router = useRouter();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -68,7 +74,7 @@ export function MyMusicScreen() {
 
         <Pressable
           style={({ pressed }) => [styles.likedSongsRow, pressed && styles.pressed]}
-          onPress={() => router.push('/my-music/liked-songs')}>
+          onPress={() => router.push(`${basePath}/liked-songs`)}>
           <ThemedView style={[styles.likedSongsIcon, { backgroundColor: theme.accent }]}>
             <SymbolView
               name={{ ios: 'heart.fill', android: 'favorite', web: 'favorite' }}
@@ -110,7 +116,7 @@ export function MyMusicScreen() {
                 renderItem={({ item }) => (
                   <Pressable
                     style={({ pressed }) => [styles.row, pressed && styles.pressed]}
-                    onPress={() => router.push(`/my-music/playlist/${item.id}`)}>
+                    onPress={() => router.push(`${basePath}/playlist/${item.id}`)}>
                     <CoverArtImage
                       uri={coverUri(item.coverArtId, CoverArtSize.list)}
                       style={styles.cover}
@@ -141,7 +147,7 @@ export function MyMusicScreen() {
                     <ArtistRow
                       artist={item}
                       coverArtUri={coverUri(item.coverArtId, CoverArtSize.list)}
-                      onPress={() => router.push(`/my-music/artist/${item.id}`)}
+                      onPress={() => router.push(`${basePath}/artist/${item.id}`)}
                     />
                   )}
                 />
@@ -157,7 +163,7 @@ export function MyMusicScreen() {
                           album={album}
                           width={tileWidth}
                           coverArtUri={coverUri(album.coverArtId, coverArtSize)}
-                          onPress={() => router.push(`/my-music/album/${album.id}`)}
+                          onPress={() => router.push(`${basePath}/album/${album.id}`)}
                         />
                       ))}
                     </ThemedView>
@@ -203,7 +209,7 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
           : { borderWidth: 1, borderColor: theme.border },
       ]}
       onPress={onPress}>
-      <ThemedText type="smallBold" style={active ? { color: theme.tint } : { color: theme.textSecondary }}>
+      <ThemedText type="smallBold" style={active ? { color: theme.onAccent } : { color: theme.textSecondary }}>
         {label}
       </ThemedText>
     </Pressable>

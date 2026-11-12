@@ -5,6 +5,7 @@ import { Modal, Platform, Pressable, StyleSheet } from 'react-native';
 import type { Track } from '@/api/types';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { showConfirmation } from '@/components/use-notice-store';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { downloadTracks, removeTrackDownload } from '@/features/downloads/downloads-runtime';
 import { useTrackDownloadState } from '@/features/downloads/hooks/use-download-state';
@@ -44,7 +45,12 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
                 label="Remove from Favourites"
                 icon={{ ios: 'heart.slash', android: 'heart_broken', web: 'heart_broken' }}
                 onPress={() => {
-                  if (track) unstar.mutate({ kind: 'song', item: track });
+                  if (track) {
+                    unstar.mutate(
+                      { kind: 'song', item: track },
+                      { onSuccess: () => showConfirmation('Removed from Favourites') },
+                    );
+                  }
                   onClose();
                 }}
               />
@@ -53,7 +59,12 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
                 label="Add to Favourites"
                 icon={{ ios: 'heart', android: 'favorite_border', web: 'favorite_border' }}
                 onPress={() => {
-                  if (track) star.mutate({ kind: 'song', item: track });
+                  if (track) {
+                    star.mutate(
+                      { kind: 'song', item: track },
+                      { onSuccess: () => showConfirmation('Added to Favourites') },
+                    );
+                  }
                   onClose();
                 }}
               />
@@ -70,7 +81,10 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
               label="Play next"
               icon={{ ios: 'text.line.first.and.arrowtriangle.forward', android: 'queue_play_next', web: 'queue_play_next' }}
               onPress={() => {
-                if (track) PlaybackController.playNext(track);
+                if (track) {
+                  PlaybackController.playNext(track);
+                  showConfirmation('Playing next');
+                }
                 onClose();
               }}
             />
@@ -78,7 +92,10 @@ export function TrackActionsMenu({ track, onClose, onRemoveFromPlaylist }: Track
               label="Add to queue"
               icon={{ ios: 'text.append', android: 'add_to_queue', web: 'add_to_queue' }}
               onPress={() => {
-                if (track) PlaybackController.addToQueue(track);
+                if (track) {
+                  PlaybackController.addToQueue(track);
+                  showConfirmation('Added to Queue');
+                }
                 onClose();
               }}
             />
@@ -132,7 +149,10 @@ function MenuOption({
 }) {
   const theme = useTheme();
   return (
-    <Pressable style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]}
+      onPress={onPress}>
       <SymbolView name={icon} size={20} tintColor={theme.text} />
       <ThemedText>{label}</ThemedText>
     </Pressable>

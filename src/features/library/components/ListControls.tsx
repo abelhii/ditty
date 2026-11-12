@@ -64,7 +64,7 @@ export function ListControls<K extends string>({
                 active ? { backgroundColor: theme.accent } : { borderWidth: 1, borderColor: theme.border },
               ]}
             >
-              <ThemedText type="smallBold" style={{ color: active ? theme.tint : theme.textSecondary }}>
+              <ThemedText type="smallBold" style={{ color: active ? theme.onAccent : theme.textSecondary }}>
                 {option.label}
               </ThemedText>
             </Pressable>

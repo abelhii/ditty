@@ -52,7 +52,8 @@ domain entity. Introduced in step 9.
 
 **Notice**:
 A transient, auto-dismissing, non-blocking message shown to the user when a background action
-fails without a surface of its own to report into — e.g. a failed star or playlist edit. One
+fails — or succeeds with nothing else on screen to show it (Add to Queue, Remove from Queue with
+Undo) — without a surface of its own to report into, e.g. a failed star or playlist edit. One
 app-level primitive, driven by a small store, mounted once near the root (same layering as the
 MiniPlayer). Distinct from `QueryState`'s error state (full-surface, for a screen that has
 nothing to show yet) and from Re-authentication (blocking, for a rejected session). Introduced
