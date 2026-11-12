@@ -1,7 +1,10 @@
-import { Alert, Platform, Pressable, StyleSheet, Switch } from 'react-native';
+import { useState } from 'react';
+import { Platform, Pressable, StyleSheet, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { logoutLossWarning } from '@/auth/logout-guard';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import {
@@ -16,7 +19,6 @@ import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import { useThemePreferenceStore, type ThemePreference } from '@/hooks/use-theme-preference-store';
 import { DownloadsSettings } from '@/features/downloads/components/DownloadsSettings';
-import { getDownloadSummary } from '@/features/downloads/downloads-runtime';
 import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { useAutoDjSettingsStore, type AutoDjSource } from '@/player/use-auto-dj-settings-store';
 import { useLevellingSettingsStore } from '@/player/use-levelling-settings-store';
@@ -50,6 +52,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const wide = useIsWideLayout();
   const logout = useAuthStore((state) => state.logout);
+  const [logoutWarning, setLogoutWarning] = useState<string | null>(null);
   const credentials = useAuthStore((state) => state.credentials);
   const preference = useThemePreferenceStore((state) => state.preference);
   const setPreference = useThemePreferenceStore((state) => state.setPreference);
@@ -177,22 +180,30 @@ export default function SettingsScreen() {
   // Logging out deletes this server's downloads (they're server-specific, like the queue), so ask
   // first when there is anything to lose.
   function confirmLogout() {
-    if (Platform.OS === 'web' || getDownloadSummary().groups.length === 0) {
-      logout();
-      return;
-    }
-    Alert.alert('Log out?', 'Downloaded music will be deleted from this device.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => logout() },
-    ]);
+    const warning = logoutLossWarning();
+    if (warning) setLogoutWarning(warning);
+    else logout();
   }
 
   const logOut = (
-    <Pressable
-      style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
-      onPress={confirmLogout}>
-      <ThemedText style={{ color: theme.accentDeep }}>Log out</ThemedText>
-    </Pressable>
+    <>
+      <ConfirmModal
+        visible={logoutWarning !== null}
+        title="Log out?"
+        message={logoutWarning ?? ''}
+        confirmLabel="Log out"
+        onConfirm={() => {
+          setLogoutWarning(null);
+          logout();
+        }}
+        onCancel={() => setLogoutWarning(null)}
+      />
+      <Pressable
+        style={({ pressed }) => [styles.logOutRow, pressed && styles.pressed]}
+        onPress={confirmLogout}>
+        <ThemedText style={{ color: theme.accentDeep }}>Log out</ThemedText>
+      </Pressable>
+    </>
   );
 
   if (wide) {

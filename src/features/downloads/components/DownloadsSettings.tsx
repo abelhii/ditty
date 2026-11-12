@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { Alert, Pressable, StyleSheet, Switch } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Switch } from 'react-native';
 
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Radius, Spacing } from '@/constants/theme';
@@ -21,6 +22,8 @@ type DownloadsSettingsProps = {
   wide: boolean;
 };
 
+type PendingRemoval = { kind: 'album'; name: string; trackIds: string[] } | { kind: 'all' };
+
 /** Storage use, free space, per-album delete, "Remove all downloads" and the Wi-Fi-only switch. */
 export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
   const theme = useTheme();
@@ -36,17 +39,28 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const free = useMemo(() => availableBytes(), [downloadedIds]);
 
-  const rowType = wide ? 'background' : 'backgroundElement';
+  const [pending, setPending] = useState<PendingRemoval | null>(null);
 
-  function confirmRemoveAll() {
-    Alert.alert('Remove all downloads?', 'Downloaded music will be deleted from this device.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove all', style: 'destructive', onPress: removeAllDownloads },
-    ]);
-  }
+  const rowType = wide ? 'background' : 'backgroundElement';
 
   return (
     <ThemedView style={styles.section}>
+      <ConfirmModal
+        visible={pending !== null}
+        title={pending?.kind === 'album' ? 'Remove downloaded album?' : 'Remove all downloads?'}
+        message={
+          pending?.kind === 'album'
+            ? `${pending.name} will be deleted from this device. You can download it again.`
+            : 'Downloaded music will be deleted from this device.'
+        }
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (pending?.kind === 'album') removeTrackDownloads(pending.trackIds);
+          else removeAllDownloads();
+          setPending(null);
+        }}
+        onCancel={() => setPending(null)}
+      />
       {!wide && (
         <ThemedText type="small" themeColor="textSecondary">
           Downloads
@@ -95,7 +109,7 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
                 accessibilityRole="button"
                 accessibilityLabel={`Remove downloads for ${group.albumName}`}
                 hitSlop={8}
-                onPress={() => removeTrackDownloads(group.trackIds)}>
+                onPress={() => setPending({ kind: 'album', name: group.albumName, trackIds: group.trackIds })}>
                 <ThemedText type="small" style={{ color: theme.accentDeep }}>
                   Remove
                 </ThemedText>
@@ -105,7 +119,7 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
           <Pressable
             accessibilityRole="button"
             style={({ pressed }) => pressed && styles.pressed}
-            onPress={confirmRemoveAll}>
+            onPress={() => setPending({ kind: 'all' })}>
             <ThemedText type="small" style={{ color: theme.accentDeep }}>
               Remove all downloads
             </ThemedText>
