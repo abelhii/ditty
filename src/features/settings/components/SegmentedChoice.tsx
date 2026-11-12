@@ -38,7 +38,7 @@ export function SegmentedChoice<T extends string | number>({
             disabled={disabled}
             onPress={() => onChange(option.value)}
             style={[styles.segment, selected && { backgroundColor: theme.accent }]}>
-            <ThemedText type="small" style={selected ? { color: theme.tint } : undefined}>
+            <ThemedText type="small" style={selected ? { color: theme.onAccent } : undefined}>
               {option.label}
             </ThemedText>
           </Pressable>

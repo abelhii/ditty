@@ -42,7 +42,32 @@ describe('DownloadsSettings', () => {
     expect(screen.getByText('3.0 MB used · 2.0 GB free')).toBeTruthy();
     expect(screen.getByText('Band · 2 tracks · 3.0 MB')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Remove downloads for Record'));
+    expect(mockRemoveTracks).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove' }));
     expect(mockRemoveTracks).toHaveBeenCalledWith(['a', 'b']);
+  });
+
+  it('keeps an album when its removal is cancelled', async () => {
+    mockSummary = {
+      groups: [{ key: 'al1', albumName: 'Record', artist: 'Band', trackIds: ['a', 'b'], sizeBytes: 1024 }],
+      totalBytes: 1024,
+    };
+    await render(<DownloadsSettings wide={false} />);
+    await fireEvent.press(screen.getByLabelText('Remove downloads for Record'));
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(mockRemoveTracks).not.toHaveBeenCalled();
+  });
+
+  it('asks before removing all downloads', async () => {
+    mockSummary = {
+      groups: [{ key: 'al1', albumName: 'Record', artist: 'Band', trackIds: ['a'], sizeBytes: 1024 }],
+      totalBytes: 1024,
+    };
+    await render(<DownloadsSettings wide={false} />);
+    await fireEvent.press(screen.getByText('Remove all downloads'));
+    expect(mockRemoveAll).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove' }));
+    expect(mockRemoveAll).toHaveBeenCalledTimes(1);
   });
 
   it('writes the Wi-Fi only switch to the settings store', async () => {

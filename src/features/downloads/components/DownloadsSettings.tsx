@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
-import { Alert, Pressable, StyleSheet, Switch } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Switch } from 'react-native';
 
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Radius, Spacing } from '@/constants/theme';
@@ -14,16 +15,16 @@ import { availableBytes } from '@/features/downloads/downloads-files';
 import { formatBytes } from '@/features/downloads/storage-usage';
 import { useDownloadSettingsStore } from '@/features/downloads/use-download-settings-store';
 import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
-import { useTheme } from '@/hooks/use-theme';
 
 type DownloadsSettingsProps = {
   /** Wide layout draws the rows on the page background inside a card. */
   wide: boolean;
 };
 
+type PendingRemoval = { kind: 'album'; name: string; trackIds: string[] } | { kind: 'all' };
+
 /** Storage use, free space, per-album delete, "Remove all downloads" and the Wi-Fi-only switch. */
 export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
-  const theme = useTheme();
   const wifiOnly = useDownloadSettingsStore((state) => state.wifiOnly);
   const setWifiOnly = useDownloadSettingsStore((state) => state.setWifiOnly);
   const autoFavourites = useDownloadSettingsStore((state) => state.autoDownloadFavourites);
@@ -36,17 +37,28 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const free = useMemo(() => availableBytes(), [downloadedIds]);
 
-  const rowType = wide ? 'background' : 'backgroundElement';
+  const [pending, setPending] = useState<PendingRemoval | null>(null);
 
-  function confirmRemoveAll() {
-    Alert.alert('Remove all downloads?', 'Downloaded music will be deleted from this device.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove all', style: 'destructive', onPress: removeAllDownloads },
-    ]);
-  }
+  const rowType = wide ? 'background' : 'backgroundElement';
 
   return (
     <ThemedView style={styles.section}>
+      <ConfirmModal
+        visible={pending !== null}
+        title={pending?.kind === 'album' ? 'Remove downloaded album?' : 'Remove all downloads?'}
+        message={
+          pending?.kind === 'album'
+            ? `${pending.name} will be deleted from this device. You can download it again.`
+            : 'Downloaded music will be deleted from this device.'
+        }
+        confirmLabel="Remove"
+        onConfirm={() => {
+          if (pending?.kind === 'album') removeTrackDownloads(pending.trackIds);
+          else removeAllDownloads();
+          setPending(null);
+        }}
+        onCancel={() => setPending(null)}
+      />
       {!wide && (
         <ThemedText type="small" themeColor="textSecondary">
           Downloads
@@ -95,8 +107,8 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
                 accessibilityRole="button"
                 accessibilityLabel={`Remove downloads for ${group.albumName}`}
                 hitSlop={8}
-                onPress={() => removeTrackDownloads(group.trackIds)}>
-                <ThemedText type="small" style={{ color: theme.accentDeep }}>
+                onPress={() => setPending({ kind: 'album', name: group.albumName, trackIds: group.trackIds })}>
+                <ThemedText type="small" themeColor="danger">
                   Remove
                 </ThemedText>
               </Pressable>
@@ -105,8 +117,8 @@ export function DownloadsSettings({ wide }: DownloadsSettingsProps) {
           <Pressable
             accessibilityRole="button"
             style={({ pressed }) => pressed && styles.pressed}
-            onPress={confirmRemoveAll}>
-            <ThemedText type="small" style={{ color: theme.accentDeep }}>
+            onPress={() => setPending({ kind: 'all' })}>
+            <ThemedText type="small" themeColor="danger">
               Remove all downloads
             </ThemedText>
           </Pressable>

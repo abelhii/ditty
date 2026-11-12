@@ -16,7 +16,7 @@ describe('tab stack layouts', () => {
   // A detail screen opened straight from its URL (a reload, a shared link, an installed web app)
   // must still have the tab's first screen under it, so the stack header shows a back button.
   it.each([
-    ['home', HomeLayout, ['album/[id]', 'liked-songs', 'playlist/[id]'], '/home/album/1'],
+    ['home', HomeLayout, ['album/[id]', 'liked-songs', 'playlist/[id]', 'my-music'], '/home/album/1'],
     ['library', LibraryLayout, ['album/[id]', 'artist/[id]', 'genre/[name]'], '/library/album/1'],
     ['my-music', MyMusicLayout, ['playlist/[id]', 'liked-songs', 'album/[id]', 'artist/[id]'], '/my-music/playlist/1'],
     ['search', SearchLayout, ['album/[id]', 'artist/[id]'], '/search/artist/1'],
