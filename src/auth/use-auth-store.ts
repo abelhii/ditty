@@ -29,7 +29,7 @@ type AuthState = {
   error: string | null;
   /** True while the server has rejected the session mid-use (token 40/41) and the blocking re-auth
    *  prompt is up. Idempotent via {@link AuthState.sessionExpired} so N concurrent rejections
-   *  collapse to one modal (ADR 0007). */
+   *  collapse to one modal. */
   reauthRequired: boolean;
   /** Inline error shown in the re-auth prompt on a repeated rejection. */
   reauthError: string | null;
@@ -98,7 +98,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Cache keys aren't scoped by server/user, so a second account would otherwise see the
     // first account's cached library until every query happened to refetch.
     queryClient.clear();
-    // The persisted queue holds server-specific track ids (ADR 0006) — drop it (and stop
+    // The persisted queue holds server-specific track ids — drop it (and stop
     // playback) so the next account never inherits this one's queue.
     usePlayerStore.getState().reset();
     useAutoDjStore.getState().reset();
@@ -131,7 +131,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await writePersistedCredentials(JSON.stringify(next));
       set({ credentials: next, reauthRequired: false, reauthError: null });
       // Queue, query cache, and nav position all survive — idempotent queries refetch for free;
-      // failed mutations are not auto-replayed (the user re-does that one action). See ADR 0007.
+      // failed mutations are not auto-replayed (the user re-does that one action).
       queryClient.invalidateQueries();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Re-authentication failed.';

@@ -7,8 +7,8 @@ import { ThemedView } from '@/components/ThemedView';
 import { useTheme } from '@/hooks/use-theme';
 
 type CoverArtImageProps = {
-  /** A pre-signed cover art URL, already sized via `getCoverArtUrl`
-   *  (see docs/adr/0003-cover-art-sizing-and-caching.md) — or undefined for "no cover art". */
+  /** A pre-signed cover art URL, already sized via `getCoverArtUrl`, or undefined
+   *  for "no cover art". */
   uri?: string;
   /** Layout for the image/placeholder box — callers control on-screen size, this component only
    *  renders within it. */

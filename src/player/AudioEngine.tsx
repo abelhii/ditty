@@ -21,7 +21,7 @@ import { isOffline } from "@/utils/network";
 /**
  * The only module that touches the audio player directly. Mount once per authenticated session
  * (app/_layout.tsx). Reads proposed state from `usePlayerStore`, drives expo-audio imperatively,
- * and writes observed facts back — the contract in ADR 0001, now on expo-audio (ADR 0009: bit-perfect
+ * and writes observed facts back, on expo-audio (bit-perfect
  * FLAC, no MP3 transcode).
  *
  * Non-obvious points forced by expo-audio's API:
@@ -131,7 +131,7 @@ export function AudioEngine() {
 
     if (status.error) {
       // Halt rather than auto-advance: offline, every track fails, so auto-skip would blast through
-      // the queue (ADR 0007). The connectivity probe is async, so the wording lands after the halt.
+      // the queue. The connectivity probe is async, so the wording lands after the halt.
       usePlaybackStatusStore.getState().reportError();
       isOffline().then((offline) =>
         usePlaybackStatusStore.getState().setErrorOffline(offline),

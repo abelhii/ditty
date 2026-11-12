@@ -33,7 +33,7 @@ export function getCurrentTrack(state: QueueState): Track | undefined {
 }
 
 /**
- * Normalises a queue rehydrated from local storage (ADR 0006). A queue that ran to completion
+ * Normalises a queue rehydrated from local storage. A queue that ran to completion
  * last session was saved with `currentIndex === tracks.length` (see `next`), which would restore
  * to a dead player; snap any out-of-range index on a non-empty queue back to 0 so "reopen → hit
  * play" works. An empty queue keeps its sentinel `currentIndex` (-1). shuffle/repeat/originalOrder
@@ -105,7 +105,7 @@ export function playNext(state: QueueState, track: Track): QueueState {
 
 /** Inserts a track at the current position and makes it the current track — the previously-playing
  *  track becomes next, the rest of the queue preserved after it. Search's "play now, keep the
- *  queue" (see docs/adr/0004-search-tap-preserves-queue.md); contrast with `play`, which replaces
+ *  queue"; contrast with `play`, which replaces
  *  the whole queue. */
 export function playNow(state: QueueState, track: Track): QueueState {
   const insertAt = state.currentIndex === -1 ? 0 : state.currentIndex;

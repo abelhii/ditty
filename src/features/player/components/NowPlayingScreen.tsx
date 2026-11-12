@@ -38,7 +38,7 @@ const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', on
 const REPEAT_LABEL: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
 /**
- * Full-screen player, shown as a JS overlay above the tab bar (ADR 0005 extends the MiniPlayer's
+ * Full-screen player, shown as a JS overlay above the tab bar (extending the MiniPlayer's
  * overlay approach to now-playing/queue rather than a native modal route). Slides up on open,
  * swipe down anywhere (or Android back) to dismiss. Big artwork, metadata, scrubber + transport, shuffle/repeat
  * toggles, and an open-queue button. The favourite/add-to-playlist actions arrive in step 7b.

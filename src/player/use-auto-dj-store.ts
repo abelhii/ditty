@@ -13,8 +13,8 @@ type AutoDjState = {
   reset: () => void;
 };
 
-/** Client/session state for Auto-DJ. Not persisted and not part of `QueueState` (no ADR 0006
- *  persist version bump); each launch starts from the durable `enabledByDefault` setting. */
+/** Client/session state for Auto-DJ. Not persisted and not part of `QueueState` (no persist
+ *  version bump); each launch starts from the durable `enabledByDefault` setting. */
 export const useAutoDjStore = create<AutoDjState>((set) => ({
   enabled: useAutoDjSettingsStore.getState().enabledByDefault,
   recentIds: [],

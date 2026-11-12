@@ -14,7 +14,7 @@ The ordered, in-memory list of Tracks currently lined up for playback on this de
 the current position, shuffle, and repeat state. Transient and local — it may be seeded from
 a Playlist or an album, but it isn't one.
 _Avoid_: Playlist (conflating the two was a real point of confusion during the step 3 design
-session — see `docs/adr/0001-player-state-flows-through-store.md`)
+session)
 
 **Playlist**:
 A named, server-persisted, user-curated list of Tracks, created/edited/deleted via the
@@ -70,6 +70,5 @@ carry on untouched. Distinct from **Login** (cold start, no prior credentials) a
 **Offline mode**:
 The state in which only downloaded Tracks play: on when the user switched it on in Settings *or* the
 device has no connection. Playback skips Tracks that aren't downloaded and their rows are greyed out.
-Distinct from offline *browsing* (the persisted query cache, ADR 0002), which is always on, and from a
-stream error on a connection the app believed was fine, which still halts (ADR 0007). See
-`docs/adr/0011-offline-mode-skips-undownloaded-tracks.md`.
+Distinct from offline *browsing* (the persisted query cache), which is always on, and from a
+stream error on a connection the app believed was fine, which still halts.

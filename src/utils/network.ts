@@ -4,8 +4,7 @@ import * as Network from 'expo-network';
  * A thin, one-shot connectivity probe over `expo-network` (iOS/Android/Web). Used *reactively* to
  * flavour error messages at the point of failure — **not** as the re-login gate. Mid-session auth
  * rejection keys off the error *class* (`SubsonicApiError.isAuthError`), never this probe: a
- * code-40 response is definitionally a server reply, never "offline". See ADR 0007
- * (docs/adr/0007-error-states.md), which corrects ADR 0006's rationale.
+ * code-40 response is definitionally a server reply, never "offline".
  *
  * Its two real callers are (1) the opaque `<Audio onError>` callback, which carries no error class,
  * so connectivity is the only side-channel to word a stream failure as offline vs. a bad stream,

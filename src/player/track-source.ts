@@ -22,7 +22,7 @@ export type TrackSourceDeps = {
 /**
  * Picks where a Track plays from: its downloaded file if a complete download exists and the file is
  * really there, otherwise the server stream. Pure — `AudioEngine` stays the only module that touches
- * the player (ADR 0001); it just asks this where to point it.
+ * the player; it just asks this where to point it.
  */
 export function resolveTrackSource(
   track: Track,

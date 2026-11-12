@@ -19,9 +19,9 @@ export function noticeVisibleMs(hasAction: boolean, screenReaderEnabled: boolean
 
 /**
  * The app-level `Notice` surface — a transient banner docked below the status bar, mounted once as
- * a sibling of the tabs/MiniPlayer in _layout.tsx (see ADR 0005's overlay layering, ADR 0007 for
- * the primitive). Non-blocking: it fades in, auto-dismisses after {@link noticeVisibleMs}, and can be
- * tapped away early. Renders nothing when there's no active notice.
+ * a sibling of the tabs/MiniPlayer in _layout.tsx. Non-blocking: it fades in, auto-dismisses after
+ * {@link noticeVisibleMs}, and can be tapped away early. Renders nothing when there's no active
+ * notice.
  */
 export function Notice() {
   const insets = useSafeAreaInsets();

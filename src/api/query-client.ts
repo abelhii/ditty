@@ -19,7 +19,7 @@ function isAuthError(error: unknown): boolean {
 }
 
 /**
- * The single place the app reacts to auth rejection and surfaces failed mutations (ADR 0007) — so
+ * The single place the app reacts to auth rejection and surfaces failed mutations — so
  * `request()` stays a pure API function with no auth/navigation concerns. Every query and mutation
  * error flows through here.
  */
@@ -44,7 +44,7 @@ const mutationCache = new MutationCache({
 
 /**
  * TanStack Query's cache is the local library cache — there's no separate database mirror.
- * See docs/adr/0002-no-local-library-mirror.md. `staleTime`/`gcTime`/`maxAge` are sensible
+ * `staleTime`/`gcTime`/`maxAge` are sensible
  * defaults for fairly static library metadata, not hard requirements — safe to retune later.
  */
 export const queryClient = new QueryClient({

@@ -26,7 +26,7 @@ type AlbumDetailScreenProps = {
 
 /** An album's tracks, with "Play" (album, index 0), tap-to-play (album, tapped index), and a
  *  per-track overflow menu for "Play next"/"Add to queue" — the already-built PlaybackController
- *  entry points, see docs/adr/0001-player-state-flows-through-store.md. */
+ *  entry points. */
 export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();

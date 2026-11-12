@@ -13,8 +13,8 @@ describe('getStreamUrl', () => {
   });
 
   // expo-audio's ExoPlayer/AVFoundation backends decode FLAC natively, so we stream the original
-  // bytes bit-perfect and no longer transcode to MP3 — superseding the old 24-bit workaround
-  // (docs/adr/0008). Assert no transcode params leak onto the URL, on native or web.
+  // bytes bit-perfect and no longer transcode to MP3 — superseding the old 24-bit workaround.
+  // Assert no transcode params leak onto the URL, on native or web.
   it.each(['ios', 'android', 'web'] as const)('never transcodes on %s', (os) => {
     const originalOS = Platform.OS;
     Platform.OS = os;

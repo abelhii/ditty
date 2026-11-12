@@ -5,7 +5,7 @@ import { parseRow } from '@/features/downloads/download-rows';
 import type { DownloadRecord, DownloadRow } from '@/features/downloads/download-rows';
 
 /**
- * Durable record of downloaded Tracks (ADR 0002: downloads are the one thing that needs real local
+ * Durable record of downloaded Tracks (downloads are the one thing that needs real local
  * durability; the query cache is not enough). Separate database from the KV store that backs the
  * query cache. Native only — see downloads-db.web.ts.
  */

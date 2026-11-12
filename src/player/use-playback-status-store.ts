@@ -9,8 +9,7 @@ export function playbackErrorMessage(errorOffline: boolean | null): string {
 }
 
 /**
- * The *observed* half of playback state, split out of `usePlayerStore` (ADR 0006,
- * docs/adr/0006-local-only-queue-persistence.md). These fields are written by `AudioEngine`
+ * The *observed* half of playback state, split out of `usePlayerStore`. These fields are written by `AudioEngine`
  * from what `<Audio>` actually reports — `position` in particular ticks ~once a second during
  * playback. Keeping them out of the persisted store is what lets `usePlayerStore` wrap itself in
  * `persist` without a SQLite write on every position tick. Contrast the proposed state
@@ -21,7 +20,7 @@ type PlaybackStatusState = {
   /** Seconds, as last reported by `<Audio>`'s onPositionChange. */
   position: number;
   /** When `status === 'error'`, whether the stream failed because the device is offline. `null`
-   *  until the async connectivity probe in AudioEngine's onError resolves a beat later (ADR 0007). */
+   *  until the async connectivity probe in AudioEngine's onError resolves a beat later. */
   errorOffline: boolean | null;
 
   setStatus: (status: PlaybackStatus) => void;

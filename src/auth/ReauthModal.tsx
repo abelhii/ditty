@@ -10,7 +10,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 /**
- * The in-place Re-authentication prompt (ADR 0007): a blocking, password-only modal shown when the
+ * The in-place Re-authentication prompt: a blocking, password-only modal shown when the
  * server rejects the session mid-use (`reauthRequired`). Server + username are already known, so it
  * only re-collects the password, recomputes the token, and lets the Queue, query cache, and nav
  * position carry on. Mounted once in _layout.tsx alongside the tabs. A repeated rejection surfaces

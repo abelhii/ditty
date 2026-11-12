@@ -50,7 +50,7 @@ function useToggleStar(starred: boolean) {
   const setTrackStarred = usePlayerStore((state) => state.setTrackStarred);
 
   return useMutation<void, unknown, StarTarget, StarContext>({
-    // Read by the global MutationCache to word a failure Notice (ADR 0007); rollback stays below.
+    // Read by the global MutationCache to word a failure Notice; rollback stays below.
     meta: { action: starred ? 'favourite this' : 'remove this favourite' },
     mutationFn: (target) => {
       if (!credentials) throw new Error('Not authenticated.');

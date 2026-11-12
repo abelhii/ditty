@@ -122,7 +122,7 @@ For every task:
 **Ask before proceeding when:**
 
 - The request has two plausible interpretations and the choice materially affects the output.
-- The change touches something you've been told is load-bearing, versioned, or has a migration path (e.g. anything an ADR in `docs/adr/` covers).
+- The change touches something you've been told is load-bearing, versioned, or has a migration path.
 - You need a credential, a secret, or a production resource you don't have access to.
 - The user's stated goal and the literal request appear to conflict.
 
@@ -157,9 +157,9 @@ server-hosted music catalog and streams playback of it.
 ### Stack
 
 - TypeScript (`strict` — keep it on), React 19, React Native 0.86, Expo SDK 57, expo-router (file-based routing).
-- **Server/remote state → React Query** (`@tanstack/react-query`). Its cache *is* the local library cache — there's no separate DB mirror (ADR 0002) — persisted through a KV adapter (`src/api/kv-storage`) via `@tanstack/react-query-persist-client`.
+- **Server/remote state → React Query** (`@tanstack/react-query`). Its cache *is* the local library cache — there's no separate DB mirror — persisted through a KV adapter (`src/api/kv-storage`) via `@tanstack/react-query-persist-client`.
 - **Client/session/UI state → Zustand.** Don't duplicate server data into a store.
-- Playback: `expo-audio` (bit-perfect lossless — see `docs/adr/0009-expo-audio-lossless.md`). `AudioEngine` is the only module that touches the player directly.
+- Playback: `expo-audio` (bit-perfect lossless). `AudioEngine` is the only module that touches the player directly.
 - Auth token/storage: `expo-secure-store`; hashing via `js-md5` / `expo-crypto`. Images: `expo-image`.
 - Package manager: **pnpm only.**
 
@@ -178,7 +178,6 @@ server-hosted music catalog and streams playback of it.
 ### Before you write code
 
 - **Read `CONTEXT.md` first.** It defines the ubiquitous language — Track, Queue, Playlist, Favourite, Library, My Music, Shelf, Notice, Re-authentication. Name things with those words; don't invent synonyms. Domain names follow the Subsonic/Navidrome API's own vocabulary, not another app's.
-- Non-obvious design decisions live in `docs/adr/` (0001–0009). Skim the relevant ADR before changing behaviour it covers, and add a new one for decisions of similar weight.
 - `PLAN.md` tracks the build in numbered steps — check where a change fits.
 
 ### Layout
@@ -230,8 +229,8 @@ Client/session/UI → a Zustand store. Selectors in components; `getState()` out
 
 **Styling:** `StyleSheet.create`; pull colours and spacing from `src/constants/theme.ts`, not literals.
 
-**Player:** `AudioEngine` is the sole owner of the imperative player; state flows through the store
-(ADR 0001). Don't add other call sites that touch `expo-audio` directly.
+**Player:** `AudioEngine` is the sole owner of the imperative player; state flows through the store.
+Don't add other call sites that touch `expo-audio` directly.
 
 ### Don't modify
 
@@ -278,7 +277,7 @@ concretely ("Always use X for Y"), never abstractly ("be careful with Y"). If an
 covers the correction, tighten it instead of adding a new one. Remove lines when the underlying issue
 goes away (model upgrades, refactors, process changes).
 
-- (empty)
+- Don't create ADRs or docs/adr/; the project doesn't use them. Record non-obvious rationale in a brief code comment instead.
 
 ---
 

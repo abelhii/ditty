@@ -15,7 +15,7 @@ import { usePlayerStore } from '@/player/use-player-store';
  * next/previous/seek buttons in macOS Control Center / the media keys only appear once we register
  * handlers on the **Media Session API** (`navigator.mediaSession`). This mirrors the native bridge's
  * reactive pattern: subscribe to the stores, forward each OS button into the same
- * `PlaybackController` entry points the UI uses (docs/adr/0001-player-state-flows-through-store.md).
+ * `PlaybackController` entry points the UI uses.
  */
 export function NotificationBridge() {
   const credentials = useAuthStore((state) => state.credentials);
