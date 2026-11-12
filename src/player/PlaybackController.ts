@@ -33,11 +33,19 @@ function isPlayableNow(track: Track): boolean {
 }
 
 /** Replaces the queue and starts playback at `startIndex` — or at the next downloaded Track when
- *  Offline mode is on and the requested one isn't. */
+ *  Offline mode is on and the requested one isn't. If Offline mode is on and nothing from
+ *  `startIndex` onward is downloaded, the existing Queue is left untouched and a Notice explains why. */
 export function play(tracks: Track[], startIndex = 0): void {
   let queue = QueueManager.createQueueState(tracks, startIndex);
   const start = QueueManager.getCurrentTrack(queue);
-  if (start && !isPlayableNow(start)) queue = stepToPlayable(queue, QueueManager.next, isPlayableNow);
+  if (start && !isPlayableNow(start)) {
+    queue = stepToPlayable(queue, QueueManager.next, isPlayableNow);
+    const landed = QueueManager.getCurrentTrack(queue);
+    if (!landed || !isPlayableNow(landed)) {
+      showNotice("Nothing from here on is downloaded, so it can't play offline.");
+      return;
+    }
+  }
   usePlayerStore.setState({ queue, desiredPlaying: tracks.length > 0 });
 }
 

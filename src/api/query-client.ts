@@ -4,6 +4,7 @@ import type { PersistQueryClientProviderProps } from '@tanstack/react-query-pers
 
 import { getItem, removeItem, setItem } from '@/api/kv-storage';
 import { mutationErrorNotice } from '@/api/mutation-error-notice';
+import { shouldRetryQuery } from '@/api/query-retry';
 import { SubsonicApiError } from '@/api/subsonic/errors';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { showNotice } from '@/components/use-notice-store';
@@ -53,6 +54,7 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: FIVE_MINUTES,
       gcTime: SEVEN_DAYS,
+      retry: shouldRetryQuery,
     },
   },
 });

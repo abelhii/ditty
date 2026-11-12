@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -10,9 +10,11 @@ import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { HomeHeader } from '@/features/home/components/HomeHeader';
+import { HomeStatusMessage } from '@/features/home/components/HomeStatusMessage';
 import { MostPlayedTracks } from '@/features/home/components/MostPlayedTracks';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
 import { WideHome } from '@/features/home/components/WideHome';
+import { useHomeShelves } from '@/features/home/hooks/use-home-shelves';
 import { homeShelves } from '@/features/home/shelves';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
@@ -44,11 +46,13 @@ function NarrowHome() {
   const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
   const explore = shelves.find((shelf) => shelf.id === 'explore');
   const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
+  const { status, refresh, refreshing } = useHomeShelves();
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
           contentContainerStyle={{
             paddingTop: Spacing.three,
             paddingBottom: insets.bottom + listBottomInset,
@@ -100,6 +104,7 @@ function NarrowHome() {
           {frequentlyPlayed && <AlbumShelf shelf={frequentlyPlayed} />}
           {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
           {explore && <UnheardTracks shelf={explore} />}
+          <HomeStatusMessage status={status} onRetry={() => void refresh()} />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

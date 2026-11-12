@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -16,10 +16,12 @@ import { Radius, Spacing, WideMaxContentWidth } from '@/constants/theme';
 import { Carousel } from '@/features/home/components/Carousel';
 import { CollectionCard } from '@/features/home/components/CollectionCard';
 import { ExploreArtists } from '@/features/home/components/ExploreArtists';
+import { HomeStatusMessage } from '@/features/home/components/HomeStatusMessage';
 import { MostPlayedTracks } from '@/features/home/components/MostPlayedTracks';
 import { UnheardTracks } from '@/features/home/components/UnheardTracks';
 import { greetingForHour } from '@/features/home/greeting';
 import { useAlbumShelf } from '@/features/home/hooks/use-album-shelf';
+import { useHomeShelves } from '@/features/home/hooks/use-home-shelves';
 import { homeShelves } from '@/features/home/shelves';
 import { wideHomeLayout } from '@/features/home/wide-grid';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
@@ -52,11 +54,13 @@ export function WideHome() {
   const explore = shelves.find((shelf) => shelf.id === 'explore');
   const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
   const recentlyAddedShelf = useAlbumShelf(recentlyAdded ?? shelves[0]);
+  const { status, refresh, refreshing } = useHomeShelves();
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} />}
           contentContainerStyle={{
             paddingBottom: insets.bottom + listBottomInset,
             gap: Spacing.five,
@@ -122,6 +126,7 @@ export function WideHome() {
           <ExploreArtists tileWidth={tileWidth} />
           {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
           {explore && <UnheardTracks shelf={explore} />}
+          <HomeStatusMessage status={status} onRetry={() => void refresh()} />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

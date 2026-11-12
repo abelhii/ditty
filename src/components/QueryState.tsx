@@ -1,10 +1,12 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, Button, StyleSheet } from 'react-native';
 
+import { SubsonicNetworkError } from '@/api/subsonic/errors';
+import { queryErrorMessage } from '@/components/query-error-message';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Spacing } from '@/constants/theme';
-import { SubsonicNetworkError } from '@/api/subsonic/errors';
+import { isOffline } from '@/utils/network';
 
 /** The subset of TanStack Query's `UseQueryResult`/`UseInfiniteQueryResult` this component
  *  needs — structurally compatible with both, so either can be passed as `query`. */
@@ -40,19 +42,7 @@ export function QueryState<T>({ query, emptyMessage, isEmpty, children }: QueryS
   }
 
   if (query.isError && query.data === undefined) {
-    const offline = query.error instanceof SubsonicNetworkError;
-    return (
-      <ThemedView style={styles.centered}>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.message}>
-          {offline
-            ? "You're offline and haven't viewed this yet. Downloaded music is still available."
-            : query.error instanceof Error
-              ? query.error.message
-              : 'Something went wrong.'}
-        </ThemedText>
-        <Button title="Retry" onPress={() => query.refetch()} />
-      </ThemedView>
-    );
+    return <QueryErrorView error={query.error} onRetry={() => query.refetch()} />;
   }
 
   if (query.data === undefined || (isEmpty?.(query.data) ?? false)) {
@@ -66,6 +56,43 @@ export function QueryState<T>({ query, emptyMessage, isEmpty, children }: QueryS
   }
 
   return <>{children(query.data)}</>;
+}
+
+/** Full-surface error with Retry. A `SubsonicNetworkError` means "no response", so the device
+ *  connectivity probe decides whether to blame the device or the server (ADR 0007). */
+type QueryErrorViewProps = {
+  error: unknown;
+  onRetry: () => void;
+};
+
+export function QueryErrorView({ error, onRetry }: QueryErrorViewProps) {
+  const isNetworkError = error instanceof SubsonicNetworkError;
+  const [deviceOffline, setDeviceOffline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!isNetworkError) return;
+    let cancelled = false;
+    void isOffline().then((offline) => {
+      if (!cancelled) setDeviceOffline(offline);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isNetworkError, error]);
+
+  // Hold the message back until the probe resolves so it doesn't flip wording after first paint.
+  const message = isNetworkError && deviceOffline === null ? null : queryErrorMessage(error, deviceOffline === true);
+
+  return (
+    <ThemedView style={styles.centered}>
+      {message !== null && (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.message}>
+          {message}
+        </ThemedText>
+      )}
+      <Button title="Retry" onPress={onRetry} />
+    </ThemedView>
+  );
 }
 
 const styles = StyleSheet.create({

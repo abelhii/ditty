@@ -17,6 +17,9 @@ jest.mock('@/hooks/use-list-bottom-inset', () => ({ useListBottomInset: () => 0 
 jest.mock('@/features/playlists/hooks/use-playlists', () => ({
   usePlaylists: () => ({ data: [] }),
 }));
+jest.mock('@/features/home/hooks/use-home-shelves', () => ({
+  useHomeShelves: () => ({ status: { kind: 'ready' }, refresh: jest.fn(), refreshing: false }),
+}));
 jest.mock('@/features/home/components/HomeHeader', () => ({ HomeHeader: () => null }));
 jest.mock('@/features/home/components/AlbumShelf', () => ({ AlbumShelf: () => null }));
 jest.mock('@/features/home/components/MostPlayedTracks', () => ({ MostPlayedTracks: () => null }));

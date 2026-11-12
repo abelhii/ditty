@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 import { queryKeys } from '@/api/query-keys';
 import { getAlbum } from '@/api/subsonic/endpoints/browsing';
-import { SubsonicNetworkError } from '@/api/subsonic/errors';
+import { isServerUnreachable } from '@/api/subsonic/errors';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { getDownloadedAlbum } from '@/features/downloads/downloads-runtime';
 import { useOfflineMode } from '@/features/downloads/use-offline-store';
@@ -27,7 +27,7 @@ export function useAlbum(id: string) {
     enabled: credentials !== null && !offline,
   });
 
-  const unreachable = offline || query.error instanceof SubsonicNetworkError;
+  const unreachable = offline || isServerUnreachable(query.error);
   const fallback = useMemo(
     () => (query.data === undefined && unreachable ? getDownloadedAlbum(id) : null),
     [query.data, unreachable, id],

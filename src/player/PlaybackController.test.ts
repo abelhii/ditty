@@ -190,6 +190,35 @@ describe('Offline mode playback', () => {
     expect(usePlayerStore.getState().queue.currentIndex).toBe(0);
   });
 
+  it('leaves the existing queue alone and shows a Notice when nothing is downloaded', () => {
+    PlaybackController.play([track('x'), track('y')], 1);
+    const before = usePlayerStore.getState().queue;
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: {} });
+
+    PlaybackController.play(four(), 0);
+
+    expect(usePlayerStore.getState().queue).toBe(before);
+    expect(usePlayerStore.getState().desiredPlaying).toBe(true);
+    expect(showNotice).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses when only tracks before the start index are downloaded', () => {
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: { a: true } });
+    PlaybackController.play(four(), 2);
+    expect(usePlayerStore.getState().queue.tracks).toHaveLength(0);
+    expect(showNotice).toHaveBeenCalledTimes(1);
+  });
+
+  it('plays and shows no Notice when something is playable', () => {
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: { c: true } });
+    PlaybackController.play(four(), 0);
+    expect(usePlayerStore.getState().queue.currentIndex).toBe(2);
+    expect(showNotice).not.toHaveBeenCalled();
+  });
+
   it('finishes the queue when nothing after the current track is downloaded', () => {
     useOfflineStore.setState({ manual: true });
     useDownloadsStore.setState({ downloadedIds: { a: true } });
