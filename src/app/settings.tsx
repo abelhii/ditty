@@ -204,7 +204,7 @@ export default function SettingsScreen() {
     const username = credentials?.username;
     return (
       <ThemedView style={styles.container}>
-        <SafeAreaView style={[styles.safeArea, styles.safeAreaWide]}>
+        <SafeAreaView style={[styles.safeArea, styles.safeAreaWide]} edges={['top', 'left', 'right']}>
           <ScrollView contentContainerStyle={scrollContent}>
             <ThemedText type="title">Settings</ThemedText>
             <ThemedView type="backgroundElement" style={styles.profile}>
@@ -243,7 +243,7 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView contentContainerStyle={scrollContent}>
           <ThemedText type="title">Settings</ThemedText>
           {serverInfo}

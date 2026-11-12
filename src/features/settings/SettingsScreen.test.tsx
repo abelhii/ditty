@@ -8,7 +8,11 @@ import { useAutoDjSettingsStore } from '@/player/use-auto-dj-settings-store';
 jest.mock('@/global.css', () => ({}));
 jest.mock('@/api/kv-storage', () => ({ getItem: () => null, setItem: () => {}, removeItem: () => {} }));
 jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+  // Host element that keeps `edges`, so tests can assert the bottom edge is left to the ScrollView padding.
+  SafeAreaView: ({ children, edges }: { children: React.ReactNode; edges?: string[] }) => {
+    const { View } = jest.requireActual('react-native');
+    return <View testID="safe-area" edges={edges}>{children}</View>;
+  },
   useSafeAreaInsets: () => ({ top: 0, bottom: 20, left: 0, right: 0 }),
 }));
 
@@ -77,5 +81,7 @@ describe('SettingsScreen scrolling', () => {
     }
     expect(inScrollView).toBe(true);
     expect(paddingBottom).toBe(20 + inset);
+    // The bottom safe area is already in the ScrollView padding; the SafeAreaView must not add it again.
+    expect(screen.getByTestId('safe-area').props.edges).toEqual(['top', 'left', 'right']);
   });
 });

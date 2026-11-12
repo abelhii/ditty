@@ -438,6 +438,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   error: {
-    color: '#e5484d',
+    color: Colors.dark.danger,
   },
 });
