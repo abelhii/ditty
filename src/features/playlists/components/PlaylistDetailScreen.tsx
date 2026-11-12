@@ -8,6 +8,7 @@ import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
@@ -50,6 +51,9 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
   const [menuTarget, setMenuTarget] = useState<MenuTarget | null>(null);
   const [playlistMenuOpen, setPlaylistMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Held apart from menuTarget, which the actions menu clears as it closes.
+  const [removeTarget, setRemoveTarget] = useState<MenuTarget | null>(null);
 
   return (
     <ThemedView style={styles.container}>
@@ -126,7 +130,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                 onClose={() => setMenuTarget(null)}
                 onRemoveFromPlaylist={
                   menuTarget
-                    ? () => removeFromPlaylist.mutate({ playlistId, index: menuTarget.index })
+                    ? () => setRemoveTarget(menuTarget)
                     : undefined
                 }
               />
@@ -163,13 +167,37 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                       icon={{ ios: 'trash', android: 'delete', web: 'delete' }}
                       onPress={() => {
                         setPlaylistMenuOpen(false);
-                        deletePlaylist.mutate(playlistId);
-                        router.back();
+                        setConfirmingDelete(true);
                       }}
                     />
                   </ThemedView>
                 </Pressable>
               </Modal>
+
+              <ConfirmModal
+                visible={confirmingDelete}
+                title="Delete playlist?"
+                message={`"${playlist.name}" will be deleted from the server. This can't be undone.`}
+                confirmLabel="Delete"
+                onConfirm={() => {
+                  setConfirmingDelete(false);
+                  deletePlaylist.mutate(playlistId);
+                  router.back();
+                }}
+                onCancel={() => setConfirmingDelete(false)}
+              />
+
+              <ConfirmModal
+                visible={removeTarget !== null}
+                title="Remove from playlist?"
+                message={`"${removeTarget?.track.title ?? ''}" will be removed from "${playlist.name}".`}
+                confirmLabel="Remove"
+                onConfirm={() => {
+                  if (removeTarget) removeFromPlaylist.mutate({ playlistId, index: removeTarget.index });
+                  setRemoveTarget(null);
+                }}
+                onCancel={() => setRemoveTarget(null)}
+              />
 
               <TextPromptModal
                 visible={renaming}

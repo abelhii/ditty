@@ -1,8 +1,9 @@
 import { SymbolView } from 'expo-symbols';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet } from 'react-native';
 
 import type { Track } from '@/api/types';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { ThemedText } from '@/components/ThemedText';
 import { Spacing } from '@/constants/theme';
 import {
@@ -25,6 +26,7 @@ export function DownloadCollectionButton({ kind, collectionId, tracks }: Downloa
   const theme = useTheme();
   const trackIds = useMemo(() => tracks.map((t) => t.id), [tracks]);
   const state = useCollectionDownloadState(trackIds);
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   if (Platform.OS === 'web' || tracks.length === 0) return null;
 
@@ -34,7 +36,7 @@ export function DownloadCollectionButton({ kind, collectionId, tracks }: Downloa
         return {
           label: 'Downloaded',
           icon: { ios: 'arrow.down.circle.fill', android: 'download_done', web: 'download_done' } as const,
-          onPress: () => removeCollectionDownload(kind, collectionId, trackIds),
+          onPress: () => setConfirmingRemove(true),
         };
       case 'downloading':
       case 'queued':
@@ -59,19 +61,32 @@ export function DownloadCollectionButton({ kind, collectionId, tracks }: Downloa
   })();
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={
-        state.kind === 'downloaded' ? `Remove ${kind} download` : state.kind === 'downloading' ? `Cancel ${kind} download` : `${label} ${kind}`
-      }
-      hitSlop={8}
-      onPress={onPress}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-      <SymbolView name={icon} size={22} tintColor={theme.accent} />
-      <ThemedText type="small" themeColor="textSecondary">
-        {label}
-      </ThemedText>
-    </Pressable>
+    <>
+      <ConfirmModal
+        visible={confirmingRemove}
+        title={`Remove downloaded ${kind}?`}
+        message="It will be deleted from this device. You can download it again."
+        confirmLabel="Remove"
+        onConfirm={() => {
+          setConfirmingRemove(false);
+          removeCollectionDownload(kind, collectionId, trackIds);
+        }}
+        onCancel={() => setConfirmingRemove(false)}
+      />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          state.kind === 'downloaded' ? `Remove ${kind} download` : state.kind === 'downloading' ? `Cancel ${kind} download` : `${label} ${kind}`
+        }
+        hitSlop={8}
+        onPress={onPress}
+        style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
+        <SymbolView name={icon} size={22} tintColor={theme.accent} />
+        <ThemedText type="small" themeColor="textSecondary">
+          {label}
+        </ThemedText>
+      </Pressable>
+    </>
   );
 }
 
