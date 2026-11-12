@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 
-/** An optional action a Notice can carry. 8b populates this nowhere — the primitive reserves the
- *  slot per ADR 0007, but every 8b mutation already fires from a visible, re-tappable affordance,
- *  so none needs a Retry here. */
+/** An optional action a Notice can carry. Used for Queue-removal Undo (ADR 0007 amendment);
+ *  failure Notices carry none — their redo affordance is already on screen. */
 export type NoticeAction = { label: string; onPress: () => void };
 
 export type Notice = {
@@ -35,4 +34,12 @@ export const useNoticeStore = create<NoticeState>((set) => ({
 /** Fire a notice from non-React code — the global MutationCache handler's entry point. */
 export function showNotice(message: string, action?: NoticeAction): void {
   useNoticeStore.getState().show(message, action);
+}
+
+/** Fire a success confirmation ("Added to Queue"). Unlike {@link showNotice} it yields to a Notice
+ *  that carries an action (e.g. Queue-removal Undo) so the confirmation can't swallow the user's
+ *  only chance to use it; failures keep using `showNotice` and always show. */
+export function showConfirmation(message: string): void {
+  if (useNoticeStore.getState().current?.action) return;
+  showNotice(message);
 }

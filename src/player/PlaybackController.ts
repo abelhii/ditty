@@ -154,7 +154,21 @@ export function playNext(track: Track): void {
 }
 
 export function removeFromQueue(index: number): void {
-  usePlayerStore.setState({ queue: QueueManager.removeAt(currentQueue(), index) });
+  const before = currentQueue();
+  const removed = before.tracks[index];
+  const originalIndex = before.originalOrder.indexOf(removed);
+  usePlayerStore.setState({ queue: QueueManager.removeAt(before, index) });
+  if (!removed) return;
+  const afterTracks = currentQueue().tracks;
+  showNotice('Removed from Queue', {
+    label: 'Undo',
+    onPress: () => {
+      // Any other change to the track list (replace, reorder, another remove/add) makes `index`
+      // meaningless, so Undo only applies while the list is exactly as the removal left it.
+      if (currentQueue().tracks !== afterTracks) return;
+      usePlayerStore.setState({ queue: QueueManager.insertAt(currentQueue(), removed, index, originalIndex) });
+    },
+  });
 }
 
 export function reorderQueue(fromIndex: number, toIndex: number): void {

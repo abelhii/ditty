@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import { StyleSheet, type ViewStyle } from 'react-native';
 
 import type { Track } from '@/api/types';
@@ -80,5 +80,35 @@ describe('QueueScreen controls', () => {
     await render(<QueueScreen />);
 
     expect(screen.getByLabelText('Reorder Track a')).toBeTruthy();
+  });
+
+  it('offers move up/down/remove as accessibility actions, omitting impossible moves', async () => {
+    await render(<QueueScreen />);
+
+    const names = (title: string) =>
+      screen.getByText(title).parent!.parent!.props.accessibilityActions?.map((a: { name: string }) => a.name);
+    expect(names('Track a')).toEqual(['moveDown', 'remove']);
+    expect(names('Track b')).toEqual(['moveUp', 'moveDown', 'remove']);
+    expect(names('Track c')).toEqual(['moveUp', 'remove']);
+  });
+
+  it('moves a row down through the moveDown accessibility action', async () => {
+    await render(<QueueScreen />);
+
+    await act(async () =>
+      screen.getByText('Track a').parent!.parent!.props.onAccessibilityAction({ nativeEvent: { actionName: 'moveDown' } }),
+    );
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('reorders and removes through accessibility actions', async () => {
+    await render(<QueueScreen />);
+    const row = (title: string) => screen.getByText(title).parent!.parent!;
+
+    await act(async () => row('Track b').props.onAccessibilityAction({ nativeEvent: { actionName: 'moveUp' } }));
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['b', 'a', 'c']);
+
+    await act(async () => row('Track c').props.onAccessibilityAction({ nativeEvent: { actionName: 'remove' } }));
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['b', 'a']);
   });
 });
