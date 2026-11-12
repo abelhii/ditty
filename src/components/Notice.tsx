@@ -61,18 +61,22 @@ export function Notice() {
       accessibilityLiveRegion="polite"
       testID="notice"
       style={[styles.container, { top: insets.top + Spacing.two, opacity }]}>
-      <Pressable accessibilityRole="button" accessibilityHint="Dismiss" onPress={dismiss}>
-        <ThemedView type="backgroundElement" style={styles.card}>
-          <ThemedText type="small" numberOfLines={2} style={styles.message}>
+      <ThemedView type="backgroundElement" style={styles.card}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint="Dismiss"
+          style={styles.message}
+          onPress={dismiss}>
+          <ThemedText type="small" numberOfLines={2}>
             {current.message}
           </ThemedText>
-          {current.action && (
-            <Pressable accessibilityRole="button" hitSlop={8} onPress={current.action.onPress}>
-              <ThemedText type="smallBold">{current.action.label}</ThemedText>
-            </Pressable>
-          )}
-        </ThemedView>
-      </Pressable>
+        </Pressable>
+        {current.action && (
+          <Pressable accessibilityRole="button" hitSlop={8} onPress={current.action.onPress}>
+            <ThemedText type="smallBold">{current.action.label}</ThemedText>
+          </Pressable>
+        )}
+      </ThemedView>
     </Animated.View>
   );
 }

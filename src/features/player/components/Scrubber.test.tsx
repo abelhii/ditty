@@ -14,16 +14,19 @@ describe('Scrubber accessibility', () => {
     expect(seek.props.accessibilityValue).toEqual({ text: '1:23 of 3:45' });
   });
 
-  it('seeks +/-10s on increment/decrement, clamped to the track', async () => {
+  it('seeks +10s per increment, clamped to the track', async () => {
     const onSeek = jest.fn();
     await render(<Scrubber position={5} duration={20} fraction={0.25} onSeek={onSeek} />);
     const seek = screen.getByLabelText('Seek');
 
     await fireEvent(seek, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
-    await fireEvent(seek, 'accessibilityAction', { nativeEvent: { actionName: 'decrement' } });
+    await fireEvent(seek, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
+    await fireEvent(seek, 'accessibilityAction', { nativeEvent: { actionName: 'increment' } });
 
+    // Repeats build on the last requested target, and clamp at the end.
     expect(onSeek).toHaveBeenNthCalledWith(1, 15);
-    expect(onSeek).toHaveBeenNthCalledWith(2, 0);
+    expect(onSeek).toHaveBeenNthCalledWith(2, 20);
+    expect(onSeek).toHaveBeenNthCalledWith(3, 20);
   });
 
   it('does nothing when the duration is unknown', async () => {

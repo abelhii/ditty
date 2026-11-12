@@ -38,6 +38,7 @@ export function AlphabetIndex({ available, onSelect }: AlphabetIndexProps) {
 
   return (
     <View
+      accessible
       accessibilityRole="adjustable"
       accessibilityLabel="Jump to letter"
       accessibilityValue={{ text: current ?? undefined }}

@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Notice, noticeVisibleMs } from '@/components/Notice';
@@ -18,6 +18,23 @@ describe('noticeVisibleMs', () => {
 });
 
 describe('Notice', () => {
+  it('renders the action and dismiss as sibling buttons', async () => {
+    const onPress = jest.fn();
+    await render(
+      <SafeAreaProvider initialMetrics={metrics}>
+        <Notice />
+      </SafeAreaProvider>,
+    );
+    await act(async () => showNotice('Removed track', { label: 'Undo', onPress }));
+
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    const dismiss = screen.getByRole('button', { name: 'Removed track' });
+    expect(dismiss.props.accessibilityHint).toBe('Dismiss');
+    expect(dismiss.parent).toBe(undo.parent);
+    await fireEvent.press(undo);
+    expect(onPress).toHaveBeenCalled();
+  });
+
   afterEach(() => act(() => useNoticeStore.getState().dismiss()));
 
   it('renders as an alert live region', async () => {

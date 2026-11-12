@@ -36,6 +36,7 @@ export function VolumeSlider({ volume, onChange }: VolumeSliderProps) {
         tintColor={theme.textSecondary}
       />
       <View
+        accessible
         accessibilityRole="adjustable"
         accessibilityLabel="Volume"
         accessibilityValue={{ min: 0, max: 100, now: Math.round(volume * 100) }}

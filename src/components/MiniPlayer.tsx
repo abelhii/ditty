@@ -55,7 +55,8 @@ export function MiniPlayer() {
     <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Open now playing"
+        accessibilityLabel={`Now playing: ${currentTrack.title} by ${currentTrack.artist}`}
+        accessibilityHint="Opens the full player"
         style={styles.pressable}
         onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>

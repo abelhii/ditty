@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LayoutChangeEvent, PanResponder, Platform, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ThemedText';
@@ -55,9 +55,16 @@ export function Scrubber({ position, duration, fraction, onSeek, variant = 'play
   }
 
   // Screen-reader increment/decrement (and web arrow keys) seek in fixed steps from the live position.
+  // Rapid repeats build on the last requested target until the live position catches up.
+  const requested = useRef<number | null>(null);
+  useEffect(() => {
+    requested.current = null;
+  }, [position]);
   function step(delta: number) {
-    const target = steppedSeek(position, duration, delta);
-    if (target !== null) onSeek(target);
+    const target = steppedSeek(requested.current ?? position, duration, delta);
+    if (target === null) return;
+    requested.current = target;
+    onSeek(target);
   }
 
   const keyboardProps =
@@ -91,6 +98,9 @@ export function Scrubber({ position, duration, fraction, onSeek, variant = 'play
         if (event.nativeEvent.actionName === 'increment') step(SEEK_STEP_SECONDS);
         else if (event.nativeEvent.actionName === 'decrement') step(-SEEK_STEP_SECONDS);
       }}
+      // Taller touch area (44pt) without changing the layout box or drawn bar; vertical only, so the
+      // x-coordinate seek maths is unaffected.
+      hitSlop={{ top: 8, bottom: 8 }}
       style={surface ? styles.trackInline : styles.track}
       onLayout={onLayout}
       {...keyboardProps}
@@ -154,12 +164,12 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
   },
   track: {
-    height: 44,
+    height: 28,
     justifyContent: 'center',
   },
   trackInline: {
     flex: 1,
-    height: 44,
+    height: 28,
     justifyContent: 'center',
   },
   inlineRow: {
