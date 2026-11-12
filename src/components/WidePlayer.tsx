@@ -90,9 +90,8 @@ export function WidePlayer() {
               </ThemedText>
               <ThemedText
                 type="small"
-                themeColor={status === 'error' ? undefined : 'textSecondary'}
-                numberOfLines={1}
-                style={status === 'error' ? styles.error : undefined}>
+                themeColor={status === 'error' ? 'danger' : 'textSecondary'}
+                numberOfLines={1}>
                 {status === 'error' ? playbackErrorMessage(errorOffline) : currentTrack.artist}
               </ThemedText>
             </View>
@@ -196,9 +195,6 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     minWidth: 0,
-  },
-  error: {
-    color: '#e5484d',
   },
   centre: {
     flex: 2.2,

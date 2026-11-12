@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { logoutLossWarning } from '@/auth/logout-guard';
 import { useAuthStore } from '@/auth/use-auth-store';
+import { ConfirmCard } from '@/components/ConfirmModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -24,6 +26,13 @@ export function ReauthModal() {
 
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [logoutWarning, setLogoutWarning] = useState<string | null>(null);
+
+  function handleSignOut() {
+    const warning = logoutLossWarning();
+    if (warning) setLogoutWarning(warning);
+    else logout();
+  }
 
   async function handleSubmit() {
     if (!password) return;
@@ -41,49 +50,65 @@ export function ReauthModal() {
   return (
     <Modal visible={reauthRequired} transparent animationType="fade">
       <View style={styles.backdrop}>
-        <ThemedView type="backgroundElement" style={styles.card}>
-          <ThemedText type="subtitle">Session expired</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            Re-enter the password for {username ?? 'your account'} to keep going. Your queue and
-            library stay put.
-          </ThemedText>
-
-          <TextInput
-            style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-            placeholder="Password"
-            placeholderTextColor={theme.textSecondary}
-            secureTextEntry
-            autoFocus
-            value={password}
-            onChangeText={setPassword}
-            editable={!isSubmitting}
-            returnKeyType="done"
-            onSubmitEditing={handleSubmit}
-          />
-
-          {reauthError && (
-            <ThemedText type="small" style={styles.error}>
-              {reauthError}
+        {logoutWarning !== null ? (
+          // Swapped in place rather than a nested Modal, which can't stack over this one on iOS.
+          <View style={styles.confirmWrap}>
+            <ConfirmCard
+              title="Sign out?"
+              message={logoutWarning}
+              confirmLabel="Sign out"
+              onConfirm={() => {
+                setLogoutWarning(null);
+                logout();
+              }}
+              onCancel={() => setLogoutWarning(null)}
+            />
+          </View>
+        ) : (
+          <ThemedView type="backgroundElement" style={styles.card}>
+            <ThemedText type="subtitle">Session expired</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Re-enter the password for {username ?? 'your account'} to keep going. Your queue and
+              library stay put.
             </ThemedText>
-          )}
 
-          <ThemedView type="backgroundElement" style={styles.actions}>
-            <Pressable hitSlop={8} onPress={() => logout()} disabled={isSubmitting}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Sign out
+            <TextInput
+              style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
+              placeholder="Password"
+              placeholderTextColor={theme.textSecondary}
+              secureTextEntry
+              autoFocus
+              value={password}
+              onChangeText={setPassword}
+              editable={!isSubmitting}
+              returnKeyType="done"
+              onSubmitEditing={handleSubmit}
+            />
+
+            {reauthError && (
+              <ThemedText type="small" themeColor="danger">
+                {reauthError}
               </ThemedText>
-            </Pressable>
-            {isSubmitting ? (
-              <ActivityIndicator />
-            ) : (
-              <Pressable hitSlop={8} onPress={handleSubmit} disabled={!password}>
-                <ThemedText type="smallBold" themeColor={password ? 'text' : 'textSecondary'}>
-                  Continue
+            )}
+
+            <ThemedView type="backgroundElement" style={styles.actions}>
+              <Pressable accessibilityRole="button" style={styles.action} hitSlop={8} onPress={handleSignOut} disabled={isSubmitting}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Sign out
                 </ThemedText>
               </Pressable>
-            )}
+              {isSubmitting ? (
+                <ActivityIndicator />
+              ) : (
+                <Pressable accessibilityRole="button" style={styles.action} hitSlop={8} onPress={handleSubmit} disabled={!password}>
+                  <ThemedText type="smallBold" themeColor={password ? 'text' : 'textSecondary'}>
+                    Continue
+                  </ThemedText>
+                </Pressable>
+              )}
+            </ThemedView>
           </ThemedView>
-        </ThemedView>
+        )}
       </View>
     </Modal>
   );
@@ -96,6 +121,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: Spacing.four,
     backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  confirmWrap: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+  },
+  action: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   card: {
     width: '100%',
@@ -110,9 +143,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     fontSize: 16,
-  },
-  error: {
-    color: '#e5484d',
   },
   actions: {
     flexDirection: 'row',

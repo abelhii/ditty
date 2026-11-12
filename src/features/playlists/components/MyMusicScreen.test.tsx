@@ -9,7 +9,8 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: () => {} }) }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
 jest.mock('@/api/kv-storage', () => ({
   getItem: () => null,
   setItem: () => {},
@@ -26,7 +27,7 @@ const loadedQuery = (data: unknown) => ({
 });
 
 jest.mock('@/features/playlists/hooks/use-playlists', () => ({
-  usePlaylists: () => loadedQuery([]),
+  usePlaylists: () => loadedQuery([{ id: 'p1', name: 'Mix', songCount: 3 }]),
 }));
 jest.mock('@/features/favourites/hooks/use-favourites', () => ({
   useFavourites: () => loadedQuery({ albums: [], artists: [], songs: [] }),
@@ -34,6 +35,22 @@ jest.mock('@/features/favourites/hooks/use-favourites', () => ({
 jest.mock('@/features/playlists/hooks/use-create-playlist', () => ({
   useCreatePlaylist: () => ({ mutate: () => {} }),
 }));
+
+describe('MyMusicScreen basePath', () => {
+  beforeEach(() => mockPush.mockClear());
+
+  it('opens a playlist in its own stack by default', async () => {
+    await render(<MyMusicScreen />);
+    await fireEvent.press(screen.getByText('Mix'));
+    expect(mockPush).toHaveBeenCalledWith('/my-music/playlist/p1');
+  });
+
+  it('opens a playlist in the Home stack when mounted there', async () => {
+    await render(<MyMusicScreen basePath="/home" />);
+    await fireEvent.press(screen.getByText('Mix'));
+    expect(mockPush).toHaveBeenCalledWith('/home/playlist/p1');
+  });
+});
 
 describe('MyMusicScreen chips', () => {
   it('marks only the selected chip as selected', async () => {

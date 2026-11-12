@@ -18,6 +18,7 @@ type AlbumTileProps = {
 export function AlbumTile({ album, coverArtUri, width, onPress, round }: AlbumTileProps) {
   return (
     <Pressable
+      accessibilityRole="button"
       style={({ pressed }) => [styles.tile, { width }, pressed && styles.pressed]}
       onPress={onPress}>
       <CoverArtImage uri={coverArtUri} style={[styles.cover, { width, height: width }, round && { borderRadius: Radius.pill }]} iconSize={32} />

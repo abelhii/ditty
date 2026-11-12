@@ -16,7 +16,10 @@ type ArtistRowProps = {
 
 export function ArtistRow({ artist, coverArtUri, onPress }: ArtistRowProps) {
   return (
-    <Pressable style={({ pressed }) => [styles.row, pressed && styles.pressed]} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      onPress={onPress}>
       <CoverArtImage uri={coverArtUri} style={styles.thumbnail} />
       <ThemedView style={styles.text}>
         <ThemedText type="defaultBold" numberOfLines={1}>{artist.name}</ThemedText>

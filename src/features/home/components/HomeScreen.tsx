@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Radius, Spacing } from '@/constants/theme';
 import { AlbumShelf } from '@/features/home/components/AlbumShelf';
@@ -79,6 +80,18 @@ function NarrowHome() {
                 />
               ))}
             </ThemedView>
+            {/* Only the first playlists fit above; My Music lists them all, plus starred Albums and
+                Artists and New playlist. */}
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="See all in My Music"
+              onPress={() => router.push('/home/my-music')}
+              style={({ pressed }) => [styles.myMusicLink, pressed && styles.pressed]}>
+              <ThemedText type="smallBold">My Music</ThemedText>
+              <ThemedText type="smallBold" themeColor="accent">
+                See all
+              </ThemedText>
+            </Pressable>
           </ThemedView>
 
           {recentlyAdded && (
@@ -110,6 +123,15 @@ const styles = StyleSheet.create({
   playlistRow: {
     flexDirection: 'row',
     gap: Spacing.three,
+  },
+  myMusicLink: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.one,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   likesIcon: {
     width: LIKES_ICON_SIZE,

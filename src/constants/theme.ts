@@ -18,11 +18,15 @@ export const Colors = {
     background: '#f3f2ee',
     backgroundElement: '#e9e5de',
     backgroundSelected: '#dbd6cd',
-    textSecondary: '#787268',
+    textSecondary: '#625c53',
     /** Sage brand accent — active pills/chips, progress fill, primary buttons. */
     accent: '#5f7340',
     /** Pressed/hover state of `accent`. */
     accentDeep: '#3c4a29',
+    /** Text on an `accent` fill (selected pills/chips, avatar). */
+    onAccent: '#faf8f5',
+    /** Destructive actions and error text (Log out, Remove, error messages). */
+    danger: '#b3212a',
     /** Elevated surface above `background` (e.g. the floating mini-player bar). */
     tint: '#faf8f5',
     /** Drop-shadow tint for elevated surfaces (e.g. the floating mini-player bar). */
@@ -42,6 +46,8 @@ export const Colors = {
     textSecondary: '#B0B4BA',
     accent: '#5f7340',
     accentDeep: '#3c4a29',
+    onAccent: '#ffffff',
+    danger: '#ff7b7f',
     tint: '#212225',
     shadow: '#000000',
     border: '#2E3135',

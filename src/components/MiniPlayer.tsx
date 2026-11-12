@@ -53,7 +53,12 @@ export function MiniPlayer() {
 
   return (
     <View style={[styles.container, { bottom: insets.bottom + BottomTabInset + MiniPlayerOffset }]}>
-      <Pressable style={styles.pressable} onPress={openNowPlaying}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Now playing: ${currentTrack.title} by ${currentTrack.artist}`}
+        accessibilityHint="Opens the full player"
+        style={styles.pressable}
+        onPress={openNowPlaying}>
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
           <View style={styles.text}>
@@ -61,7 +66,7 @@ export function MiniPlayer() {
               {currentTrack.title}
             </ThemedText>
             {status === 'error' ? (
-              <ThemedText type="small" numberOfLines={1} style={styles.error}>
+              <ThemedText type="small" themeColor="danger" numberOfLines={1}>
                 {playbackErrorMessage(errorOffline)}
               </ThemedText>
             ) : (
@@ -205,9 +210,6 @@ const styles = StyleSheet.create({
   text: {
     flex: 1,
     gap: Spacing.half,
-  },
-  error: {
-    color: '#e5484d',
   },
   control: {
     width: 32,

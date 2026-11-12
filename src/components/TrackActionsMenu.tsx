@@ -149,7 +149,10 @@ function MenuOption({
 }) {
   const theme = useTheme();
   return (
-    <Pressable style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]} onPress={onPress}>
+    <Pressable
+      accessibilityRole="button"
+      style={({ pressed }) => [styles.menuOption, pressed && styles.pressed]}
+      onPress={onPress}>
       <SymbolView name={icon} size={20} tintColor={theme.text} />
       <ThemedText>{label}</ThemedText>
     </Pressable>
