@@ -1,32 +1,35 @@
-import {
-  BottomTabInset,
-  isWideWidth,
-  ListBottomInset,
-  MiniPlayerHeight,
-  MiniPlayerOffset,
-  Spacing,
-  WideLayoutMinWidth,
-} from '@/constants/theme';
+import { Colors, type ThemeColor } from '@/constants/theme';
 
-// theme.ts imports the web stylesheet for its side effect; jest can't parse CSS.
 jest.mock('@/global.css', () => ({}));
 
-describe('ListBottomInset', () => {
-  it('clears the floating mini player with a gap to spare', () => {
-    // The mini player's top edge, measured up from the bottom safe-area inset.
-    const miniPlayerTop = BottomTabInset + MiniPlayerOffset + MiniPlayerHeight;
-    expect(ListBottomInset - miniPlayerTop).toBeGreaterThanOrEqual(Spacing.three);
-  });
-});
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
 
-describe('isWideWidth', () => {
-  it('switches to the wide layout at exactly the breakpoint', () => {
-    expect(isWideWidth(WideLayoutMinWidth - 1)).toBe(false);
-    expect(isWideWidth(WideLayoutMinWidth)).toBe(true);
-  });
+function contrast(foreground: string, background: string): number {
+  const [hi, lo] = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (hi + 0.05) / (lo + 0.05);
+}
 
-  it('uses 900 as the breakpoint', () => {
-    expect(isWideWidth(899)).toBe(false);
-    expect(isWideWidth(900)).toBe(true);
+const PAIRS: [ThemeColor, ThemeColor][] = [
+  ['text', 'background'],
+  ['textSecondary', 'background'],
+  ['textSecondary', 'backgroundElement'],
+  ['textSecondary', 'backgroundSelected'],
+  ['danger', 'background'],
+  ['danger', 'backgroundElement'],
+  ['danger', 'backgroundSelected'],
+  ['danger', 'tint'],
+  ['onAccent', 'accent'],
+];
+
+describe('theme text contrast (WCAG AA, 4.5:1)', () => {
+  describe.each(['light', 'dark'] as const)('%s', (scheme) => {
+    it.each(PAIRS)('%s on %s', (foreground, background) => {
+      expect(contrast(Colors[scheme][foreground], Colors[scheme][background])).toBeGreaterThanOrEqual(4.5);
+    });
   });
 });

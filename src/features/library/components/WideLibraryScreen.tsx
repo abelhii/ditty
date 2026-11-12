@@ -73,7 +73,7 @@ export function WideLibraryScreen() {
               { backgroundColor: theme.accent },
               pressed && styles.pressed,
             ]}>
-            <ThemedText type="smallBold" style={{ color: theme.tint }}>
+            <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
               + New playlist
             </ThemedText>
           </Pressable>
@@ -354,7 +354,7 @@ function FilterPill({ label, active, onPress }: FilterPillProps) {
       ]}>
       <ThemedText
         type="smallBold"
-        style={{ color: active ? theme.tint : theme.textSecondary }}>
+        style={{ color: active ? theme.onAccent : theme.textSecondary }}>
         {label}
       </ThemedText>
     </Pressable>

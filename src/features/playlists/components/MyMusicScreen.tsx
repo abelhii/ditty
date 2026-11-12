@@ -203,7 +203,7 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
           : { borderWidth: 1, borderColor: theme.border },
       ]}
       onPress={onPress}>
-      <ThemedText type="smallBold" style={active ? { color: theme.tint } : { color: theme.textSecondary }}>
+      <ThemedText type="smallBold" style={active ? { color: theme.onAccent } : { color: theme.textSecondary }}>
         {label}
       </ThemedText>
     </Pressable>
