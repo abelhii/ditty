@@ -27,7 +27,12 @@ let nextId = 1;
  */
 export const useNoticeStore = create<NoticeState>((set) => ({
   current: null,
-  show: (message, action) => set({ current: { id: nextId++, message, action } }),
+  // An action-less Notice never displaces one that carries an action (e.g. Undo): the user would
+  // lose the only chance to use it. The action-less message is dropped; it lasts only seconds.
+  show: (message, action) =>
+    set((state) =>
+      state.current?.action && !action ? state : { current: { id: nextId++, message, action } },
+    ),
   dismiss: () => set({ current: null }),
 }));
 

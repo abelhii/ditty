@@ -92,6 +92,15 @@ describe('QueueScreen controls', () => {
     expect(names('Track c')).toEqual(['moveUp', 'remove']);
   });
 
+  it('moves a row down through the moveDown accessibility action', async () => {
+    await render(<QueueScreen />);
+
+    await act(async () =>
+      screen.getByText('Track a').parent!.parent!.props.onAccessibilityAction({ nativeEvent: { actionName: 'moveDown' } }),
+    );
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['b', 'a', 'c']);
+  });
+
   it('reorders and removes through accessibility actions', async () => {
     await render(<QueueScreen />);
     const row = (title: string) => screen.getByText(title).parent!.parent!;

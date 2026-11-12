@@ -273,6 +273,15 @@ describe('restoreQueue', () => {
   });
 });
 
+describe('removeAt with a repeated track', () => {
+  it('removes only one originalOrder entry', () => {
+    const state = removeAt(createQueueState([tracks[0], tracks[1], tracks[0]], 0), 2);
+    expect(state.tracks).toEqual([tracks[0], tracks[1]]);
+    expect(state.originalOrder).toHaveLength(2);
+    expect(state.originalOrder).toContain(tracks[0]);
+  });
+});
+
 describe('insertAt', () => {
   it('undoes removeAt, keeping the current track current', () => {
     const start = createQueueState(tracks, 2);
@@ -286,6 +295,12 @@ describe('insertAt', () => {
     const restored = insertAt(removeAt(start, 2), tracks[2], 2);
     expect(restored.tracks).toEqual(start.tracks);
     expect(restored.currentIndex).toBe(0);
+  });
+
+  it('restores the original (shuffle-off) position', () => {
+    const start = createQueueState(tracks, 0);
+    const restored = insertAt(removeAt(start, 1), tracks[1], 1, 1);
+    expect(restored.originalOrder).toEqual(start.originalOrder);
   });
 
   it('clamps an out-of-range index and revives an empty queue', () => {

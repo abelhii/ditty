@@ -210,6 +210,40 @@ describe('removeFromQueue', () => {
     expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
   });
 
+  describe('Undo staleness', () => {
+    const ids = () => usePlayerStore.getState().queue.tracks.map((t) => t.id);
+    const undo = () => (showNotice as jest.Mock).mock.calls[0][1].onPress();
+    beforeEach(() => PlaybackController.play([track('a'), track('b'), track('c'), track('d')], 0));
+
+    it('does nothing after the Queue was replaced', () => {
+      PlaybackController.removeFromQueue(1);
+      PlaybackController.play([track('x'), track('y')], 0);
+      undo();
+      expect(ids()).toEqual(['x', 'y']);
+    });
+
+    it('does nothing after a reorder', () => {
+      PlaybackController.removeFromQueue(1);
+      PlaybackController.reorderQueue(0, 2);
+      undo();
+      expect(ids()).toEqual(['c', 'd', 'a']);
+    });
+
+    it('does nothing after a second remove', () => {
+      PlaybackController.removeFromQueue(1);
+      PlaybackController.removeFromQueue(0);
+      undo();
+      expect(ids()).toEqual(['c', 'd']);
+    });
+
+    it('still works after the current track merely advances', () => {
+      PlaybackController.removeFromQueue(2);
+      PlaybackController.skipNext();
+      undo();
+      expect(ids()).toEqual(['a', 'b', 'c', 'd']);
+    });
+  });
+
   it('shows no notice for an out-of-range index', () => {
     PlaybackController.play([track('a')], 0);
     PlaybackController.removeFromQueue(5);
