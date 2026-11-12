@@ -73,7 +73,7 @@ export function ServerConfigScreen() {
         />
 
         {error && (
-          <ThemedText type="small" themeColor="text" style={styles.error}>
+          <ThemedText type="small" themeColor="danger">
             {error}
           </ThemedText>
         )}
@@ -107,5 +107,4 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
     fontSize: 16,
   },
-  error: { color: '#e5484d' },
 });
