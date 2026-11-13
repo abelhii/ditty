@@ -23,6 +23,8 @@ import { DownloadsSettings } from '@/features/downloads/components/DownloadsSett
 import { useOfflineStore } from '@/features/downloads/use-offline-store';
 import { useAutoDjSettingsStore, type AutoDjSource } from '@/player/use-auto-dj-settings-store';
 import { useLevellingSettingsStore } from '@/player/use-levelling-settings-store';
+import { useStreamQualityStore } from '@/player/use-stream-quality-store';
+import type { StreamQuality } from '@/api/subsonic/endpoints/media';
 import type { LevellingMode } from '@/player/replay-gain';
 
 const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
@@ -35,6 +37,13 @@ const LEVELLING_OPTIONS: { value: LevellingMode; label: string }[] = [
   { value: 'off', label: 'Off' },
   { value: 'track', label: 'Track' },
   { value: 'album', label: 'Album' },
+];
+
+const STREAM_QUALITY_OPTIONS: { value: StreamQuality; label: string }[] = [
+  { value: 'original', label: 'Original' },
+  { value: 'high', label: 'High' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'low', label: 'Low' },
 ];
 
 const SOURCE_OPTIONS: { value: AutoDjSource; label: string }[] = [
@@ -62,6 +71,8 @@ export default function SettingsScreen() {
   const autoDj = useAutoDjSettingsStore();
   const levellingMode = useLevellingSettingsStore((state) => state.mode);
   const setLevellingMode = useLevellingSettingsStore((state) => state.setMode);
+  const streamQuality = useStreamQualityStore((state) => state.quality);
+  const setStreamQuality = useStreamQualityStore((state) => state.setQuality);
   const offlineManual = useOfflineStore((state) => state.manual);
   const setOfflineManual = useOfflineStore((state) => state.setManual);
 
@@ -161,6 +172,26 @@ export default function SettingsScreen() {
     </ThemedView>
   );
 
+  const streamQualitySection = (
+    <ThemedView style={styles.appearance}>
+      {!wide && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Streaming quality
+        </ThemedText>
+      )}
+      <SegmentedChoice
+        label="Streaming quality"
+        options={STREAM_QUALITY_OPTIONS}
+        value={streamQuality}
+        onChange={setStreamQuality}
+      />
+      <ThemedText type="small" themeColor="textSecondary">
+        Original streams the file untouched. Other settings have the server convert to MP3 (High
+        320 kbps, Normal 192, Low 96) to save data. Downloaded tracks always play as downloaded.
+      </ThemedText>
+    </ThemedView>
+  );
+
   const offlineSection = Platform.OS !== 'web' && (
     <ThemedView style={styles.appearance}>
       {!wide && (
@@ -237,6 +268,7 @@ export default function SettingsScreen() {
               </ThemedView>
               <ThemedView type="backgroundElement" style={[styles.card, styles.cardPlayback]}>
                 <ThemedText type="smallBold">Playback</ThemedText>
+                {streamQualitySection}
                 {levellingSection}
                 {autoDjSection}
                 {offlineSection}
@@ -260,6 +292,7 @@ export default function SettingsScreen() {
           <ThemedText type="title">Settings</ThemedText>
           {serverInfo}
           {appearance}
+          {streamQualitySection}
           {levellingSection}
           {autoDjSection}
           {offlineSection}
