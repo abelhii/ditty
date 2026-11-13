@@ -14,6 +14,7 @@ export default function SearchStackLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="artist/[id]" options={detailOptions} />
       <Stack.Screen name="album/[id]" options={detailOptions} />
+      <Stack.Screen name="playlist/[id]" options={detailOptions} />
     </Stack>
   );
 }

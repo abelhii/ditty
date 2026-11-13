@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { SymbolView } from "expo-symbols";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -14,11 +14,13 @@ import {
 } from "react-native-safe-area-context";
 
 import { CoverArtSize, getCoverArtUrl } from "@/api/subsonic/endpoints/media";
-import type { Album, Artist, Track } from "@/api/types";
+import type { Album, Artist, Playlist, Track } from "@/api/types";
 import { useAuthStore } from "@/auth/use-auth-store";
 import { albumGridLayout, AlbumGridGap } from "@/components/album-grid";
 import { AlbumTile } from "@/components/AlbumTile";
 import { ArtistRow } from "@/components/ArtistRow";
+import { EmptyMessage } from "@/components/EmptyMessage";
+import { FilterChip } from "@/components/FilterChip";
 import { QueryState } from "@/components/QueryState";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -26,16 +28,26 @@ import { WideTopBar } from "@/components/WideTopBar";
 import { TrackActionsMenu } from "@/components/TrackActionsMenu";
 import { TrackRow } from "@/components/TrackRow";
 import { MaxContentWidth, Radius, Spacing, WideMaxContentWidth } from "@/constants/theme";
+import { usePlaylists } from "@/features/playlists/hooks/use-playlists";
+import { SearchResultRow } from "@/features/search/components/SearchResultRow";
 import { useRecentSearches } from "@/features/search/hooks/use-recent-searches";
 import { useSearch } from "@/features/search/hooks/use-search";
+import {
+  filterPlaylistsByName,
+  formatResultCount,
+  resultCount,
+  songCountLabel,
+  type SearchFilter,
+} from "@/features/search/search-filters";
 import { useIsWideLayout } from "@/hooks/use-is-wide-layout";
 import { useTheme } from "@/hooks/use-theme";
 import * as PlaybackController from "@/player/PlaybackController";
 import { useListBottomInset } from "@/hooks/use-list-bottom-inset";
 
-/** The Search tab (Build Order step 6): a debounced text search over `search3`, rendered as one
- *  combined sectioned scroll (artists / albums / songs). An empty box shows Recent Searches; a song
- *  tap plays now without destroying the queue; artist/album taps drill into the shared detail
+/** The Search tab (Build Order step 6): a debounced text search over `search3` plus a client-side
+ *  name match over Playlists, rendered as one sectioned scroll behind All / Songs / Artists /
+ *  Albums / Playlists filter chips with a result count. An empty box shows Recent Searches; a song
+ *  tap plays now without destroying the queue; artist/album/playlist taps drill into the detail
  *  screens, staying inside the Search tab via their `basePath`. */
 export function SearchScreen() {
   const router = useRouter();
@@ -49,6 +61,19 @@ export function SearchScreen() {
   const [input, setInput] = useState("");
   const { query, term, isActive } = useSearch(input);
   const recent = useRecentSearches();
+  const playlists = usePlaylists().data;
+  const playlistMatches = useMemo(
+    () => (playlists ? filterPlaylistsByName(playlists, term) : []),
+    [playlists, term],
+  );
+  // Selection resets to All whenever the settled term changes (adjusted during render, not in an
+  // effect, so a stale chip never paints against the new results).
+  const [filter, setFilter] = useState<SearchFilter>("all");
+  const [filterTerm, setFilterTerm] = useState(term);
+  if (filterTerm !== term) {
+    setFilterTerm(term);
+    setFilter("all");
+  }
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
 
   const { tileWidth, coverArtSize } = albumGridLayout(width, scale, wide);
@@ -71,6 +96,10 @@ export function SearchScreen() {
   const openAlbum = (album: Album) => {
     recent.add(term);
     router.push(`/search/album/${album.id}`);
+  };
+  const openPlaylist = (playlist: Playlist) => {
+    recent.add(term);
+    router.push(`/search/playlist/${playlist.id}`);
   };
   const playSong = (song: Track) => {
     recent.add(term);
@@ -149,69 +178,158 @@ export function SearchScreen() {
             isEmpty={(r) =>
               r.artists.length === 0 &&
               r.albums.length === 0 &&
-              r.tracks.length === 0
+              r.tracks.length === 0 &&
+              playlistMatches.length === 0
             }
             emptyMessage={`No results for "${term}".`}
           >
-            {({ artists, albums, tracks }) => (
-              <ScrollView
-                contentContainerStyle={contentPadding}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-              >
-                {artists.length > 0 && (
-                  <>
-                    <SectionHeader label="Artists" />
-                    {artists.map((artist) => (
-                      <ArtistRow
-                        key={artist.id}
-                        artist={artist}
-                        coverArtUri={coverUri(
-                          artist.coverArtId,
-                          CoverArtSize.list,
-                        )}
-                        onPress={() => openArtist(artist)}
+            {({ artists, albums, tracks }) => {
+              const counts = {
+                songs: tracks.length,
+                artists: artists.length,
+                albums: albums.length,
+                playlists: playlistMatches.length,
+              };
+              const total = resultCount(filter, counts);
+              // Type labels ("Song · artist") only make sense in the mixed All list.
+              const labelled = filter === "all";
+              const show = (type: SearchFilter) =>
+                filter === "all" || filter === type;
+
+              return (
+                <>
+                  <ThemedView style={styles.chips}>
+                    {FILTERS.map(({ value, label }) => (
+                      <FilterChip
+                        key={value}
+                        label={label}
+                        active={filter === value}
+                        onPress={() => setFilter(value)}
                       />
                     ))}
-                  </>
-                )}
+                  </ThemedView>
+                  <ThemedText
+                    type="small"
+                    themeColor="textSecondary"
+                    style={styles.count}
+                  >
+                    {formatResultCount(total)}
+                  </ThemedText>
+                  <ScrollView
+                    contentContainerStyle={contentPadding}
+                    keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="on-drag"
+                  >
+                    {total === 0 && (
+                      <EmptyMessage text={`No results for "${term}" here.`} />
+                    )}
 
-                {tracks.length > 0 && (
-                  <>
-                    <SectionHeader label="Songs" />
-                    {tracks.map((track) => (
-                      <TrackRow
-                        key={track.id}
-                        track={track}
-                        coverArtUri={coverUri(
-                          track.coverArtId,
-                          CoverArtSize.list,
+                    {show("artists") && artists.length > 0 && (
+                      <>
+                        <SectionHeader label="Artists" />
+                        {artists.map((artist) =>
+                          labelled ? (
+                            <SearchResultRow
+                              key={artist.id}
+                              title={artist.name}
+                              subtitle="Artist"
+                              coverArtUri={coverUri(
+                                artist.coverArtId,
+                                CoverArtSize.list,
+                              )}
+                              round
+                              onPress={() => openArtist(artist)}
+                            />
+                          ) : (
+                            <ArtistRow
+                              key={artist.id}
+                              artist={artist}
+                              coverArtUri={coverUri(
+                                artist.coverArtId,
+                                CoverArtSize.list,
+                              )}
+                              onPress={() => openArtist(artist)}
+                            />
+                          ),
                         )}
-                        onPress={() => playSong(track)}
-                        onOverflowPress={() => setMenuTrack(track)}
-                      />
-                    ))}
-                  </>
-                )}
+                      </>
+                    )}
 
-                {albums.length > 0 && (
-                  <>
-                    <SectionHeader label="Albums" />
-                    <ThemedView style={styles.albumGrid}>
-                      {albums.map((album) => (
-                        <AlbumTile
-                          key={album.id}
-                          album={album}
-                          width={tileWidth}
-                          coverArtUri={coverUri(album.coverArtId, coverArtSize)}
-                          onPress={() => openAlbum(album)}
-                        />
-                      ))}
-                    </ThemedView>
-                  </>
-                )}
-              </ScrollView>
-            )}
+                    {show("songs") && tracks.length > 0 && (
+                      <>
+                        <SectionHeader label="Songs" />
+                        {tracks.map((track) => (
+                          <TrackRow
+                            key={track.id}
+                            track={track}
+                            typeLabel={labelled ? "Song" : undefined}
+                            coverArtUri={coverUri(
+                              track.coverArtId,
+                              CoverArtSize.list,
+                            )}
+                            onPress={() => playSong(track)}
+                            onOverflowPress={() => setMenuTrack(track)}
+                          />
+                        ))}
+                      </>
+                    )}
+
+                    {show("albums") && albums.length > 0 && (
+                      <>
+                        <SectionHeader label="Albums" />
+                        {labelled ? (
+                          albums.map((album) => (
+                            <SearchResultRow
+                              key={album.id}
+                              title={album.name}
+                              subtitle={`Album · ${album.artist}`}
+                              coverArtUri={coverUri(
+                                album.coverArtId,
+                                CoverArtSize.list,
+                              )}
+                              onPress={() => openAlbum(album)}
+                            />
+                          ))
+                        ) : (
+                          <ThemedView style={styles.albumGrid}>
+                            {albums.map((album) => (
+                              <AlbumTile
+                                key={album.id}
+                                album={album}
+                                width={tileWidth}
+                                coverArtUri={coverUri(
+                                  album.coverArtId,
+                                  coverArtSize,
+                                )}
+                                onPress={() => openAlbum(album)}
+                              />
+                            ))}
+                          </ThemedView>
+                        )}
+                      </>
+                    )}
+
+                    {show("playlists") && playlistMatches.length > 0 && (
+                      <>
+                        <SectionHeader label="Playlists" />
+                        {playlistMatches.map((playlist) => (
+                          <SearchResultRow
+                            key={playlist.id}
+                            title={playlist.name}
+                            subtitle={`Playlist · ${songCountLabel(playlist.songCount)}`}
+                            coverArtUri={coverUri(
+                              playlist.coverArtId,
+                              CoverArtSize.list,
+                            )}
+                            onPress={() => openPlaylist(playlist)}
+                          />
+                        ))}
+                      </>
+                    )}
+                  </ScrollView>
+                </>
+              );
+            }}
           </QueryState>
         ) : (
           <RecentSearches
@@ -316,6 +434,14 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
+const FILTERS: { value: SearchFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "songs", label: "Songs" },
+  { value: "artists", label: "Artists" },
+  { value: "albums", label: "Albums" },
+  { value: "playlists", label: "Playlists" },
+];
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -349,6 +475,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: Spacing.two,
     fontSize: 16,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.two,
+  },
+  count: {
+    paddingHorizontal: Spacing.four,
   },
   sectionHeader: {
     paddingHorizontal: Spacing.four,

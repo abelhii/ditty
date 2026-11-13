@@ -25,6 +25,8 @@ type TrackRowProps = {
   coverArtUri?: string;
   /** Extra text after the artist on the subtitle line, e.g. "12 plays". */
   detail?: string;
+  /** Type label prefixed to the subtitle, e.g. "Song" -> "Song · artist" in mixed search results. */
+  typeLabel?: string;
   onPress: () => void;
   onOverflowPress: () => void;
 };
@@ -34,6 +36,7 @@ export function TrackRow({
   position,
   coverArtUri,
   detail,
+  typeLabel,
   onPress,
   onOverflowPress,
 }: TrackRowProps) {
@@ -74,7 +77,7 @@ export function TrackRow({
           {track.title}
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-          {detail ? `${track.artist} · ${detail}` : track.artist}
+          {[typeLabel, track.artist, detail].filter(Boolean).join(' · ')}
         </ThemedText>
       </ThemedView>
       <DownloadBadge trackId={track.id} />
