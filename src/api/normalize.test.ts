@@ -135,6 +135,15 @@ describe('normalizeTrack', () => {
     });
   });
 
+  it('carries the starred timestamp through as starredAt, and leaves it absent when not starred', () => {
+    const starred = normalizeTrack({ id: 's1', title: 'T', starred: '2026-07-29T10:00:00Z' });
+    expect(starred.starred).toBe(true);
+    expect(starred.starredAt).toBe('2026-07-29T10:00:00Z');
+    const plain = normalizeTrack({ id: 's1', title: 'T' });
+    expect(plain.starred).toBe(false);
+    expect(plain.starredAt).toBeUndefined();
+  });
+
   it('carries playCount through, and leaves it absent when the server omits it', () => {
     expect(normalizeTrack({ id: 's1', title: 'T', playCount: 7 }).playCount).toBe(7);
     expect(normalizeTrack({ id: 's1', title: 'T' }).playCount).toBeUndefined();

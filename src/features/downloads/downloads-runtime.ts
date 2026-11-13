@@ -203,7 +203,7 @@ export function removeAllDownloads(): void {
   clearServerDownloads(credentials.serverUrl, credentials.username);
 }
 
-const FAVOURITES_ID = 'starred';
+export const FAVOURITES_ID = 'starred';
 const MIN_SYNC_INTERVAL_MS = 60 * 60 * 1000;
 let syncing = false;
 let lastSyncAt = 0;
