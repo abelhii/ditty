@@ -8,6 +8,7 @@ import * as PlaybackController from '@/player/PlaybackController';
 import { createQueueState } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { usePlayerStore } from '@/player/use-player-store';
+import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 // theme.ts imports a stylesheet that jest cannot parse.
 jest.mock('@/global.css', () => ({}));
@@ -89,5 +90,47 @@ describe('MiniPlayer skip buttons', () => {
 
     expect(screen.queryByRole('button', { name: 'Previous track' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Next track' })).toBeTruthy();
+  });
+
+  it('opens the Queue overlay from a labelled button without opening the full player', async () => {
+    usePlayerUiStore.setState({ nowPlayingOpen: false, queueOpen: false });
+    await renderBar();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Open Queue, 2 Tracks' }));
+
+    expect(usePlayerUiStore.getState().queueOpen).toBe(true);
+    expect(usePlayerUiStore.getState().nowPlayingOpen).toBe(false);
+  });
+
+  it('shows the Queue length as a badge and singularises one Track', async () => {
+    usePlayerStore.setState({ queue: createQueueState([track], 0) });
+    await renderBar();
+
+    expect(screen.getByRole('button', { name: 'Open Queue, 1 Track' })).toBeTruthy();
+    expect(screen.getByText('1')).toBeTruthy();
+  });
+
+  it('shows "Next: <title>" while a next Track exists, else the artist', async () => {
+    usePlayerStore.setState({
+      queue: createQueueState([track, { ...track, id: 't2', title: 'Second' }], 0),
+    });
+    const { unmount } = await renderBar();
+    expect(screen.getByText('Next: Second')).toBeTruthy();
+    expect(screen.queryByText('Artist')).toBeNull();
+    await unmount();
+
+    usePlayerStore.setState({
+      queue: createQueueState([track, { ...track, id: 't2', title: 'Second' }], 1),
+    });
+    await renderBar();
+    expect(screen.getByText('Artist')).toBeTruthy();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+  });
+
+  it('lets the error text win over the Next line', async () => {
+    usePlaybackStatusStore.setState({ status: 'error', errorOffline: false });
+    await renderBar();
+
+    expect(screen.queryByText(/^Next:/)).toBeNull();
   });
 });
