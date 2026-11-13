@@ -26,6 +26,9 @@ const loadedQuery = (data: unknown) => ({
   refetch: () => {},
 });
 
+jest.mock('@/features/downloads/components/CollectionRowDownload', () => ({
+  CollectionRowDownload: () => null,
+}));
 jest.mock('@/features/playlists/hooks/use-playlists', () => ({
   usePlaylists: () => loadedQuery([{ id: 'p1', name: 'Mix', songCount: 3 }]),
 }));

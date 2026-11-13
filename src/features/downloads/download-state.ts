@@ -50,3 +50,24 @@ export function collectionDownloadState(
   if (failed > 0) return { kind: 'failed', progress: 0 };
   return { kind: 'idle', progress: 0 };
 }
+
+export type RowDownloadStateKind = DownloadStateKind | 'partial';
+
+export type RowDownloadStateView = { kind: RowDownloadStateKind; progress: number };
+
+/**
+ * The state a My Music row shows for a Playlist or Album it only knows by `songCount`: the Tracks
+ * the collection has asked for (`memberIds`, from the downloads DB) judged against the server's
+ * count. `partial` is some Tracks on the device but not all, with nothing running.
+ */
+export function rowDownloadState(
+  items: Items,
+  downloadedIds: DownloadedIds,
+  memberIds: string[],
+  songCount: number,
+): RowDownloadStateView {
+  const state = collectionDownloadState(items, downloadedIds, memberIds);
+  if (state.kind === 'downloaded' && memberIds.length < songCount) return { kind: 'partial', progress: 0 };
+  if (state.kind === 'idle' && memberIds.some((id) => downloadedIds[id])) return { kind: 'partial', progress: 0 };
+  return state;
+}

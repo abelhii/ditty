@@ -18,6 +18,7 @@ import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, WideMaxContentWidth, Radius, Spacing } from '@/constants/theme';
+import { CollectionRowDownload } from '@/features/downloads/components/CollectionRowDownload';
 import { useFavourites } from '@/features/favourites/hooks/use-favourites';
 import { useCreatePlaylist } from '@/features/playlists/hooks/use-create-playlist';
 import { usePlaylists } from '@/features/playlists/hooks/use-playlists';
@@ -128,6 +129,12 @@ export function MyMusicScreen({ basePath = '/my-music' }: MyMusicScreenProps) {
                         {item.songCount} {item.songCount === 1 ? 'song' : 'songs'}
                       </ThemedText>
                     </ThemedView>
+                    <CollectionRowDownload
+                      kind="playlist"
+                      collectionId={item.id}
+                      name={item.name}
+                      songCount={item.songCount}
+                    />
                   </Pressable>
                 )}
               />
@@ -159,13 +166,21 @@ export function MyMusicScreen({ basePath = '/my-music' }: MyMusicScreenProps) {
                   ) : (
                     <ThemedView style={styles.albumGrid}>
                       {albums.map((album) => (
-                        <AlbumTile
-                          key={album.id}
-                          album={album}
-                          width={tileWidth}
-                          coverArtUri={coverUri(album.coverArtId, coverArtSize)}
-                          onPress={() => router.push(`${basePath}/album/${album.id}`)}
-                        />
+                        <ThemedView key={album.id}>
+                          <AlbumTile
+                            album={album}
+                            width={tileWidth}
+                            coverArtUri={coverUri(album.coverArtId, coverArtSize)}
+                            onPress={() => router.push(`${basePath}/album/${album.id}`)}
+                          />
+                          <CollectionRowDownload
+                            kind="album"
+                            collectionId={album.id}
+                            name={album.name}
+                            songCount={album.songCount}
+                            style={[styles.tileDownload, { backgroundColor: theme.tint }]}
+                          />
+                        </ThemedView>
                       ))}
                     </ThemedView>
                   )}
@@ -255,6 +270,13 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: AlbumGridGap,
     paddingHorizontal: Spacing.four,
+  },
+  // Floats over the cover's top-right corner so tiles keep their size with or without it.
+  tileDownload: {
+    position: 'absolute',
+    top: Spacing.one,
+    right: Spacing.one,
+    borderRadius: Radius.pill,
   },
   pressed: {
     opacity: 0.7,

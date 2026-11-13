@@ -12,6 +12,9 @@ export function removeCollectionDownload(
   _collectionId: string,
   _trackIds: string[],
 ): void {}
+export function getCollectionTrackIds(_kind: CollectionKind, _collectionId: string): string[] {
+  return [];
+}
 export function getDownloadedAlbum(_albumId: string): { album: Album; tracks: Track[] } | null {
   return null;
 }
