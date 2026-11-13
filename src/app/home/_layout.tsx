@@ -15,6 +15,7 @@ export default function HomeStackLayout() {
       <Stack.Screen name="artist/[id]" options={{ headerTitle: '' }} />
       <Stack.Screen name="liked-songs" options={{ headerTitle: '' }} />
       <Stack.Screen name="most-played" options={{ headerTitle: '' }} />
+      <Stack.Screen name="recently-added" options={{ headerTitle: '' }} />
       <Stack.Screen name="my-music" options={{ headerTitle: '' }} />
       <Stack.Screen name="playlist/[id]" options={{ headerTitle: '' }} />
     </Stack>

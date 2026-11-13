@@ -44,6 +44,7 @@ export function normalizeAlbum(raw: SubsonicAlbum): Album {
     genre: raw.genre,
     coverArtId: raw.coverArt,
     starred: raw.starred != null,
+    created: raw.created,
   };
 }
 

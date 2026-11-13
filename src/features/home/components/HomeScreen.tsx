@@ -99,7 +99,7 @@ function NarrowHome() {
           </ThemedView>
 
           {recentlyAdded && (
-            <AlbumShelf shelf={recentlyAdded} onSeeAll={() => router.push('/library')} />
+            <AlbumShelf shelf={recentlyAdded} onSeeAll={() => router.push('/home/recently-added')} />
           )}
           {frequentlyPlayed && <AlbumShelf shelf={frequentlyPlayed} />}
           {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}

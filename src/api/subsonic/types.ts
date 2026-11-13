@@ -82,6 +82,8 @@ export type SubsonicAlbum = {
   year?: number;
   genre?: string;
   starred?: string;
+  /** ISO timestamp the server added the album (Navidrome sets it; plain Subsonic may omit it). */
+  created?: string;
 };
 
 /** The shape returned by getAlbum — an album plus its songs. */

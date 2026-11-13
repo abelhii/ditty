@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useMemo } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -111,6 +111,16 @@ export function WideHome() {
               keyExtractor={(album) => album.id}
               onRefresh={() => void recentlyAddedShelf.refetch()}
               refreshing={recentlyAddedShelf.isFetching}
+              headerExtra={
+                <Pressable
+                  accessibilityRole="link"
+                  onPress={() => router.push('/home/recently-added')}
+                  style={({ pressed }) => pressed && styles.pressed}>
+                  <ThemedText type="smallBold" themeColor="accent">
+                    See all
+                  </ThemedText>
+                </Pressable>
+              }
               renderItem={({ item, index }) => (
                 <AlbumTile
                   album={item}
@@ -154,6 +164,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.three,
+  },
+  pressed: {
+    opacity: 0.6,
   },
   likesIcon: {
     width: LIKES_ICON_SIZE,

@@ -9,6 +9,8 @@ export const queryKeys = {
   albumsByGenre: (genre: string) => ['albumsByGenre', genre] as const,
   /** A Home/discover shelf, keyed by its stable ShelfId (Build Order step 9). */
   albumShelf: (id: string) => ['albumShelf', id] as const,
+  /** The paged Recently added screen's albums (newest first). */
+  recentlyAddedAlbums: () => ['recentlyAddedAlbums'] as const,
   /** Every song on the server, paged. Excluded from persistence like `search` (query-client.ts). */
   allSongs: (query: string) => ['allSongs', query] as const,
   playlists: () => ['playlists'] as const,
