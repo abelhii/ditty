@@ -30,8 +30,8 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform
  * (the native BottomAccessory is iOS-only), mounted as a sibling of NativeTabs in _layout.tsx
  * (the wide layout swaps in WidePlayer instead). Artwork + title/artist + previous / play-pause /
- * next + a hairline progress line; tapping the bar expands the now-playing overlay. Hidden when
- * there's nothing playing or when now-playing is already open.
+ * next + queue button (count badge) + a hairline progress line; tapping the bar expands the
+ * now-playing overlay. Hidden when there's nothing playing or when now-playing is already open.
  */
 export function MiniPlayer() {
   const insets = useSafeAreaInsets();
@@ -40,6 +40,9 @@ export function MiniPlayer() {
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
   const nowPlayingOpen = usePlayerUiStore((state) => state.nowPlayingOpen);
   const openNowPlaying = usePlayerUiStore((state) => state.openNowPlaying);
+  const openQueue = usePlayerUiStore((state) => state.openQueue);
+  const nextTrack = usePlayerStore((state) => state.queue.tracks[state.queue.currentIndex + 1]);
+  const queueLength = usePlayerStore((state) => state.queue.tracks.length);
   const status = usePlaybackStatusStore((state) => state.status);
   const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
   const { fraction } = useProgress();
@@ -62,16 +65,24 @@ export function MiniPlayer() {
         <ThemedView type="tint" style={[styles.bar, { shadowColor: theme.shadow }]}>
           <CoverArtImage uri={coverArtUri || undefined} style={styles.art} iconSize={20} />
           <View style={styles.text}>
-            <ThemedText type="smallBold" numberOfLines={1}>
+            <ThemedText type="smallBold" numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE}>
               {currentTrack.title}
             </ThemedText>
             {status === 'error' ? (
-              <ThemedText type="small" themeColor="danger" numberOfLines={1}>
+              <ThemedText
+                type="small"
+                themeColor="danger"
+                numberOfLines={1}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}>
                 {playbackErrorMessage(errorOffline)}
               </ThemedText>
             ) : (
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {currentTrack.artist}
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                numberOfLines={1}
+                maxFontSizeMultiplier={MAX_FONT_SCALE}>
+                {nextTrack ? `Next: ${nextTrack.title}` : currentTrack.artist}
               </ThemedText>
             )}
             <View style={[styles.progressTrack, { backgroundColor: theme.backgroundSelected }]}>
@@ -93,6 +104,26 @@ export function MiniPlayer() {
             label="Next track"
             onPress={PlaybackController.skipNext}
           />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open Queue, ${queueLength} ${queueLength === 1 ? 'Track' : 'Tracks'}`}
+            style={styles.queueButton}
+            onPress={openQueue}>
+            <SymbolView
+              name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }}
+              size={22}
+              tintColor={theme.text}
+            />
+            <View style={[styles.badge, { backgroundColor: theme.accent }]}>
+              <ThemedText
+                themeColor="onAccent"
+                numberOfLines={1}
+                maxFontSizeMultiplier={1}
+                style={styles.badgeText}>
+                {queueLength}
+              </ThemedText>
+            </View>
+          </Pressable>
         </ThemedView>
       </Pressable>
     </View>
@@ -175,6 +206,11 @@ export function PlayPauseButton({ size = 26, tintColor }: { size?: number; tintC
 const ART_SIZE = 40;
 /** Below this window width the bar drops Previous so the title keeps room (Next stays). */
 const HIDE_PREVIOUS_BELOW_WIDTH = 360;
+/** The bar is a fixed height, so cap text scaling to keep title + secondary line + progress inside it. */
+const MAX_FONT_SCALE = 1.1;
+/** Minimum touch target (issue #105). */
+const QUEUE_BUTTON_SIZE = 44;
+const BADGE_SIZE = 18;
 
 const styles = StyleSheet.create({
   container: {
@@ -198,7 +234,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     borderRadius: Radius.pill,
     paddingLeft: Spacing.two,
-    paddingRight: Spacing.three,
+    paddingRight: Spacing.one,
     paddingVertical: Spacing.two,
     ...Shadow.floating,
   },
@@ -215,6 +251,28 @@ const styles = StyleSheet.create({
     width: 32,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  queueButton: {
+    width: QUEUE_BUTTON_SIZE,
+    height: QUEUE_BUTTON_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: BADGE_SIZE,
+    height: BADGE_SIZE,
+    borderRadius: BADGE_SIZE / 2,
+    paddingHorizontal: Spacing.one,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: 700,
   },
   progressTrack: {
     height: ProgressBarHeight,
