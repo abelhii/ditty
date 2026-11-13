@@ -4,6 +4,7 @@ import { StyleSheet, type ViewStyle } from 'react-native';
 import type { Track } from '@/api/types';
 import { Colors } from '@/constants/theme';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
+import { useNoticeStore } from '@/components/use-notice-store';
 import { createQueueState, enqueue } from '@/player/QueueManager';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
@@ -192,5 +193,50 @@ describe('QueueScreen Clear queue', () => {
     await render(<QueueScreen />);
 
     expect(screen.queryByRole('button', { name: 'Clear queue' })).toBeNull();
+  });
+});
+
+describe('QueueScreen remove button', () => {
+  const ids = () => usePlayerStore.getState().queue.tracks.map((t) => t.id);
+
+  beforeEach(() => {
+    useNoticeStore.setState({ current: null });
+    usePlayerStore
+      .getState()
+      .setQueue(enqueue(createQueueState([track('a'), track('b'), track('c')], 0, 'Road Trip'), track('x')));
+  });
+
+  it('is offered only on Next in queue rows', async () => {
+    await render(<QueueScreen />);
+
+    expect(screen.getAllByRole('button', { name: /^Remove .* from Queue$/ })).toHaveLength(1);
+    expect(screen.getByRole('button', { name: 'Remove Track x from Queue' })).toBeTruthy();
+  });
+
+  it('removes the Track and shows an Undo Notice that restores it at the same index', async () => {
+    await render(<QueueScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove Track x from Queue' }));
+    expect(ids()).toEqual(['a', 'b', 'c']);
+    const notice = useNoticeStore.getState().current;
+    expect(notice?.message).toBe('Removed from Queue');
+
+    await act(async () => notice?.action?.onPress());
+    expect(ids()).toEqual(['a', 'x', 'b', 'c']);
+  });
+});
+
+describe('QueueScreen now-playing glyph', () => {
+  it('shows the glyph on the Now playing row only', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b'), track('c')], 1));
+    await render(<QueueScreen />);
+
+    const glyphs = screen.getAllByTestId('now-playing-glyph');
+    expect(glyphs).toHaveLength(1);
+    // The glyph sits inside the same row Pressable as the current Track's title.
+    const rowOf = (title: string) => screen.getByText(title).parent!.parent!.props.onPress;
+    let node = glyphs[0].parent;
+    while (node && node.props.onPress !== rowOf('Track b')) node = node.parent;
+    expect(node).not.toBeNull();
   });
 });

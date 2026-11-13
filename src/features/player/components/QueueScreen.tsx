@@ -357,7 +357,11 @@ function QueueRow({
                 break;
             }
           }}
-          style={({ pressed }) => [styles.rowInner, pressed && styles.pressed]}>
+          style={({ pressed }) => [
+            styles.rowInner,
+            section === 'userAdded' && styles.rowInnerWithRemove,
+            pressed && styles.pressed,
+          ]}>
           <CoverArtImage uri={coverArtUri} style={[styles.thumbnail, isPlayed && styles.dimmed]} />
           <View style={[styles.text, isPlayed && styles.dimmed]}>
             <ThemedText numberOfLines={1} style={{ color: colors.text }}>
@@ -372,8 +376,26 @@ function QueueRow({
               Added by you
             </ThemedText>
           )}
+          {isCurrent && (
+            <SymbolView
+              testID="now-playing-glyph"
+              name={{ ios: 'waveform', android: 'graphic_eq', web: 'graphic_eq' }}
+              size={20}
+              tintColor={colors.text}
+            />
+          )}
         </Pressable>
       </Animated.View>
+
+      {section === 'userAdded' && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${track.title} from Queue`}
+          onPress={() => onRemove(index)}
+          style={({ pressed }) => [styles.removeButton, pressed && styles.pressed]}>
+          <SymbolView name={{ ios: 'xmark', android: 'close', web: 'close' }} size={18} tintColor={colors.textSecondary} />
+        </Pressable>
+      )}
 
       <View style={styles.handle} accessible accessibilityLabel={`Reorder ${track.title}`} {...drag.panHandlers}>
         <SymbolView
@@ -387,6 +409,7 @@ function QueueRow({
 }
 
 const HANDLE_WIDTH = 52;
+const REMOVE_BUTTON_WIDTH = 44; // minimum touch target (#105); the row is already taller than that
 
 const styles = StyleSheet.create({
   overlay: {
@@ -452,6 +475,18 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingLeft: Spacing.four,
     paddingRight: HANDLE_WIDTH,
+  },
+  rowInnerWithRemove: {
+    paddingRight: HANDLE_WIDTH + REMOVE_BUTTON_WIDTH,
+  },
+  removeButton: {
+    position: 'absolute',
+    right: HANDLE_WIDTH,
+    top: 0,
+    bottom: 0,
+    width: REMOVE_BUTTON_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   thumbnail: {
     width: 44,
