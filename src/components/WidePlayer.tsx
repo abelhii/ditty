@@ -20,6 +20,7 @@ import {
   WidePlayerWidth,
 } from '@/constants/theme';
 import { Scrubber } from '@/features/player/components/Scrubber';
+import { useQueueSidebarWidth } from '@/features/player/hooks/use-queue-sidebar-width';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
@@ -27,6 +28,7 @@ import { useProgress } from '@/player/hooks/use-progress';
 import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
+import { useQueueSidebarStore } from '@/player/use-queue-sidebar-store';
 
 const ART_SIZE = 56;
 const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', one: 'off' };
@@ -43,9 +45,9 @@ export function shareMessage(track: { title: string; artist: string }): string {
 }
 
 /**
- * The wide layout's floating player: an 820px pill docked at the bottom of the content pane (right
- * of the sidebar). Left: cover, title/artist, like. Centre: shuffle, previous, play/pause, next,
- * repeat over a scrubber with elapsed/total time. Right: share and volume. Clicking the track area
+ * The wide layout's floating player: an 820px pill docked at the bottom of the content pane (between
+ * the sidebar and the Queue sidebar). Left: cover, title/artist, like. Centre: shuffle, previous, play/pause, next,
+ * repeat over a scrubber with elapsed/total time. Right: share, the Queue sidebar toggle and volume. Clicking the track area
  * opens Now Playing. Hidden when nothing is playing or Now Playing is open.
  */
 export function WidePlayer() {
@@ -60,6 +62,9 @@ export function WidePlayer() {
   const openNowPlaying = usePlayerUiStore((state) => state.openNowPlaying);
   const status = usePlaybackStatusStore((state) => state.status);
   const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
+  const queueSidebarCollapsed = useQueueSidebarStore((state) => state.collapsed);
+  const toggleQueueSidebar = useQueueSidebarStore((state) => state.toggle);
+  const queueSidebarWidth = useQueueSidebarWidth();
   const progress = useProgress();
 
   if (!currentTrack || nowPlayingOpen) return null;
@@ -75,7 +80,7 @@ export function WidePlayer() {
   };
 
   return (
-    <View style={[styles.container, { bottom: insets.bottom + WidePlayerOffset }]}>
+    <View style={[styles.container, { bottom: insets.bottom + WidePlayerOffset, right: queueSidebarWidth }]}>
       <ThemedView type="tint" style={[styles.pill, { shadowColor: theme.shadow }]}>
         <View style={styles.left}>
           <Pressable
@@ -144,6 +149,12 @@ export function WidePlayer() {
             label="Share"
             onPress={share}
           />
+          <SkipButton
+            name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }}
+            label={queueSidebarCollapsed ? 'Show Queue' : 'Hide Queue'}
+            selected={!queueSidebarCollapsed}
+            onPress={toggleQueueSidebar}
+          />
           <VolumeSlider volume={volume} onChange={PlaybackController.setVolume} />
         </View>
       </ThemedView>
@@ -156,7 +167,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     // Inside the content pane: clear of the sidebar, centred in what is left.
     left: SidebarWidth,
-    right: 0,
     paddingHorizontal: Spacing.four,
     alignItems: 'center',
     // Spans the pane so the pill can centre; only the pill itself takes touches.

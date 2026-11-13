@@ -14,7 +14,7 @@ import { VolumeSlider } from '@/components/VolumeSlider';
 import { Colors, MaxContentWidth, PlayerSurface, Radius, Spacing } from '@/constants/theme';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
-import { ClearQueueButton, QueueList } from '@/features/player/components/QueueScreen';
+import { QueuePanel } from '@/features/player/components/QueuePanel';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
@@ -264,15 +264,7 @@ export function NowPlayingScreen() {
 
             {wide && (
               <View style={styles.queuePanel}>
-                <View style={styles.panelHeader}>
-                  <ThemedText type="smallBold" style={styles.panelTitle}>
-                    Queue
-                  </ThemedText>
-                  <ClearQueueButton color={PlayerSurface.textSecondary} />
-                </View>
-                <View style={styles.fill}>
-                  <QueueList palette={QUEUE_PANEL_PALETTE} />
-                </View>
+                <QueuePanel palette={QUEUE_PANEL_PALETTE} />
                 <View style={styles.panelVolume}>
                   <VolumeSlider volume={volume} onChange={PlaybackController.setVolume} />
                 </View>
@@ -350,16 +342,6 @@ const styles = StyleSheet.create({
   queuePanel: {
     width: 300,
     backgroundColor: PlayerSurface.panel,
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingRight: Spacing.three,
-  },
-  panelTitle: {
-    color: PlayerSurface.text,
-    padding: Spacing.three,
   },
   panelVolume: {
     padding: Spacing.three,

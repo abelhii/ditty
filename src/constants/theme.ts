@@ -155,6 +155,9 @@ export const MaxContentWidth = 800;
 export const WideLayoutMinWidth = 900;
 /** Width of the wide layout's left sidebar. */
 export const SidebarWidth = 216;
+/** Width of the wide layout's right-hand Queue sidebar, expanded and collapsed to its rail. */
+export const QueueSidebarWidth = 280;
+export const QueueRailWidth = 72;
 /** Side padding of the content pane in the wide layout. */
 export const WideContentPadding = Spacing.five;
 /** Width of the wide layout's floating player pill. */

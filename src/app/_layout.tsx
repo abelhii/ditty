@@ -3,7 +3,7 @@ import { Figtree_400Regular, Figtree_700Bold, useFonts } from '@expo-google-font
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { Appearance, Platform } from 'react-native';
+import { Appearance, Platform, StyleSheet, View } from 'react-native';
 
 import { persistOptions, queryClient } from '@/api/query-client';
 import { prefetchLibrary } from '@/api/prefetch-library';
@@ -19,6 +19,7 @@ import { WidePlayer } from '@/components/WidePlayer';
 import { hydrateDownloads, startDownloadSync } from '@/features/downloads/downloads-runtime';
 import { startOfflineWatcher } from '@/features/downloads/offline-watcher';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
+import { QueueSidebar } from '@/features/player/components/QueueSidebar';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
@@ -71,7 +72,12 @@ export default function TabLayout() {
         {status === 'hydrating' && <ThemedView style={{ flex: 1 }} />}
         {status === 'authenticated' && (
           <>
-            <AppTabs />
+            <View style={styles.shell}>
+              <View style={styles.pane}>
+                <AppTabs />
+              </View>
+              <QueueSidebar />
+            </View>
             {wide ? <WidePlayer /> : <MiniPlayer />}
             <NowPlayingScreen />
             <QueueScreen />
@@ -87,3 +93,10 @@ export default function TabLayout() {
     </PersistQueryClientProvider>
   );
 }
+
+// Content pane and the wide layout's right-hand Queue sidebar side by side. The sidebar renders
+// nothing on narrow layouts, leaving the pane as the whole screen.
+const styles = StyleSheet.create({
+  shell: { flex: 1, flexDirection: 'row' },
+  pane: { flex: 1, minWidth: 0 },
+});
