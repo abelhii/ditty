@@ -182,6 +182,29 @@ export type GetSimilarSongs2Response = {
   similarSongs2: { song?: SubsonicSong[] };
 };
 
+/** One lyric line. `start` is milliseconds from the track start, present only on synced lyrics. */
+export type SubsonicLyricLine = {
+  start?: number;
+  value?: string;
+};
+
+/** One set of lyrics for a song (OpenSubsonic `songLyrics`). A song can carry several, e.g. other languages. */
+export type SubsonicStructuredLyrics = {
+  lang?: string;
+  /** Milliseconds. Positive means the lyrics appear sooner, negative later. Absent means 0. */
+  offset?: number;
+  synced?: boolean;
+  line?: SubsonicLyricLine[];
+};
+
+export type GetLyricsBySongIdResponse = {
+  lyricsList?: { structuredLyrics?: SubsonicStructuredLyrics[] };
+};
+
+export type GetOpenSubsonicExtensionsResponse = {
+  openSubsonicExtensions?: { name: string; versions?: number[] }[];
+};
+
 export type GetStarred2Response = {
   starred2: {
     artist?: SubsonicArtist[];

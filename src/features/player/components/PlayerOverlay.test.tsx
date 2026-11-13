@@ -20,6 +20,7 @@ jest.mock('@/api/kv-storage', () => ({
 }));
 // Both need React Query; neither matters here.
 jest.mock('@/components/FavouriteButton', () => ({ FavouriteButton: () => null }));
+jest.mock('@/features/player/hooks/use-lyrics', () => ({ useLyricsSupported: () => false }));
 jest.mock('@/features/playlists/components/AddToPlaylistSheet', () => ({
   AddToPlaylistSheet: () => null,
 }));

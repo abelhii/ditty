@@ -1,4 +1,4 @@
-import type { Album, Artist, ArtistSection, Genre, Playlist, Track } from '@/api/types';
+import type { Album, Artist, ArtistSection, Genre, Lyrics, Playlist, Track } from '@/api/types';
 import type {
   SubsonicAlbum,
   SubsonicArtist,
@@ -6,6 +6,7 @@ import type {
   SubsonicIndex,
   SubsonicPlaylist,
   SubsonicSong,
+  SubsonicStructuredLyrics,
 } from '@/api/subsonic/types';
 
 export function normalizeArtist(raw: SubsonicArtist): Artist {
@@ -89,4 +90,26 @@ export function normalizePlaylist(raw: SubsonicPlaylist): Playlist {
     coverArtId: raw.coverArt,
     created: raw.created,
   };
+}
+
+/**
+ * Picks the lyrics to show from a song's `structuredLyrics` and normalizes them, or returns null
+ * when there is nothing to show. Prefers synced lyrics, then the server's own order (so the first
+ * language wins). Lyrics count as synced only when every line has a start time; a half-timed set
+ * can't be followed, so it is shown as plain text. A set whose lines are all blank is skipped.
+ */
+export function normalizeLyrics(list: SubsonicStructuredLyrics[] | undefined): Lyrics | null {
+  const usable = (list ?? []).filter((entry) => (entry.line ?? []).some((line) => line.value?.trim()));
+  const entry = usable.find((candidate) => candidate.synced) ?? usable[0];
+  if (!entry) return null;
+
+  const rawLines = entry.line ?? [];
+  const synced =
+    entry.synced === true && rawLines.every((line) => typeof line.start === 'number' && Number.isFinite(line.start));
+  const lines = rawLines.map((line) => ({
+    text: line.value ?? '',
+    ...(synced ? { startMs: line.start } : {}),
+  }));
+
+  return { synced, offsetMs: synced && Number.isFinite(entry.offset) ? (entry.offset as number) : 0, lines };
 }

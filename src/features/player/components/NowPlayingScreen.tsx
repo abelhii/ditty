@@ -14,9 +14,10 @@ import { VolumeSlider } from '@/components/VolumeSlider';
 import { Colors, MaxContentWidth, PlayerSurface, Radius, Spacing } from '@/constants/theme';
 import { AddToPlaylistSheet } from '@/features/playlists/components/AddToPlaylistSheet';
 import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
-import { QueuePanel } from '@/features/player/components/QueuePanel';
+import { PlayerSidePanel } from '@/features/player/components/PlayerSidePanel';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
+import { useLyricsSupported } from '@/features/player/hooks/use-lyrics';
 import { shareTrack } from '@/features/player/share-track';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import * as PlaybackController from '@/player/PlaybackController';
@@ -53,6 +54,8 @@ export function NowPlayingScreen() {
   const nowPlayingOpen = usePlayerUiStore((state) => state.nowPlayingOpen);
   const closeNowPlaying = usePlayerUiStore((state) => state.closeNowPlaying);
   const openQueue = usePlayerUiStore((state) => state.openQueue);
+  const openLyrics = usePlayerUiStore((state) => state.openLyrics);
+  const lyricsSupported = useLyricsSupported();
   const credentials = useAuthStore((state) => state.credentials);
 
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
@@ -113,6 +116,7 @@ export function NowPlayingScreen() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       const ui = usePlayerUiStore.getState();
       if (ui.queueOpen) ui.closeQueue();
+      else if (ui.lyricsOpen) ui.closeLyrics();
       else dismiss();
       return true;
     });
@@ -278,6 +282,19 @@ export function NowPlayingScreen() {
                 onPress={() => PlaybackController.setAutoDj(!autoDj)}
               />
 
+              {!wide && lyricsSupported && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Lyrics"
+                  onPress={openLyrics}
+                  style={({ pressed }) => [styles.lyricsPill, pressed && styles.pressed]}>
+                  <Icon name={{ ios: 'quote.bubble', android: 'lyrics', web: 'lyrics' }} size={18} />
+                  <ThemedText type="smallBold" style={styles.title}>
+                    Lyrics
+                  </ThemedText>
+                </Pressable>
+              )}
+
               {!wide && queueLength > 0 && (
                 <Pressable
                   accessibilityRole="button"
@@ -322,7 +339,7 @@ export function NowPlayingScreen() {
 
             {wide && (
               <View style={styles.queuePanel}>
-                <QueuePanel palette={QUEUE_PANEL_PALETTE} />
+                <PlayerSidePanel trackId={currentTrack.id} palette={QUEUE_PANEL_PALETTE} />
                 <View style={styles.panelVolume}>
                   <VolumeSlider volume={volume} onChange={PlaybackController.setVolume} />
                 </View>
@@ -489,6 +506,15 @@ const styles = StyleSheet.create({
     width: '100%',
     padding: Spacing.two,
     borderRadius: Radius.md,
+    backgroundColor: PlayerSurface.panel,
+  },
+  lyricsPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.pill,
     backgroundColor: PlayerSurface.panel,
   },
   upNextArt: {

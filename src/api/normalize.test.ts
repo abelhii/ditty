@@ -4,6 +4,7 @@ import {
   normalizeAlbum,
   normalizeArtist,
   normalizeGenre,
+  normalizeLyrics,
   normalizePlaylist,
   normalizeTrack,
 } from '@/api/normalize';
@@ -210,5 +211,55 @@ describe('normalizePlaylist', () => {
 
   it('defaults isPublic to false when missing', () => {
     expect(normalizePlaylist({ id: 'pl1', name: 'Random', songCount: 0, duration: 0 }).isPublic).toBe(false);
+  });
+});
+
+describe('normalizeLyrics', () => {
+  it('normalizes unsynced lyrics without timing', () => {
+    expect(normalizeLyrics([{ synced: false, line: [{ value: 'a' }, { value: 'b' }] }])).toEqual({
+      synced: false,
+      offsetMs: 0,
+      lines: [{ text: 'a' }, { text: 'b' }],
+    });
+  });
+
+  it('keeps start times and the offset for synced lyrics', () => {
+    expect(
+      normalizeLyrics([{ synced: true, offset: 250, line: [{ start: 0, value: 'a' }, { start: 900, value: 'b' }] }]),
+    ).toEqual({
+      synced: true,
+      offsetMs: 250,
+      lines: [
+        { text: 'a', startMs: 0 },
+        { text: 'b', startMs: 900 },
+      ],
+    });
+  });
+
+  it('returns null for undefined, empty, or all-blank lyrics', () => {
+    expect(normalizeLyrics(undefined)).toBeNull();
+    expect(normalizeLyrics([])).toBeNull();
+    expect(normalizeLyrics([{ synced: true, line: [] }])).toBeNull();
+    expect(normalizeLyrics([{ synced: false, line: [{ value: '  ' }, {}] }])).toBeNull();
+    expect(normalizeLyrics([{ synced: false }])).toBeNull();
+  });
+
+  it('prefers synced lyrics over an earlier unsynced set', () => {
+    const result = normalizeLyrics([
+      { synced: false, line: [{ value: 'plain' }] },
+      { synced: true, line: [{ start: 0, value: 'timed' }] },
+    ]);
+    expect(result?.synced).toBe(true);
+    expect(result?.lines[0].text).toBe('timed');
+  });
+
+  it('falls back to plain text when a synced set has a line without a start', () => {
+    const result = normalizeLyrics([{ synced: true, offset: 100, line: [{ start: 0, value: 'a' }, { value: 'b' }] }]);
+    expect(result).toEqual({ synced: false, offsetMs: 0, lines: [{ text: 'a' }, { text: 'b' }] });
+  });
+
+  it('keeps blank lines as gaps and defaults a missing value to empty', () => {
+    const result = normalizeLyrics([{ synced: false, line: [{ value: 'a' }, { value: '' }, {}, { value: 'b' }] }]);
+    expect(result?.lines.map((line) => line.text)).toEqual(['a', '', '', 'b']);
   });
 });

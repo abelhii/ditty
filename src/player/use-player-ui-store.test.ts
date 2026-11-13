@@ -15,10 +15,19 @@ function track(id: string): Track {
 
 beforeEach(() => {
   usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')], 1));
-  usePlayerUiStore.setState({ nowPlayingOpen: false, queueOpen: false });
+  usePlayerUiStore.setState({ nowPlayingOpen: false, queueOpen: false, lyricsOpen: false });
 });
 
 describe('usePlayerUiStore', () => {
+  it('closes the Lyrics view along with the full player', () => {
+    usePlayerUiStore.getState().openNowPlaying();
+    usePlayerUiStore.getState().openLyrics();
+    expect(usePlayerUiStore.getState().lyricsOpen).toBe(true);
+
+    usePlayerUiStore.getState().closeNowPlaying();
+    expect(usePlayerUiStore.getState()).toMatchObject({ nowPlayingOpen: false, lyricsOpen: false });
+  });
+
   it('closes the full player and the Queue when the Queue runs out', () => {
     usePlayerUiStore.getState().openNowPlaying();
     usePlayerUiStore.getState().openQueue();

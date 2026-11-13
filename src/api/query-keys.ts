@@ -21,4 +21,8 @@ export const queryKeys = {
   /** Search results are keyed by query string. The `'search'` root key is also what
    *  query-client.ts's dehydrate filter matches to keep search out of the persisted cache. */
   search: (query: string) => ['search', query] as const,
+  /** The OpenSubsonic extensions the server advertises (gates the Lyrics UI). */
+  serverExtensions: () => ['serverExtensions'] as const,
+  /** A Track's lyrics. The `'lyrics'` root key is excluded from persistence (query-client.ts). */
+  lyrics: (trackId: string) => ['lyrics', trackId] as const,
 };

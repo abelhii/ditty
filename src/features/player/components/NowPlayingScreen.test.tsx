@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { BackHandler, Share } from 'react-native';
 
 import type { Track } from '@/api/types';
+import { useLyricsSupported } from '@/features/player/hooks/use-lyrics';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { useNoticeStore } from '@/components/use-notice-store';
 import { createQueueState } from '@/player/QueueManager';
@@ -25,6 +26,8 @@ jest.mock('@/features/playlists/components/AddToPlaylistSheet', () => ({
   AddToPlaylistSheet: () => null,
 }));
 
+jest.mock('@/features/player/hooks/use-lyrics', () => ({ useLyricsSupported: jest.fn() }));
+
 function track(id: string): Track {
   return { id, title: `Track ${id}`, artist: 'Artist', album: 'Album', duration: 180, starred: false };
 }
@@ -40,12 +43,28 @@ function isInScrollView(element: { type: unknown; parent: unknown }): boolean {
 }
 
 beforeEach(() => {
+  jest.mocked(useLyricsSupported).mockReturnValue(false);
+  usePlayerUiStore.setState({ lyricsOpen: false });
   usePlayerStore.getState().setQueue(createQueueState([track('a')]));
   usePlayerUiStore.setState({ nowPlayingOpen: true, queueOpen: false });
   usePlaybackStatusStore.setState({ status: 'paused' });
 });
 
 describe('NowPlayingScreen', () => {
+  it('hides the Lyrics pill when the server does not support lyrics', async () => {
+    await render(<NowPlayingScreen />);
+
+    expect(screen.queryByRole('button', { name: 'Lyrics' })).toBeNull();
+  });
+
+  it('shows a Lyrics pill that opens the Lyrics view when the server supports lyrics', async () => {
+    jest.mocked(useLyricsSupported).mockReturnValue(true);
+    await render(<NowPlayingScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Lyrics' }));
+    expect(usePlayerUiStore.getState().lyricsOpen).toBe(true);
+  });
+
   it('closes on Android back, Queue first when it is open', async () => {
     let pressBack: () => boolean | null | undefined = () => false;
     jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_event, handler) => {
