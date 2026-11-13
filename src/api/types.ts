@@ -58,6 +58,8 @@ export type Album = {
   genre?: string;
   coverArtId?: string;
   starred: boolean;
+  /** ISO timestamp the server added the album, when it reports one. */
+  created?: string;
 };
 
 export type Genre = {

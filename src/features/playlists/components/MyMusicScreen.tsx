@@ -12,6 +12,7 @@ import { AlbumTile } from '@/components/AlbumTile';
 import { ArtistRow } from '@/components/ArtistRow';
 import { CoverArtImage } from '@/components/CoverArtImage';
 import { EmptyMessage } from '@/components/EmptyMessage';
+import { FilterChip } from '@/components/FilterChip';
 import { QueryState } from '@/components/QueryState';
 import { TextPromptModal } from '@/components/TextPromptModal';
 import { ThemedText } from '@/components/ThemedText';
@@ -190,32 +191,6 @@ export function MyMusicScreen({ basePath = '/my-music' }: MyMusicScreenProps) {
   );
 }
 
-type FilterChipProps = {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-};
-
-function FilterChip({ label, active, onPress }: FilterChipProps) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      style={[
-        styles.chip,
-        active
-          ? { backgroundColor: theme.accent }
-          : { borderWidth: 1, borderColor: theme.border },
-      ]}
-      onPress={onPress}>
-      <ThemedText type="smallBold" style={active ? { color: theme.onAccent } : { color: theme.textSecondary }}>
-        {label}
-      </ThemedText>
-    </Pressable>
-  );
-}
-
 const THUMBNAIL_SIZE = 48;
 
 const styles = StyleSheet.create({
@@ -258,11 +233,6 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.three,
-  },
-  chip: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderRadius: Radius.pill,
   },
   row: {
     flexDirection: 'row',
