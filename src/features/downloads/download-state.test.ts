@@ -1,4 +1,4 @@
-import { collectionDownloadState, trackDownloadState } from '@/features/downloads/download-state';
+import { collectionDownloadState, rowDownloadState, trackDownloadState } from '@/features/downloads/download-state';
 
 describe('trackDownloadState', () => {
   it('is idle for an unknown track', () => {
@@ -52,5 +52,29 @@ describe('collectionDownloadState', () => {
       c: { status: 'downloading' as const, progress: 0.2 },
     };
     expect(collectionDownloadState(items, {}, ['b', 'c']).kind).toBe('downloading');
+  });
+});
+
+describe('rowDownloadState', () => {
+  it('is idle when the collection was never requested', () => {
+    expect(rowDownloadState({}, {}, [])).toEqual({ kind: 'idle', progress: 0 });
+  });
+
+  it('is downloaded when every requested Track is on the device', () => {
+    expect(rowDownloadState({}, { a: true, b: true }, ['a', 'b']).kind).toBe('downloaded');
+  });
+
+  it('is partial when some requested Tracks are missing and nothing is running', () => {
+    expect(rowDownloadState({}, { a: true }, ['a', 'b']).kind).toBe('partial');
+  });
+
+  it('reports overall progress while downloading', () => {
+    const items = { b: { status: 'downloading' as const, progress: 0.5 } };
+    expect(rowDownloadState(items, { a: true }, ['a', 'b'])).toEqual({ kind: 'downloading', progress: 0.75 });
+  });
+
+  it('reports failed when nothing is running and nothing finished', () => {
+    const items = { a: { status: 'failed' as const, progress: 0 } };
+    expect(rowDownloadState(items, {}, ['a']).kind).toBe('failed');
   });
 });

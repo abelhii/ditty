@@ -174,6 +174,12 @@ export function removeCollectionDownload(
   deleteRecords(server, releaseCollection(server, kind, collectionId));
 }
 
+/** Ids of the Tracks a downloaded Album/Playlist has asked for (empty when never downloaded). */
+export function getCollectionTrackIds(kind: CollectionKind, collectionId: string): string[] {
+  const server = currentServer();
+  return server ? listCollectionTrackIds(server, kind, collectionId) : [];
+}
+
 /** An album rebuilt from downloaded tracks (see `albumFromDownloads`), or null. */
 export function getDownloadedAlbum(albumId: string) {
   const server = currentServer();

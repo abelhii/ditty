@@ -50,3 +50,23 @@ export function collectionDownloadState(
   if (failed > 0) return { kind: 'failed', progress: 0 };
   return { kind: 'idle', progress: 0 };
 }
+
+export type RowDownloadStateKind = DownloadStateKind | 'partial';
+
+export type RowDownloadStateView = { kind: RowDownloadStateKind; progress: number };
+
+/**
+ * The state a My Music row shows for a Playlist or Album from the Tracks the collection has asked
+ * for (`memberIds`, from the downloads DB). `partial` is some Tracks on the device but not all, with
+ * nothing running. Deliberately not judged against the server's `songCount`: when that count and
+ * the returned Track list disagree, the row would stay `partial` and "Finish" could never clear it.
+ */
+export function rowDownloadState(
+  items: Items,
+  downloadedIds: DownloadedIds,
+  memberIds: string[],
+): RowDownloadStateView {
+  const state = collectionDownloadState(items, downloadedIds, memberIds);
+  if (state.kind === 'idle' && memberIds.some((id) => downloadedIds[id])) return { kind: 'partial', progress: 0 };
+  return state;
+}
