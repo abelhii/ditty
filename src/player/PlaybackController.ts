@@ -33,9 +33,10 @@ function isPlayableNow(track: Track): boolean {
 
 /** Replaces the queue and starts playback at `startIndex` — or at the next downloaded Track when
  *  Offline mode is on and the requested one isn't. If Offline mode is on and nothing from
- *  `startIndex` onward is downloaded, the existing Queue is left untouched and a Notice explains why. */
-export function play(tracks: Track[], startIndex = 0): void {
-  let queue = QueueManager.createQueueState(tracks, startIndex);
+ *  `startIndex` onward is downloaded, the existing Queue is left untouched and a Notice explains why.
+ *  `source` names what the Queue was seeded from (a Playlist or album name) for the Queue's sections. */
+export function play(tracks: Track[], startIndex = 0, source?: string): void {
+  let queue = QueueManager.createQueueState(tracks, startIndex, source);
   const start = QueueManager.getCurrentTrack(queue);
   if (start && !isPlayableNow(start)) {
     queue = stepToPlayable(queue, QueueManager.next, isPlayableNow);
@@ -52,14 +53,14 @@ export function play(tracks: Track[], startIndex = 0): void {
  *  collection is queued, the rest follow in shuffled order. In Offline mode the start is drawn only
  *  from downloaded Tracks; if there are none, `play` leaves the Queue untouched and shows its Notice.
  *  An empty list does nothing. `random` is injectable for tests. */
-export function playShuffled(tracks: Track[], random: () => number = Math.random): void {
+export function playShuffled(tracks: Track[], source?: string, random: () => number = Math.random): void {
   if (tracks.length === 0) return;
   const playable = tracks.flatMap((track, index) => (isPlayableNow(track) ? [index] : []));
   if (playable.length === 0) {
-    play(tracks, 0);
+    play(tracks, 0, source);
     return;
   }
-  play(tracks, playable[Math.floor(random() * playable.length)]);
+  play(tracks, playable[Math.floor(random() * playable.length)], source);
   usePlayerStore.setState({ queue: QueueManager.setShuffle(currentQueue(), true, random) });
 }
 
@@ -83,7 +84,7 @@ export async function playNow(track: Track): Promise<void> {
     0,
     tracks.findIndex((t) => t.id === track.id),
   );
-  play(tracks, startIndex);
+  play(tracks, startIndex, tracks.length > 1 ? track.album : undefined);
 }
 
 /** The tapped song's album tracks, or just the song itself if there's no album id or the fetch
@@ -193,6 +194,15 @@ export function removeFromQueue(index: number): void {
   });
 }
 
+/** Stops playback and empties the Queue (shuffle and repeat keep their setting). */
+export function clearQueue(): void {
+  usePlayerStore.setState({
+    queue: QueueManager.clear(currentQueue()),
+    desiredPlaying: false,
+    seekRequest: null,
+  });
+}
+
 export function reorderQueue(fromIndex: number, toIndex: number): void {
   usePlayerStore.setState({ queue: QueueManager.reorder(currentQueue(), fromIndex, toIndex) });
 }
@@ -276,7 +286,7 @@ async function autoDjRefill(): Promise<void> {
 
     const wasFinished = queue.currentIndex >= queue.tracks.length;
     const firstNewIndex = queue.tracks.length;
-    for (const track of batch) queue = QueueManager.enqueue(queue, track);
+    for (const track of batch) queue = QueueManager.append(queue, track);
     useAutoDjStore.getState().remember(batch.map((t) => t.id));
     usePlayerStore.setState(
       wasFinished

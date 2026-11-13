@@ -80,7 +80,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                           accessibilityLabel="Play album"
                           accessibilityHint={canPlay ? undefined : "Nothing in this album is downloaded"}
                           style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
-                          onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
+                          onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0, album.name)}>
                           <ThemedView style={[styles.playButtonInner, { backgroundColor: theme.accent }]}>
                             <ThemedText type="smallBold" style={{ color: theme.onAccent }}>Play</ThemedText>
                           </ThemedView>
@@ -90,7 +90,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                           accessibilityLabel="Shuffle album"
                           accessibilityHint={canPlay ? undefined : "Nothing in this album is downloaded"}
                           style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
-                          onPress={() => tracks.length > 0 && PlaybackController.playShuffled(tracks)}>
+                          onPress={() => tracks.length > 0 && PlaybackController.playShuffled(tracks, album.name)}>
                           <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
                             <ThemedText type="smallBold">Shuffle</ThemedText>
                           </ThemedView>
@@ -104,7 +104,7 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                     <TrackRow
                       track={item}
                       position={index + 1}
-                      onPress={() => PlaybackController.play(tracks, index)}
+                      onPress={() => PlaybackController.play(tracks, index, album.name)}
                       onOverflowPress={() => setMenuTrack(item)}
                     />
                   )}

@@ -7,10 +7,12 @@ import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
 import type { Track } from '@/api/types';
 import { useAuthStore } from '@/auth/use-auth-store';
 import { CoverArtImage } from '@/components/CoverArtImage';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
+import { dropTarget, layoutQueueItems, shiftFor, type QueueRowSection } from '@/features/player/queue-sections';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
@@ -18,6 +20,7 @@ import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 const ROW_HEIGHT = 64;
+const HEADING_HEIGHT = 40;
 const REMOVE_THRESHOLD = 80;
 
 /**
@@ -55,7 +58,9 @@ export function QueueScreen() {
               />
             </Pressable>
             <ThemedText type="smallBold">Queue</ThemedText>
-            <View style={styles.headerButton} />
+            <View style={[styles.headerButton, styles.headerEnd]}>
+              <ClearQueueButton color={theme.textSecondary} />
+            </View>
           </View>
 
           <QueueList />
@@ -78,6 +83,44 @@ type QueueListProps = {
   palette?: QueueListPalette;
 };
 
+type ClearQueueButtonProps = {
+  color: string;
+};
+
+/** "Clear queue": confirms, then stops playback and empties the Queue. Absent when the Queue is
+ *  already empty. Shared by the Queue overlay's header and the wide player's panel. */
+export function ClearQueueButton({ color }: ClearQueueButtonProps) {
+  const hasTracks = usePlayerStore((state) => state.queue.tracks.length > 0);
+  const [confirming, setConfirming] = useState(false);
+
+  if (!hasTracks) return null;
+
+  return (
+    <>
+      <Pressable
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel="Clear queue"
+        onPress={() => setConfirming(true)}>
+        <ThemedText type="small" style={{ color }}>
+          Clear queue
+        </ThemedText>
+      </Pressable>
+      <ConfirmModal
+        visible={confirming}
+        title="Clear queue?"
+        message="Playback will stop and every Track will be removed from the Queue."
+        confirmLabel="Clear"
+        onConfirm={() => {
+          setConfirming(false);
+          PlaybackController.clearQueue();
+        }}
+        onCancel={() => setConfirming(false)}
+      />
+    </>
+  );
+}
+
 /** The reorderable list of Queue tracks, shared by the Queue overlay and the wide player's panel. */
 export function QueueList({ palette }: QueueListProps) {
   const insets = useSafeAreaInsets();
@@ -91,7 +134,9 @@ export function QueueList({ palette }: QueueListProps) {
   const credentials = useAuthStore((state) => state.credentials);
 
   const queue = usePlayerStore((state) => state.queue);
-  const { tracks, currentIndex } = queue;
+  const { tracks } = queue;
+
+  const { placed, tops, contentHeight } = useMemo(() => layoutQueueItems(queue, ROW_HEIGHT, HEADING_HEIGHT), [queue]);
 
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState(0);
@@ -111,16 +156,13 @@ export function QueueList({ palette }: QueueListProps) {
   const onDragMove = useCallback(
     (index: number, dy: number) => {
       dragY.setValue(dy);
-      const target = Math.min(
-        tracks.length - 1,
-        Math.max(0, index + Math.round(dy / ROW_HEIGHT)),
-      );
+      const target = dropTarget(tops, index, dy);
       if (target !== hoverRef.current) {
         hoverRef.current = target;
         setHoverIndex(target);
       }
     },
-    [dragY, tracks.length],
+    [dragY, tops],
   );
 
   const onDragEnd = useCallback(
@@ -144,52 +186,58 @@ export function QueueList({ palette }: QueueListProps) {
     <ScrollView
       scrollEnabled={draggingIndex === null}
       contentContainerStyle={{
-        height: tracks.length * ROW_HEIGHT + insets.bottom + Spacing.four,
+        height: contentHeight + insets.bottom + Spacing.four,
       }}>
-      {tracks.map((track, index) => (
-        <QueueRow
-          key={`${track.id}-${index}`}
-          track={track}
-          index={index}
-          colors={colors}
-          coverArtUri={
-            (credentials &&
-              getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)) ||
-            undefined
-          }
-          isCurrent={index === currentIndex}
-          isPlayed={index < currentIndex}
-          isDragging={index === draggingIndex}
-          shift={shiftFor(index, draggingIndex, hoverIndex)}
-          dragY={dragY}
-          onJump={onJump}
-          onRemove={onRemove}
-          onMove={onMove}
-          lastIndex={tracks.length - 1}
-          onDragStart={onDragStart}
-          onDragMove={onDragMove}
-          onDragEnd={onDragEnd}
-        />
-      ))}
+      {placed.map(({ item, top }) => {
+        if (item.type === 'heading') {
+          return (
+            <View key={item.key} style={[styles.heading, { top }]}>
+              <ThemedText type="smallBold" accessibilityRole="header" style={{ color: colors.textSecondary }}>
+                {item.title}
+              </ThemedText>
+            </View>
+          );
+        }
+        const { index } = item;
+        const track = tracks[index];
+        return (
+          <QueueRow
+            key={`${track.id}-${index}`}
+            track={track}
+            index={index}
+            top={top}
+            colors={colors}
+            coverArtUri={
+              (credentials &&
+                getCoverArtUrl(credentials.serverUrl, track.coverArtId, credentials, CoverArtSize.list)) ||
+              undefined
+            }
+            section={item.section}
+            isDragging={index === draggingIndex}
+            shift={shiftFor(tops, index, draggingIndex, hoverIndex)}
+            dragY={dragY}
+            onJump={onJump}
+            onRemove={onRemove}
+            onMove={onMove}
+            lastIndex={tracks.length - 1}
+            onDragStart={onDragStart}
+            onDragMove={onDragMove}
+            onDragEnd={onDragEnd}
+          />
+        );
+      })}
     </ScrollView>
   );
-}
-
-/** How far a non-dragged row shifts to open a gap at the drag target. */
-function shiftFor(index: number, from: number | null, to: number): number {
-  if (from === null || index === from) return 0;
-  if (from < to && index > from && index <= to) return -ROW_HEIGHT;
-  if (from > to && index < from && index >= to) return ROW_HEIGHT;
-  return 0;
 }
 
 type QueueRowProps = {
   track: Track;
   index: number;
+  /** Distance from the top of the list, which includes the section headings above this row. */
+  top: number;
   colors: QueueListPalette;
   coverArtUri?: string;
-  isCurrent: boolean;
-  isPlayed: boolean;
+  section: QueueRowSection;
   isDragging: boolean;
   shift: number;
   dragY: Animated.Value;
@@ -205,10 +253,10 @@ type QueueRowProps = {
 function QueueRow({
   track,
   index,
+  top,
   colors,
   coverArtUri,
-  isCurrent,
-  isPlayed,
+  section,
   isDragging,
   shift,
   dragY,
@@ -220,6 +268,8 @@ function QueueRow({
   onDragMove,
   onDragEnd,
 }: QueueRowProps) {
+  const isCurrent = section === 'nowPlaying';
+  const isPlayed = section === 'played';
   const [translateX] = useState(() => new Animated.Value(0));
 
   const swipe = useMemo(
@@ -268,7 +318,7 @@ function QueueRow({
       style={[
         styles.row,
         {
-          top: index * ROW_HEIGHT,
+          top,
           zIndex: isDragging ? 10 : 0,
           transform: [{ translateY: isDragging ? dragY : shift }],
         },
@@ -317,6 +367,11 @@ function QueueRow({
               {track.artist}
             </ThemedText>
           </View>
+          {section === 'userAdded' && (
+            <ThemedText type="small" numberOfLines={1} style={{ color: colors.textSecondary }}>
+              Added by you
+            </ThemedText>
+          )}
         </Pressable>
       </Animated.View>
 
@@ -355,7 +410,20 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.two,
   },
   headerButton: {
-    width: 40,
+    width: 96,
+    alignItems: 'flex-start',
+  },
+  headerEnd: {
+    alignItems: 'flex-end',
+  },
+  heading: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: HEADING_HEIGHT,
+    justifyContent: 'flex-end',
+    paddingHorizontal: Spacing.four,
+    paddingBottom: Spacing.one,
   },
   row: {
     position: 'absolute',

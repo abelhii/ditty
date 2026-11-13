@@ -1,5 +1,5 @@
 import type { Track } from '@/api/types';
-import { createQueueState } from '@/player/QueueManager';
+import { createQueueState, enqueue } from '@/player/QueueManager';
 
 // In-memory stand-in for kvStorage so persist has somewhere sync to read/write. `mockStore` is
 // prefixed `mock` so jest.mock's factory is allowed to close over it (module-scope escape rule).
@@ -67,6 +67,38 @@ describe('usePlayerStore persistence', () => {
     expect(state.queue.repeat).toBe('all');
     // Restore is always paused (desiredPlaying not persisted).
     expect(state.desiredPlaying).toBe(false);
+  });
+
+  it('restores a queue persisted by a build that had no source or user-added markers', () => {
+    // The exact shape older builds wrote: no `source`, no `addedByUser` on any entry.
+    seed({
+      tracks,
+      originalOrder: tracks,
+      currentIndex: 1,
+      shuffle: false,
+      repeat: 'off',
+    });
+    const { queue } = loadStore().getState();
+
+    expect(queue.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+    expect(queue.currentIndex).toBe(1);
+    expect(queue.source).toBeUndefined();
+    expect(queue.tracks.some((t) => t.addedByUser)).toBe(false);
+  });
+
+  it('round-trips the source and user-added markers', () => {
+    const store = loadStore();
+    store.getState().setQueue(enqueue(createQueueState(tracks, 0, 'Road Trip'), { ...tracks[0], id: 'x' }));
+
+    const restored = loadStore().getState().queue;
+
+    expect(restored.source).toBe('Road Trip');
+    expect(restored.tracks.map((t) => [t.id, t.addedByUser === true])).toEqual([
+      ['a', false],
+      ['x', true],
+      ['b', false],
+      ['c', false],
+    ]);
   });
 
   it('clamps a queue that finished last session back to its first track', () => {

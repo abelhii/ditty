@@ -1,5 +1,7 @@
 import type { Track } from '@/api/types';
 import {
+  append,
+  clear,
   createQueueState,
   enqueue,
   getCurrentTrack,
@@ -96,23 +98,71 @@ describe('previous', () => {
 });
 
 describe('enqueue', () => {
-  it('appends to the end without moving currentIndex', () => {
+  it('goes right after the current track when nothing is user-added yet, marked as user-added', () => {
     const state = enqueue(createQueueState(tracks, 1), track('d'));
-    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'b', 'd', 'c']);
+    expect(state.tracks[2].addedByUser).toBe(true);
     expect(state.currentIndex).toBe(1);
+  });
+
+  it('queues behind earlier user-added tracks but ahead of the source tracks', () => {
+    let state = createQueueState(tracks, 0);
+    state = enqueue(state, track('x'));
+    state = enqueue(state, track('y'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'x', 'y', 'b', 'c']);
+  });
+
+  it('goes after a Play next track, which sits at the front of the user-added block', () => {
+    let state = enqueue(createQueueState(tracks, 0), track('x'));
+    state = playNext(state, track('y'));
+    state = enqueue(state, track('z'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'y', 'x', 'z', 'b', 'c']);
   });
 
   it('starts playback when enqueued onto an empty queue', () => {
     const state = enqueue(createQueueState([]), track('a'));
     expect(state.currentIndex).toBe(0);
+    expect(state.tracks.map((t) => t.id)).toEqual(['a']);
+  });
+
+  it('does not mutate the Track it was given', () => {
+    const t = track('d');
+    enqueue(createQueueState(tracks, 0), t);
+    expect('addedByUser' in t).toBe(false);
+  });
+
+  it('records the same entry in originalOrder', () => {
+    const state = enqueue(createQueueState(tracks, 0), track('d'));
+    expect(state.originalOrder.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(state.originalOrder[3]).toBe(state.tracks[1]);
+  });
+});
+
+describe('append', () => {
+  it('adds to the very end without marking the track as user-added', () => {
+    const state = append(createQueueState(tracks, 1), track('d'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(state.tracks[3].addedByUser).toBeUndefined();
+    expect(state.currentIndex).toBe(1);
+  });
+
+  it('starts playback when appended onto an empty queue', () => {
+    expect(append(createQueueState([]), track('a')).currentIndex).toBe(0);
   });
 });
 
 describe('playNext', () => {
-  it('inserts immediately after currentIndex', () => {
+  it('inserts immediately after currentIndex, marked as user-added', () => {
     const state = playNext(createQueueState(tracks, 0), track('d'));
     expect(state.tracks.map((t) => t.id)).toEqual(['a', 'd', 'b', 'c']);
+    expect(state.tracks[1].addedByUser).toBe(true);
     expect(state.currentIndex).toBe(0);
+  });
+
+  it('puts the newest Play next ahead of earlier user-added tracks', () => {
+    let state = enqueue(createQueueState(tracks, 0), track('x'));
+    state = playNext(state, track('y'));
+    expect(state.tracks.map((t) => t.id)).toEqual(['a', 'y', 'x', 'b', 'c']);
   });
 
   it('inserts at the front of an empty queue', () => {
@@ -308,5 +358,219 @@ describe('insertAt', () => {
     const restored = insertAt(empty, tracks[0], 5);
     expect(restored.tracks).toEqual([tracks[0]]);
     expect(restored.currentIndex).toBe(0);
+  });
+});
+
+type State = ReturnType<typeof createQueueState>;
+const ids = (state: State) => state.tracks.map((t) => t.id);
+const marked = (state: State) => state.tracks.filter((t) => t.addedByUser).map((t) => t.id);
+
+describe('source', () => {
+  it('is stored by createQueueState and survives other operations', () => {
+    let state = createQueueState(tracks, 0, 'Road Trip');
+    expect(state.source).toBe('Road Trip');
+    state = enqueue(next(setShuffle(setRepeat(state, 'all'), true, () => 0.3)), track('d'));
+    expect(state.source).toBe('Road Trip');
+  });
+
+  it('is absent when none is given', () => {
+    expect('source' in createQueueState(tracks)).toBe(false);
+  });
+});
+
+describe('user-added marker', () => {
+  it('clears when playback reaches the entry via next', () => {
+    const state = next(playNext(createQueueState(tracks, 0), track('x')));
+    expect(getCurrentTrack(state)?.id).toBe('x');
+    expect(marked(state)).toEqual([]);
+    expect(state.originalOrder.some((t) => t.addedByUser)).toBe(false);
+  });
+
+  it('clears on every entry skipped over by jumpTo', () => {
+    let state = enqueue(createQueueState(tracks, 0), track('x'));
+    state = enqueue(state, track('y'));
+    state = jumpTo(state, 3);
+    expect(getCurrentTrack(state)?.id).toBe('b');
+    expect(marked(state)).toEqual([]);
+  });
+
+  it('clears when the finished queue runs off the end', () => {
+    let state = enqueue(createQueueState(tracks, 2), track('x'));
+    state = next(next(state));
+    expect(state.currentIndex).toBe(state.tracks.length);
+    expect(marked(state)).toEqual([]);
+  });
+
+  it('keeps markers on entries that are still ahead', () => {
+    let state = enqueue(createQueueState(tracks, 0), track('x'));
+    state = enqueue(state, track('y'));
+    state = next(state);
+    expect(marked(state)).toEqual(['y']);
+  });
+
+  it('clears when removing the current track makes a user-added entry current', () => {
+    const state = removeAt(playNext(createQueueState(tracks, 0), track('x')), 0);
+    expect(getCurrentTrack(state)?.id).toBe('x');
+    expect(marked(state)).toEqual([]);
+  });
+
+  it('does not mark playNow, whose track is current immediately', () => {
+    expect(marked(playNow(createQueueState(tracks, 1), track('x')))).toEqual([]);
+  });
+
+  it('Undo restores the same entry and order: removeAt then insertAt', () => {
+    const before = enqueue(createQueueState(tracks, 0), track('x'));
+    const removed = before.tracks[1];
+    const after = removeAt(before, 1);
+    const restored = insertAt(after, removed, 1, before.originalOrder.indexOf(removed));
+    expect(restored.tracks).toEqual(before.tracks);
+    expect(restored.originalOrder).toEqual(before.originalOrder);
+    expect(marked(restored)).toEqual(['x']);
+  });
+});
+
+describe('shuffle with user-added entries', () => {
+  it('keeps upcoming user-added entries first, in order, and shuffles only the source tracks', () => {
+    let state = createQueueState([track('a'), track('b'), track('c'), track('d'), track('e')], 0);
+    state = enqueue(state, track('x'));
+    state = enqueue(state, track('y'));
+    const shuffled = setShuffle(state, true, () => 0);
+    expect(ids(shuffled).slice(0, 3)).toEqual(['a', 'x', 'y']);
+    expect(ids(shuffled).slice(3).sort()).toEqual(['b', 'c', 'd', 'e']);
+  });
+
+  it('puts user-added entries ahead of the source tracks when shuffle turns off', () => {
+    let state = createQueueState([track('a'), track('b'), track('c'), track('d')], 0);
+    state = setShuffle(state, true, () => 0.9);
+    state = enqueue(state, track('x'));
+    const off = setShuffle(state, false);
+    expect(ids(off)).toEqual(['a', 'x', 'b', 'c', 'd']);
+    expect(getCurrentTrack(off)?.id).toBe('a');
+  });
+
+  it('turning shuffle off mid-queue keeps the current track and plays the user-added entry next', () => {
+    let state = createQueueState([track('a'), track('b'), track('c'), track('d')], 0);
+    state = playNext(next(state), track('x'));
+    const off = setShuffle(setShuffle(state, true, () => 0.5), false);
+    expect(getCurrentTrack(off)?.id).toBe('b');
+    expect(off.tracks[off.currentIndex + 1].id).toBe('x');
+  });
+});
+
+describe('repeat all', () => {
+  it('wraps to the first track after the last, with no markers left behind', () => {
+    let state = setRepeat(enqueue(createQueueState(tracks, 2), track('x')), 'all');
+    state = next(state);
+    expect(getCurrentTrack(state)?.id).toBe('x');
+    state = next(state);
+    expect(state.currentIndex).toBe(0);
+    expect(marked(state)).toEqual([]);
+  });
+});
+
+describe('reorder across sections', () => {
+  // a (current) | x y (user-added) | b c d (source)
+  function base() {
+    const state = enqueue(createQueueState([track('a'), track('b'), track('c'), track('d')], 0), track('x'));
+    return enqueue(state, track('y'));
+  }
+
+  it('marks a source track dragged into the user-added block', () => {
+    const state = reorder(base(), 4, 2);
+    expect(ids(state)).toEqual(['a', 'x', 'c', 'y', 'b', 'd']);
+    expect(marked(state)).toEqual(['x', 'c', 'y']);
+  });
+
+  it('unmarks a user-added track dragged into the source tracks', () => {
+    const state = reorder(base(), 1, 4);
+    expect(ids(state)).toEqual(['a', 'y', 'b', 'c', 'x', 'd']);
+    expect(marked(state)).toEqual(['y']);
+  });
+
+  it('keeps a user-added track in its section when dropped on the last slot of that section', () => {
+    const state = reorder(base(), 1, 2);
+    expect(ids(state)).toEqual(['a', 'y', 'x', 'b', 'c', 'd']);
+    expect(marked(state)).toEqual(['y', 'x']);
+  });
+
+  it('keeps a source track in its section when dropped on the first slot of that section', () => {
+    const state = reorder(base(), 4, 3);
+    expect(ids(state)).toEqual(['a', 'x', 'y', 'c', 'b', 'd']);
+    expect(marked(state)).toEqual(['x', 'y']);
+  });
+
+  it('re-marks the entry in originalOrder too, so turning shuffle off still groups correctly', () => {
+    const moved = reorder(base(), 4, 1); // c becomes user-added, first
+    expect(ids(moved)).toEqual(['a', 'c', 'x', 'y', 'b', 'd']);
+    expect(marked(moved)).toEqual(['c', 'x', 'y']);
+    expect(
+      moved.originalOrder
+        .filter((t) => t.addedByUser)
+        .map((t) => t.id)
+        .sort(),
+    ).toEqual(['c', 'x', 'y']);
+    const back = setShuffle(setShuffle(moved, true, () => 0), false);
+    expect(ids(back).slice(0, 4)).toEqual(['a', 'c', 'x', 'y']);
+  });
+
+  it('follows the current track when it is dragged, clearing markers it passed over', () => {
+    const state = reorder(base(), 0, 2);
+    expect(ids(state)).toEqual(['x', 'y', 'a', 'b', 'c', 'd']);
+    expect(getCurrentTrack(state)?.id).toBe('a');
+    expect(marked(state)).toEqual([]);
+  });
+
+  it('a played track dropped into the user-added block becomes user-added', () => {
+    const state = enqueue(next(createQueueState([track('a'), track('b'), track('c')], 0)), track('x'));
+    const out = reorder(state, 0, 1); // [a b x c] -> [b a x c]
+    expect(ids(out)).toEqual(['b', 'a', 'x', 'c']);
+    expect(getCurrentTrack(out)?.id).toBe('b');
+    expect(marked(out)).toEqual(['a', 'x']);
+  });
+
+  it('is a no-op out of range', () => {
+    const state = base();
+    expect(reorder(state, 0, 99)).toBe(state);
+  });
+});
+
+describe('clear', () => {
+  it('empties the queue and source but keeps shuffle and repeat', () => {
+    const state = clear(setRepeat(setShuffle(createQueueState(tracks, 1, 'Mix'), true), 'all'));
+    expect(state.tracks).toEqual([]);
+    expect(state.originalOrder).toEqual([]);
+    expect(state.currentIndex).toBe(-1);
+    expect(state.source).toBeUndefined();
+    expect(state.shuffle).toBe(true);
+    expect(state.repeat).toBe('all');
+  });
+
+  it('is fine on an already-empty queue', () => {
+    expect(clear(createQueueState([])).currentIndex).toBe(-1);
+  });
+});
+
+describe('sections stay contiguous when the current position moves back', () => {
+  const ids = (state: State) => state.tracks.map((t) => t.id);
+
+  it('previous keeps user-added entries ahead of the Track just stepped back over', () => {
+    let state = enqueue(createQueueState(tracks, 1), track('x'));
+    state = previous(state);
+    expect(getCurrentTrack(state)?.id).toBe('a');
+    expect(ids(state)).toEqual(['a', 'x', 'b', 'c']);
+    expect(marked(state)).toEqual(['x']);
+  });
+
+  it('jumpTo an earlier Track does the same', () => {
+    let state = enqueue(createQueueState(tracks, 2), track('x'));
+    state = jumpTo(state, 0);
+    expect(ids(state)).toEqual(['a', 'x', 'b', 'c']);
+  });
+
+  it('playNow puts the replaced current Track behind the user-added entries', () => {
+    let state = enqueue(createQueueState(tracks, 0), track('x'));
+    state = playNow(state, track('n'));
+    expect(ids(state)).toEqual(['n', 'x', 'a', 'b', 'c']);
+    expect(marked(state)).toEqual(['x']);
   });
 });

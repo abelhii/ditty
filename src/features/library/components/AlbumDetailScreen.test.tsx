@@ -64,10 +64,10 @@ describe('AlbumDetailScreen header', () => {
     await render(<AlbumDetailScreen albumId="a1" />);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Shuffle album' }));
-    expect(mockPlayShuffled).toHaveBeenCalledWith(tracks);
+    expect(mockPlayShuffled).toHaveBeenCalledWith(tracks, 'Night Drive');
 
     await fireEvent.press(screen.getByRole('button', { name: 'Play album' }));
-    expect(mockPlay).toHaveBeenCalledWith(tracks, 0);
+    expect(mockPlay).toHaveBeenCalledWith(tracks, 0, 'Night Drive');
   });
 
   it('gives Shuffle the same unavailable hint as Play when nothing is playable', async () => {
