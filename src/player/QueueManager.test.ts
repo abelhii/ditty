@@ -549,3 +549,28 @@ describe('clear', () => {
     expect(clear(createQueueState([])).currentIndex).toBe(-1);
   });
 });
+
+describe('sections stay contiguous when the current position moves back', () => {
+  const ids = (state: State) => state.tracks.map((t) => t.id);
+
+  it('previous keeps user-added entries ahead of the Track just stepped back over', () => {
+    let state = enqueue(createQueueState(tracks, 1), track('x'));
+    state = previous(state);
+    expect(getCurrentTrack(state)?.id).toBe('a');
+    expect(ids(state)).toEqual(['a', 'x', 'b', 'c']);
+    expect(marked(state)).toEqual(['x']);
+  });
+
+  it('jumpTo an earlier Track does the same', () => {
+    let state = enqueue(createQueueState(tracks, 2), track('x'));
+    state = jumpTo(state, 0);
+    expect(ids(state)).toEqual(['a', 'x', 'b', 'c']);
+  });
+
+  it('playNow puts the replaced current Track behind the user-added entries', () => {
+    let state = enqueue(createQueueState(tracks, 0), track('x'));
+    state = playNow(state, track('n'));
+    expect(ids(state)).toEqual(['n', 'x', 'a', 'b', 'c']);
+    expect(marked(state)).toEqual(['x']);
+  });
+});

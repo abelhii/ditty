@@ -1,5 +1,5 @@
 import type { Track } from '@/api/types';
-import { buildQueueListItems } from '@/features/player/queue-sections';
+import { buildQueueListItems, dropTarget, layoutQueueItems, shiftFor } from '@/features/player/queue-sections';
 import { createQueueState, enqueue, next, playNext, removeAt } from '@/player/QueueManager';
 
 function track(id: string): Track {
@@ -70,5 +70,36 @@ describe('buildQueueListItems', () => {
   it('shows the lone Track as Now playing after the rest is removed', () => {
     const queue = removeAt(removeAt(createQueueState(album, 0, 'Road Trip'), 2), 1);
     expect(shape(queue)).toEqual(['Now playing', '0:nowPlaying']);
+  });
+});
+
+describe('drag geometry with section headings', () => {
+  // a (now) | x, y (added by you) | b, c, d (from Road Trip); rows 64 tall, headings 40 tall.
+  const queue = enqueue(enqueue(createQueueState([...album, track('d')], 0, 'Road Trip'), track('x')), track('y'));
+  const queueTops = () => layoutQueueItems(queue, 64, 40).tops;
+
+  it('indexes tops by queue index, adding each heading above the row', () => {
+    const { tops, contentHeight } = layoutQueueItems(queue, 64, 40);
+    expect(queue.tracks.map((t) => t.id)).toEqual(['a', 'x', 'y', 'b', 'c', 'd']);
+    expect(tops).toEqual([40, 144, 208, 312, 376, 440]);
+    expect(contentHeight).toBe(504);
+  });
+
+  it('drops on the queue index of the nearest slot, across a heading', () => {
+    expect(dropTarget(queueTops(), 2, 0)).toBe(2);
+    expect(dropTarget(queueTops(), 2, 100)).toBe(3);
+    expect(dropTarget(queueTops(), 3, -100)).toBe(2);
+    expect(dropTarget(queueTops(), 5, -1000)).toBe(0);
+    expect(dropTarget(queueTops(), 0, 1000)).toBe(5);
+  });
+
+  it("shifts neighbours into each other's slot, so a heading between them is not skipped", () => {
+    const tops = queueTops();
+    expect(shiftFor(tops, 3, 2, 3)).toBe(-104);
+    expect(shiftFor(tops, 1, 3, 1)).toBe(64);
+    expect(shiftFor(tops, 2, 3, 1)).toBe(104);
+    expect(shiftFor(tops, 4, 3, 1)).toBe(0);
+    expect(shiftFor(tops, 3, 3, 1)).toBe(0);
+    expect(shiftFor(tops, 1, null, 1)).toBe(0);
   });
 });

@@ -12,11 +12,10 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
-import { buildQueueListItems, type QueueRowSection } from '@/features/player/queue-sections';
+import { dropTarget, layoutQueueItems, shiftFor, type QueueRowSection } from '@/features/player/queue-sections';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
-import type { QueueState } from '@/player/QueueManager';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
@@ -137,7 +136,7 @@ export function QueueList({ palette }: QueueListProps) {
   const queue = usePlayerStore((state) => state.queue);
   const { tracks } = queue;
 
-  const { placed, tops, contentHeight } = useMemo(() => layoutQueueItems(queue), [queue]);
+  const { placed, tops, contentHeight } = useMemo(() => layoutQueueItems(queue, ROW_HEIGHT, HEADING_HEIGHT), [queue]);
 
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState(0);
@@ -157,11 +156,7 @@ export function QueueList({ palette }: QueueListProps) {
   const onDragMove = useCallback(
     (index: number, dy: number) => {
       dragY.setValue(dy);
-      // The row whose slot is nearest to where the dragged row now sits.
-      let target = index;
-      for (let i = 0; i < tops.length; i++) {
-        if (Math.abs(tops[i] - (tops[index] + dy)) < Math.abs(tops[target] - (tops[index] + dy))) target = i;
-      }
+      const target = dropTarget(tops, index, dy);
       if (target !== hoverRef.current) {
         hoverRef.current = target;
         setHoverIndex(target);
@@ -219,7 +214,7 @@ export function QueueList({ palette }: QueueListProps) {
             }
             section={item.section}
             isDragging={index === draggingIndex}
-            shift={shiftFor(index, draggingIndex, hoverIndex)}
+            shift={shiftFor(tops, index, draggingIndex, hoverIndex)}
             dragY={dragY}
             onJump={onJump}
             onRemove={onRemove}
@@ -233,28 +228,6 @@ export function QueueList({ palette }: QueueListProps) {
       })}
     </ScrollView>
   );
-}
-
-/** Rows sit on a fixed grid, with a heading's height added between sections. `placed` carries each
- *  item's top; `tops[i]` is where `tracks[i]` is drawn (what the drag math measures against). */
-function layoutQueueItems(queue: QueueState) {
-  const tops: number[] = [];
-  let y = 0;
-  const placed = buildQueueListItems(queue).map((item) => {
-    const top = y;
-    if (item.type === 'row') tops[item.index] = top;
-    y += item.type === 'heading' ? HEADING_HEIGHT : ROW_HEIGHT;
-    return { item, top };
-  });
-  return { placed, tops, contentHeight: y };
-}
-
-/** How far a non-dragged row shifts to open a gap at the drag target. */
-function shiftFor(index: number, from: number | null, to: number): number {
-  if (from === null || index === from) return 0;
-  if (from < to && index > from && index <= to) return -ROW_HEIGHT;
-  if (from > to && index < from && index >= to) return ROW_HEIGHT;
-  return 0;
 }
 
 type QueueRowProps = {

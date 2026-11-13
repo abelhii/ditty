@@ -47,3 +47,38 @@ export function buildQueueListItems(queue: QueueState): QueueListItem[] {
 
   return items;
 }
+
+/** Places the list items on a fixed grid. `placed` carries each item's top; `tops[i]` is where
+ *  `queue.tracks[i]` is drawn — what drag targeting measures against, so it is indexed by *queue*
+ *  index, not list-item index (headings add items but no Tracks). */
+export function layoutQueueItems(queue: QueueState, rowHeight: number, headingHeight: number) {
+  const tops: number[] = [];
+  let y = 0;
+  const placed = buildQueueListItems(queue).map((item) => {
+    const top = y;
+    if (item.type === 'row') tops[item.index] = top;
+    y += item.type === 'heading' ? headingHeight : rowHeight;
+    return { item, top };
+  });
+  return { placed, tops, contentHeight: y };
+}
+
+/** The queue index whose slot is nearest to where the row at `index` now sits after being dragged
+ *  `dy` from its own slot. The result is a queue index, ready for `QueueManager.reorder`. */
+export function dropTarget(tops: number[], index: number, dy: number): number {
+  const dragged = tops[index] + dy;
+  let target = index;
+  for (let i = 0; i < tops.length; i++) {
+    if (Math.abs(tops[i] - dragged) < Math.abs(tops[target] - dragged)) target = i;
+  }
+  return target;
+}
+
+/** How far a non-dragged row shifts to open a gap at the drag target: into the slot of its
+ *  neighbour, so a heading between the two is accounted for. */
+export function shiftFor(tops: number[], index: number, from: number | null, to: number): number {
+  if (from === null || index === from) return 0;
+  if (from < to && index > from && index <= to) return tops[index - 1] - tops[index];
+  if (from > to && index < from && index >= to) return tops[index + 1] - tops[index];
+  return 0;
+}

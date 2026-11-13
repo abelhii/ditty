@@ -80,6 +80,13 @@ function clearReachedMarkers(state: QueueState): QueueState {
   return { ...state, tracks: state.tracks.map(swap), originalOrder: state.originalOrder.map(swap) };
 }
 
+/** After the current position moves (or a Track is played now): clears markers on the entries it has
+ *  reached and re-groups: stepping back or playing a Track now turns the previous current Track into an
+ *  upcoming source entry, which must not sit ahead of the user-added ones or the sections would split. */
+function settleAfterMove(state: QueueState): QueueState {
+  return groupUserAdded(clearReachedMarkers(state));
+}
+
 export function next(state: QueueState): QueueState {
   if (state.tracks.length === 0) return state;
   if (state.repeat === 'one') return state;
@@ -103,14 +110,14 @@ export function previous(state: QueueState): QueueState {
 
   const prevIndex = state.currentIndex - 1;
   if (prevIndex >= 0) {
-    return clearReachedMarkers({ ...state, currentIndex: prevIndex });
+    return settleAfterMove({ ...state, currentIndex: prevIndex });
   }
 
   if (state.repeat === 'all') {
-    return clearReachedMarkers({ ...state, currentIndex: state.tracks.length - 1 });
+    return settleAfterMove({ ...state, currentIndex: state.tracks.length - 1 });
   }
 
-  return clearReachedMarkers({ ...state, currentIndex: 0 });
+  return settleAfterMove({ ...state, currentIndex: 0 });
 }
 
 export function setRepeat(state: QueueState, repeat: RepeatMode): QueueState {
@@ -158,12 +165,12 @@ export function playNext(state: QueueState, track: Track): QueueState {
  *  queue"; contrast with `play`, which replaces the whole queue. */
 export function playNow(state: QueueState, track: Track): QueueState {
   const insertAt = state.currentIndex === -1 ? 0 : state.currentIndex;
-  return {
+  return groupUserAdded({
     ...state,
     tracks: [...state.tracks.slice(0, insertAt), track, ...state.tracks.slice(insertAt)],
     originalOrder: [...state.originalOrder, track],
     currentIndex: insertAt,
-  };
+  });
 }
 
 export function removeAt(state: QueueState, index: number): QueueState {
@@ -210,7 +217,7 @@ export function insertAt(
  *  which build a brand-new queue. Out-of-range indices are ignored. */
 export function jumpTo(state: QueueState, index: number): QueueState {
   if (index < 0 || index >= state.tracks.length) return state;
-  return clearReachedMarkers({ ...state, currentIndex: index });
+  return settleAfterMove({ ...state, currentIndex: index });
 }
 
 /** Moves a track within the queue. A track dropped among the user-added entries becomes user-added;
