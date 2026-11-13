@@ -51,7 +51,6 @@ export function WideHome() {
 
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
   const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
-  const explore = shelves.find((shelf) => shelf.id === 'explore');
   const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
   const recentlyAddedShelf = useAlbumShelf(recentlyAdded ?? shelves[0]);
   const { status, refresh, refreshing } = useHomeShelves();
@@ -125,7 +124,7 @@ export function WideHome() {
 
           <ExploreArtists tileWidth={tileWidth} />
           {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
-          {explore && <UnheardTracks shelf={explore} />}
+          <UnheardTracks />
           <HomeStatusMessage status={status} onRetry={() => void refresh()} />
         </ScrollView>
       </SafeAreaView>

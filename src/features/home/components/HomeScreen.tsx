@@ -44,7 +44,6 @@ function NarrowHome() {
   // Injected once per mount so New Releases' year window is stable across re-renders.
   const shelves = useMemo(() => homeShelves(new Date().getFullYear()), []);
   const recentlyAdded = shelves.find((shelf) => shelf.id === 'recentlyAdded');
-  const explore = shelves.find((shelf) => shelf.id === 'explore');
   const frequentlyPlayed = shelves.find((shelf) => shelf.id === 'frequentlyPlayed');
   const { status, refresh, refreshing } = useHomeShelves();
 
@@ -103,7 +102,7 @@ function NarrowHome() {
           )}
           {frequentlyPlayed && <AlbumShelf shelf={frequentlyPlayed} />}
           {frequentlyPlayed && <MostPlayedTracks shelf={frequentlyPlayed} />}
-          {explore && <UnheardTracks shelf={explore} />}
+          <UnheardTracks />
           <HomeStatusMessage status={status} onRetry={() => void refresh()} />
         </ScrollView>
       </SafeAreaView>
