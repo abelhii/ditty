@@ -5,7 +5,6 @@ describe('homeShelves', () => {
     expect(homeShelves(2026).map((shelf) => shelf.id)).toEqual([
       'recentlyAdded',
       'newReleases',
-      'explore',
       'frequentlyPlayed',
     ]);
   });
@@ -15,7 +14,6 @@ describe('homeShelves', () => {
     expect(byId).toEqual({
       recentlyAdded: 'newest',
       newReleases: 'byYear',
-      explore: 'random',
       frequentlyPlayed: 'frequent',
     });
   });
