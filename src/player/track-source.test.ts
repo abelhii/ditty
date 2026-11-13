@@ -2,6 +2,13 @@ import type { Track } from '@/api/types';
 import type { DownloadRecord } from '@/features/downloads/download-rows';
 import { resolveTrackSource } from '@/player/track-source';
 import type { TrackSourceDeps } from '@/player/track-source';
+import { useStreamQualityStore } from '@/player/use-stream-quality-store';
+
+jest.mock('@/api/kv-storage', () => ({
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+}));
 
 const auth = { username: 'u', token: 't', salt: 's' };
 const base = 'https://navidrome.example.com';
@@ -43,6 +50,28 @@ describe('resolveTrackSource', () => {
     expect(source.isLocal).toBe(false);
     expect(source.uri).toContain('/rest/stream.view');
     expect(source.artworkUrl).toContain('/rest/getCoverArt.view');
+  });
+
+  describe('stream quality', () => {
+    afterEach(() => useStreamQualityStore.setState({ quality: 'original' }));
+
+    it('streams the original file by default', () => {
+      const url = new URL(resolveTrackSource(track, base, auth, deps(null)).uri);
+      expect(url.searchParams.get('format')).toBeNull();
+      expect(url.searchParams.get('maxBitRate')).toBeNull();
+    });
+
+    it('applies the chosen quality to the stream URL', () => {
+      useStreamQualityStore.getState().setQuality('normal');
+      const url = new URL(resolveTrackSource(track, base, auth, deps(null)).uri);
+      expect(url.searchParams.get('format')).toBe('mp3');
+      expect(url.searchParams.get('maxBitRate')).toBe('192');
+    });
+
+    it('leaves a downloaded track untouched', () => {
+      useStreamQualityStore.getState().setQuality('low');
+      expect(resolveTrackSource(track, base, auth, deps(record())).uri).toBe('file:///d/t1.flac');
+    });
   });
 
   it('plays the local file and local cover art when a complete download exists', () => {

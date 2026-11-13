@@ -1,19 +1,33 @@
 import { buildRequestUrl } from '@/api/subsonic/client';
 import type { SubsonicAuth } from '@/api/subsonic/types';
 
+/** How hard the server may transcode a stream. `original` is the default: the untouched file. */
+export type StreamQuality = 'original' | 'high' | 'normal' | 'low';
+
+/** `maxBitRate` (kbps) sent with `format=mp3` for each lossy quality; `original` sends nothing. */
+export const STREAM_QUALITY_BITRATE = { high: 320, normal: 192, low: 96 } as const;
+
 /**
- * Builds a signed streaming URL for the original, untouched file — bit-perfect, no transcode.
- *
- * We stream `format=raw` (the server default when no `format` is given) on every platform. expo-audio
+ * Builds a signed streaming URL. With `original` (the default) it is the untouched file — bit-perfect,
+ * no transcode: we send no `format`/`maxBitRate`, so the server streams `format=raw`. expo-audio
  * decodes FLAC — including 24-bit — natively: ExoPlayer/Media3 on Android, AVFoundation on iOS, the
- * browser's `<audio>` on web. This supersedes the earlier MP3 transcode workaround that existed only
- * because `react-native-audio-api` output silence for 24-bit sources on Android.
+ * browser's `<audio>` on web. Lossless is the right default for a lossless library.
  *
- * A user-selectable "data saver" that re-adds `format=mp3`/`maxBitRate` is a clean later follow-up;
- * lossless is the right default for a lossless library.
+ * Any other quality is an opt-in data saver: the server transcodes to MP3 capped at that bitrate.
  */
-export function getStreamUrl(serverUrl: string, trackId: string, auth: SubsonicAuth): string {
-  return buildRequestUrl(serverUrl, 'stream', { id: trackId }, auth).toString();
+export function getStreamUrl(
+  serverUrl: string,
+  trackId: string,
+  auth: SubsonicAuth,
+  quality: StreamQuality = 'original',
+): string {
+  const lossy = quality !== 'original';
+  const params = {
+    id: trackId,
+    format: lossy ? 'mp3' : undefined,
+    maxBitRate: lossy ? STREAM_QUALITY_BITRATE[quality] : undefined,
+  };
+  return buildRequestUrl(serverUrl, 'stream', params, auth).toString();
 }
 
 /**

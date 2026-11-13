@@ -28,6 +28,26 @@ describe('getStreamUrl', () => {
   });
 });
 
+describe('getStreamUrl quality', () => {
+  function streamParams(quality?: Parameters<typeof getStreamUrl>[3]) {
+    const url = new URL(getStreamUrl('https://navidrome.example.com', 'track-1', auth, quality));
+    return { format: url.searchParams.get('format'), maxBitRate: url.searchParams.get('maxBitRate') };
+  }
+
+  it('sends no transcode params for original, explicit or by default', () => {
+    expect(streamParams('original')).toEqual({ format: null, maxBitRate: null });
+    expect(streamParams()).toEqual({ format: null, maxBitRate: null });
+  });
+
+  it.each([
+    ['high', '320'],
+    ['normal', '192'],
+    ['low', '96'],
+  ] as const)('transcodes %s to mp3 capped at %s kbps', (quality, bitRate) => {
+    expect(streamParams(quality)).toEqual({ format: 'mp3', maxBitRate: bitRate });
+  });
+});
+
 describe('getDownloadUrl', () => {
   it('signs a download request keyed by track id, with no transcode params', () => {
     const url = new URL(getDownloadUrl('https://navidrome.example.com', 'track-1', auth));

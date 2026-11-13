@@ -2,6 +2,7 @@ import { CoverArtSize, getCoverArtUrl, getStreamUrl } from '@/api/subsonic/endpo
 import type { SubsonicAuth } from '@/api/subsonic/types';
 import type { Track } from '@/api/types';
 import type { DownloadRecord } from '@/features/downloads/download-rows';
+import { useStreamQualityStore } from '@/player/use-stream-quality-store';
 
 export type TrackSource = {
   /** What to hand `player.replace` — a `file://` URI for a downloaded track, else the stream URL. */
@@ -42,5 +43,10 @@ export function resolveTrackSource(
     deps.onMissingFile(track.id);
   }
 
-  return { uri: getStreamUrl(serverUrl, track.id, auth), artworkUrl: remoteArtwork, isLocal: false };
+  const quality = useStreamQualityStore.getState().quality;
+  return {
+    uri: getStreamUrl(serverUrl, track.id, auth, quality),
+    artworkUrl: remoteArtwork,
+    isLocal: false,
+  };
 }
