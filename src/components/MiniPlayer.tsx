@@ -21,6 +21,7 @@ import {
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack } from '@/player/QueueManager';
+import { useNextTrack } from '@/player/hooks/use-next-track';
 import { useProgress } from '@/player/hooks/use-progress';
 import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { usePlayerStore } from '@/player/use-player-store';
@@ -41,7 +42,7 @@ export function MiniPlayer() {
   const nowPlayingOpen = usePlayerUiStore((state) => state.nowPlayingOpen);
   const openNowPlaying = usePlayerUiStore((state) => state.openNowPlaying);
   const openQueue = usePlayerUiStore((state) => state.openQueue);
-  const nextTrack = usePlayerStore((state) => state.queue.tracks[state.queue.currentIndex + 1]);
+  const nextTrack = useNextTrack();
   const queueLength = usePlayerStore((state) => state.queue.tracks.length);
   const status = usePlaybackStatusStore((state) => state.status);
   const errorOffline = usePlaybackStatusStore((state) => state.errorOffline);
