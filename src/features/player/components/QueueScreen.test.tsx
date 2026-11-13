@@ -1,10 +1,10 @@
-import { act, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet, type ViewStyle } from 'react-native';
 
 import type { Track } from '@/api/types';
 import { Colors } from '@/constants/theme';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
-import { createQueueState } from '@/player/QueueManager';
+import { createQueueState, enqueue } from '@/player/QueueManager';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
@@ -110,5 +110,87 @@ describe('QueueScreen controls', () => {
 
     await act(async () => row('Track c').props.onAccessibilityAction({ nativeEvent: { actionName: 'remove' } }));
     expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['b', 'a']);
+  });
+});
+
+describe('QueueScreen sections', () => {
+  beforeEach(() => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b'), track('c')], 0, 'Road Trip'));
+  });
+
+  it('groups rows under Now playing and Next from <source>, announced as headers', async () => {
+    await render(<QueueScreen />);
+
+    expect(screen.getByRole('header', { name: 'Now playing' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Next from Road Trip' })).toBeTruthy();
+    expect(screen.queryByText('Next in queue')).toBeNull();
+    expect(screen.queryByText('Added by you')).toBeNull();
+  });
+
+  it('shows user-added Tracks under Next in queue with an "Added by you" caption', async () => {
+    usePlayerStore.getState().setQueue(enqueue(usePlayerStore.getState().queue, track('x')));
+    await render(<QueueScreen />);
+
+    expect(screen.getByRole('header', { name: 'Next in queue' })).toBeTruthy();
+    expect(screen.getAllByText('Added by you')).toHaveLength(1);
+    expect(screen.getByRole('header', { name: 'Next from Road Trip' })).toBeTruthy();
+  });
+
+  it('hides Next from <source> when only user-added Tracks follow', async () => {
+    usePlayerStore.getState().setQueue(enqueue(createQueueState([track('a')], 0, 'Road Trip'), track('x')));
+    await render(<QueueScreen />);
+
+    expect(screen.queryByText('Next from Road Trip')).toBeNull();
+    expect(screen.getByRole('header', { name: 'Next in queue' })).toBeTruthy();
+  });
+
+  it('labels a source-less Queue (restored from an older build) "Next up"', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')], 0));
+    await render(<QueueScreen />);
+
+    expect(screen.getByRole('header', { name: 'Next up' })).toBeTruthy();
+  });
+
+  it('still removes through the accessibility action from a user-added row', async () => {
+    usePlayerStore.getState().setQueue(enqueue(usePlayerStore.getState().queue, track('x')));
+    await render(<QueueScreen />);
+
+    await act(async () =>
+      screen.getByText('Track x').parent!.parent!.props.onAccessibilityAction({ nativeEvent: { actionName: 'remove' } }),
+    );
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('QueueScreen Clear queue', () => {
+  it('asks first, then stops playback and empties the Queue', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')], 0, 'Road Trip'));
+    usePlayerStore.getState().setDesiredPlaying(true);
+    await render(<QueueScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Clear queue' }));
+    expect(usePlayerStore.getState().queue.tracks).toHaveLength(2);
+
+    await fireEvent.press(screen.getByText('Clear'));
+    const { queue, desiredPlaying } = usePlayerStore.getState();
+    expect(queue.tracks).toEqual([]);
+    expect(desiredPlaying).toBe(false);
+  });
+
+  it('leaves the Queue alone when cancelled', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')], 0));
+    await render(<QueueScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Clear queue' }));
+    await fireEvent.press(screen.getByText('Cancel'));
+
+    expect(usePlayerStore.getState().queue.tracks).toHaveLength(2);
+  });
+
+  it('is not offered when the Queue is empty', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([]));
+    await render(<QueueScreen />);
+
+    expect(screen.queryByRole('button', { name: 'Clear queue' })).toBeNull();
   });
 });

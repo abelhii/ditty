@@ -284,7 +284,7 @@ describe('playShuffled', () => {
   const tracks = ['a', 'b', 'c', 'd'].map((id) => track(id));
 
   it('queues the whole collection, shuffle on, starting from the randomly picked Track', () => {
-    PlaybackController.playShuffled(tracks, () => 0.5); // 0.5 * 4 -> index 2
+    PlaybackController.playShuffled(tracks, undefined, () => 0.5); // 0.5 * 4 -> index 2
 
     const { queue, desiredPlaying } = usePlayerStore.getState();
     expect(queue.shuffle).toBe(true);
@@ -305,7 +305,7 @@ describe('playShuffled', () => {
     useOfflineStore.setState({ manual: true });
     useDownloadsStore.setState({ downloadedIds: { b: true } });
 
-    PlaybackController.playShuffled(tracks, () => 0.99);
+    PlaybackController.playShuffled(tracks, undefined, () => 0.99);
 
     const { queue } = usePlayerStore.getState();
     expect(queue.tracks[queue.currentIndex].id).toBe('b');
@@ -321,5 +321,79 @@ describe('playShuffled', () => {
 
     expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['x']);
     expect(showNotice).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Queue source and user-added tracks', () => {
+  const tracks = ['a', 'b', 'c'].map((id) => track(id));
+
+  it('play records the source name; omitting it leaves the Queue without one', () => {
+    PlaybackController.play(tracks, 0, 'Road Trip');
+    expect(usePlayerStore.getState().queue.source).toBe('Road Trip');
+
+    PlaybackController.play(tracks, 0);
+    expect(usePlayerStore.getState().queue.source).toBeUndefined();
+  });
+
+  it('playShuffled records the source name', () => {
+    PlaybackController.playShuffled(tracks, 'Road Trip');
+    expect(usePlayerStore.getState().queue.source).toBe('Road Trip');
+  });
+
+  it('addToQueue and playNext mark the entry as user-added, ahead of the source tracks', () => {
+    PlaybackController.play(tracks, 0, 'Road Trip');
+    PlaybackController.addToQueue(track('x'));
+    PlaybackController.playNext(track('y'));
+
+    const { queue } = usePlayerStore.getState();
+    expect(queue.tracks.map((t) => [t.id, t.addedByUser === true])).toEqual([
+      ['a', false],
+      ['y', true],
+      ['x', true],
+      ['b', false],
+      ['c', false],
+    ]);
+  });
+
+  it('skipping onto a user-added track clears its marker', () => {
+    PlaybackController.play(tracks, 0, 'Road Trip');
+    PlaybackController.addToQueue(track('x'));
+    PlaybackController.skipNext();
+
+    const { queue } = usePlayerStore.getState();
+    expect(queue.tracks[queue.currentIndex].id).toBe('x');
+    expect(queue.tracks.some((t) => t.addedByUser)).toBe(false);
+  });
+
+  it('removing a user-added track and pressing Undo restores it in place, still user-added', () => {
+    PlaybackController.play(tracks, 0, 'Road Trip');
+    PlaybackController.addToQueue(track('x'));
+    const before = usePlayerStore.getState().queue.tracks;
+
+    PlaybackController.removeFromQueue(1);
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c']);
+    const undo = (showNotice as jest.Mock).mock.calls.at(-1)[1].onPress;
+    undo();
+
+    expect(usePlayerStore.getState().queue.tracks).toEqual(before);
+  });
+
+  it('clearQueue empties the Queue and stops playback', () => {
+    PlaybackController.play(tracks, 1, 'Road Trip');
+    PlaybackController.setRepeat('all');
+
+    PlaybackController.clearQueue();
+
+    const { queue, desiredPlaying } = usePlayerStore.getState();
+    expect(queue.tracks).toEqual([]);
+    expect(queue.currentIndex).toBe(-1);
+    expect(queue.source).toBeUndefined();
+    expect(queue.repeat).toBe('all');
+    expect(desiredPlaying).toBe(false);
+  });
+
+  it('clearQueue on an empty Queue is harmless', () => {
+    PlaybackController.clearQueue();
+    expect(usePlayerStore.getState().queue.tracks).toEqual([]);
   });
 });

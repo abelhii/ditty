@@ -163,12 +163,15 @@ describe('PlaylistDetailScreen header', () => {
     await render(<PlaylistDetailScreen playlistId="p1" />);
 
     await fireEvent.press(screen.getByRole('button', { name: 'Shuffle Playlist' }));
-    expect(mockPlayShuffled).toHaveBeenCalledWith([
-      { id: 't1', title: 'First' },
-      { id: 't2', title: 'Second' },
-    ]);
+    expect(mockPlayShuffled).toHaveBeenCalledWith(
+      [
+        { id: 't1', title: 'First' },
+        { id: 't2', title: 'Second' },
+      ],
+      'Road trip',
+    );
 
     await fireEvent.press(screen.getByRole('button', { name: 'Play Playlist' }));
-    expect(mockPlay).toHaveBeenCalledWith(expect.any(Array), 0);
+    expect(mockPlay).toHaveBeenCalledWith(expect.any(Array), 0, 'Road trip');
   });
 });
