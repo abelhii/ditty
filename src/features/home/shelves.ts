@@ -7,7 +7,7 @@ export const SHELF_SIZE = 20;
 /** How many years back "New Releases" reaches, by the album's own release year (not date-added). */
 const NEW_RELEASE_WINDOW_YEARS = 5;
 
-export type ShelfId = 'recentlyAdded' | 'newReleases' | 'explore' | 'frequentlyPlayed';
+export type ShelfId = 'recentlyAdded' | 'newReleases' | 'frequentlyPlayed';
 
 export type Shelf = {
   id: ShelfId;
@@ -23,7 +23,6 @@ export type Shelf = {
  * - **New Releases** (`byYear`): by the album's own release year, newest first — a
  *   `fromYear > toYear` window, distinct from date-added. (`byYear` is the closest getAlbumList2
  *   ordering to OpenSubsonic's `originalReleaseDate`; year granularity is enough for MVP.)
- * - **Explore** (`random`): pure discovery.
  * - **Frequently played** (`frequent`): albums by the server's play count, most played first. Empty
  *   until the server has play history (plays only count once a client scrobbles).
  *
@@ -42,7 +41,6 @@ export function homeShelves(currentYear: number): Shelf[] {
         toYear: currentYear - NEW_RELEASE_WINDOW_YEARS,
       },
     },
-    { id: 'explore', title: 'Explore', params: { type: 'random', size: SHELF_SIZE } },
     {
       id: 'frequentlyPlayed',
       title: 'Frequently played',
