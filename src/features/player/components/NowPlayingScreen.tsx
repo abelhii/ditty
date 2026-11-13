@@ -278,25 +278,43 @@ export function NowPlayingScreen() {
                 onPress={() => PlaybackController.setAutoDj(!autoDj)}
               />
 
-              {!wide && nextTrack && (
+              {!wide && queueLength > 0 && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Up next: ${nextTrack.title} by ${nextTrack.artist}, ${queueLength} in queue`}
+                  accessibilityLabel={
+                    nextTrack
+                      ? `Up next: ${nextTrack.title} by ${nextTrack.artist}, ${queueLength} in queue`
+                      : `Open Queue, nothing up next, ${queueLength} in queue`
+                  }
                   accessibilityHint="Opens the Queue"
                   style={({ pressed }) => [styles.upNext, pressed && styles.pressed]}
                   onPress={openQueue}>
-                  <CoverArtImage uri={nextCoverArtUri || undefined} style={styles.upNextArt} iconSize={20} />
-                  <View style={styles.meta}>
-                    <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
-                      Up next · {queueLength} in queue
-                    </ThemedText>
-                    <ThemedText type="smallBold" numberOfLines={1} style={styles.title}>
-                      {nextTrack.title}
-                    </ThemedText>
-                    <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
-                      {nextTrack.artist}
-                    </ThemedText>
-                  </View>
+                  {nextTrack ? (
+                    <>
+                      <CoverArtImage uri={nextCoverArtUri || undefined} style={styles.upNextArt} iconSize={20} />
+                      <View style={styles.meta}>
+                        <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                          Up next · {queueLength} in queue
+                        </ThemedText>
+                        <ThemedText type="smallBold" numberOfLines={1} style={styles.title}>
+                          {nextTrack.title}
+                        </ThemedText>
+                        <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                          {nextTrack.artist}
+                        </ThemedText>
+                      </View>
+                    </>
+                  ) : (
+                    // Last Track (or repeat-one / a 1-Track Queue): keep the way into the Queue.
+                    <View style={styles.meta}>
+                      <ThemedText type="smallBold" numberOfLines={1} style={styles.title}>
+                        Queue · {queueLength} in queue
+                      </ThemedText>
+                      <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                        Nothing up next
+                      </ThemedText>
+                    </View>
+                  )}
                   <Icon name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }} />
                 </Pressable>
               )}

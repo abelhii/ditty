@@ -111,11 +111,23 @@ describe('NowPlayingScreen', () => {
     expect(screen.getByText('Track c')).toBeTruthy();
   });
 
-  it('hides the Up next card on the last Track', async () => {
+  it('keeps a Queue card on the last Track, with no next Track, that still opens the Queue', async () => {
     usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')], 1));
     await render(<NowPlayingScreen />);
 
     expect(screen.queryByText(/^Up next/)).toBeNull();
+    expect(screen.getByText('Queue · 2 in queue')).toBeTruthy();
+    expect(screen.getByText('Nothing up next')).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Open Queue, nothing up next, 2 in queue' }));
+    expect(usePlayerUiStore.getState().queueOpen).toBe(true);
+  });
+
+  it('keeps the Queue card for a 1-Track Queue', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a')]));
+    await render(<NowPlayingScreen />);
+
+    expect(screen.getByText('Queue · 1 in queue')).toBeTruthy();
   });
 
   it('shares the Track name and artist, and shows a Notice when sharing is unavailable', async () => {

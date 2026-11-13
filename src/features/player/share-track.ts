@@ -10,7 +10,9 @@ export function shareMessage(track: { title: string; artist: string }): string {
 
 /** Opens the platform share sheet (the Web Share API on web); a Notice when sharing isn't available. */
 export function shareTrack(track: { title: string; artist: string }): void {
-  Share.share({ message: shareMessage(track) }).catch(() => {
+  Share.share({ message: shareMessage(track) }).catch((error: unknown) => {
+    // Web Share rejects with AbortError when the user dismisses the sheet; that is not a failure.
+    if (error instanceof Error && error.name === 'AbortError') return;
     showNotice("Sharing isn't available here.");
   });
 }
