@@ -8,6 +8,7 @@ import { createQueueState } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
+import { useQueueSidebarStore } from '@/player/use-queue-sidebar-store';
 
 // theme.ts imports a stylesheet that jest cannot parse.
 jest.mock('@/global.css', () => ({}));
@@ -32,6 +33,7 @@ beforeEach(() => {
   usePlayerStore.getState().setVolume(1);
   usePlayerUiStore.setState({ nowPlayingOpen: false, queueOpen: false });
   usePlaybackStatusStore.setState({ status: 'paused', position: 0 });
+  useQueueSidebarStore.setState({ collapsed: false });
 });
 
 describe('WidePlayer', () => {
@@ -105,5 +107,16 @@ describe('WidePlayer', () => {
 
     expect(share).toHaveBeenCalledWith({ message: 'Track a by Artist' });
     expect(shareMessage(track('a'))).not.toMatch(/https?:/);
+  });
+
+  it('toggles the Queue sidebar', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a')]));
+    await render(<WidePlayer />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Hide Queue' }));
+    expect(useQueueSidebarStore.getState().collapsed).toBe(true);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Show Queue' }));
+    expect(useQueueSidebarStore.getState().collapsed).toBe(false);
   });
 });

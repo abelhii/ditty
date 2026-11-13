@@ -70,7 +70,7 @@ export function QueueScreen() {
   );
 }
 
-type QueueListPalette = {
+export type QueueListPalette = {
   background: string;
   selected: string;
   text: string;
