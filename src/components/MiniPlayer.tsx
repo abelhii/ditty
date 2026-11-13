@@ -30,8 +30,8 @@ import { usePlayerUiStore } from '@/player/use-player-ui-store';
  * Persistent player bar docked above the tab bar — a hand-rolled JS overlay on every platform
  * (the native BottomAccessory is iOS-only), mounted as a sibling of NativeTabs in _layout.tsx
  * (the wide layout swaps in WidePlayer instead). Artwork + title/artist + previous / play-pause /
- * next + queue button (count badge) + a hairline progress line; tapping the bar expands the now-playing overlay. Hidden when
- * there's nothing playing or when now-playing is already open.
+ * next + queue button (count badge) + a hairline progress line; tapping the bar expands the
+ * now-playing overlay. Hidden when there's nothing playing or when now-playing is already open.
  */
 export function MiniPlayer() {
   const insets = useSafeAreaInsets();
