@@ -11,20 +11,26 @@ type QueuePanelProps = {
   palette?: QueueListPalette;
   /** Extra header controls after "Clear queue" (the sidebar's collapse button). */
   trailing?: ReactNode;
+  /** False when tabs above already name the panel "Queue". */
+  showTitle?: boolean;
 };
 
 /** The wide layout's Queue panel: a "Queue" header with Clear queue above the Queue list. Shared by
  *  the full player's right-hand panel and the Queue sidebar. */
-export function QueuePanel({ palette, trailing }: QueuePanelProps) {
+export function QueuePanel({ palette, trailing, showTitle = true }: QueuePanelProps) {
   const theme = useTheme();
   const colors = palette ?? theme;
 
   return (
     <View style={styles.fill}>
       <View style={styles.header}>
-        <ThemedText type="smallBold" style={[styles.title, { color: colors.text }]}>
-          Queue
-        </ThemedText>
+        {showTitle ? (
+          <ThemedText type="smallBold" style={[styles.title, { color: colors.text }]}>
+            Queue
+          </ThemedText>
+        ) : (
+          <View />
+        )}
         <View style={styles.actions}>
           <ClearQueueButton color={colors.textSecondary} />
           {trailing}

@@ -13,19 +13,26 @@ import { usePlayerStore } from '@/player/use-player-store';
 type PlayerUiState = {
   nowPlayingOpen: boolean;
   queueOpen: boolean;
+  /** The narrow layout's Lyrics view, stacked above now-playing like the Queue. */
+  lyricsOpen: boolean;
   openNowPlaying: () => void;
   closeNowPlaying: () => void;
   openQueue: () => void;
   closeQueue: () => void;
+  openLyrics: () => void;
+  closeLyrics: () => void;
 };
 
 export const usePlayerUiStore = create<PlayerUiState>((set) => ({
   nowPlayingOpen: false,
   queueOpen: false,
+  lyricsOpen: false,
   openNowPlaying: () => set({ nowPlayingOpen: true }),
-  closeNowPlaying: () => set({ nowPlayingOpen: false, queueOpen: false }),
+  closeNowPlaying: () => set({ nowPlayingOpen: false, queueOpen: false, lyricsOpen: false }),
   openQueue: () => set({ queueOpen: true }),
   closeQueue: () => set({ queueOpen: false }),
+  openLyrics: () => set({ lyricsOpen: true }),
+  closeLyrics: () => set({ lyricsOpen: false }),
 }));
 
 // The full player has nothing to show once there is no current track (the Queue ran out, was

@@ -73,10 +73,12 @@ export const persistOptions: PersistQueryClientProviderProps['persistOptions'] =
     // else on the default (successful queries persist). See Build Order step 6. The all-songs
     // pages are excluded too: a large library would blow past the KV cache's size. So are the
     // Recently added pages: every scrolled page would persist and be refetched on restore.
+    // Lyrics too: one entry per Track played, each a few KB of text, refetched cheaply on demand.
     shouldDehydrateQuery: (query) =>
       query.queryKey[0] !== 'search' &&
       query.queryKey[0] !== 'allSongs' &&
       query.queryKey[0] !== 'recentlyAddedAlbums' &&
+      query.queryKey[0] !== 'lyrics' &&
       defaultShouldDehydrateQuery(query),
   },
 };

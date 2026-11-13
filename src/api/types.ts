@@ -89,3 +89,18 @@ export type Playlist = {
   /** ISO timestamp the server created the playlist. */
   created?: string;
 };
+
+/** One line of a Track's lyrics. */
+export type LyricLine = {
+  text: string;
+  /** Milliseconds from the track start; present on every line of synced lyrics, absent otherwise. */
+  startMs?: number;
+};
+
+/** The lyrics shown for a Track. `offsetMs` is the server's timing correction for synced lyrics:
+ *  positive means the lines appear sooner. */
+export type Lyrics = {
+  synced: boolean;
+  offsetMs: number;
+  lines: LyricLine[];
+};

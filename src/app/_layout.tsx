@@ -20,6 +20,7 @@ import { hydrateDownloads, startDownloadSync } from '@/features/downloads/downlo
 import { startOfflineWatcher } from '@/features/downloads/offline-watcher';
 import { NowPlayingScreen } from '@/features/player/components/NowPlayingScreen';
 import { QueueSidebar } from '@/features/player/components/QueueSidebar';
+import { LyricsScreen } from '@/features/player/components/LyricsScreen';
 import { QueueScreen } from '@/features/player/components/QueueScreen';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
@@ -85,6 +86,7 @@ export default function TabLayout() {
             {wide ? <WidePlayer /> : <MiniPlayer />}
             <NowPlayingScreen />
             <QueueScreen />
+            <LyricsScreen />
             <AudioEngine />
             <ScrobbleReporter />
             <NotificationBridge />
