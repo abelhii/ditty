@@ -15,18 +15,20 @@ import { useCollectionDownloadState } from '@/features/downloads/hooks/use-downl
 import { useTheme } from '@/hooks/use-theme';
 
 type DownloadCollectionButtonProps = {
-  kind: 'album' | 'playlist';
+  kind: 'album' | 'playlist' | 'favourites';
   collectionId: string;
   tracks: Track[];
 };
 
-/** Download / cancel / remove for a whole album or playlist, driven by its tracks' combined state.
+/** Download / cancel / remove for a whole album, playlist or the Liked Songs list, driven by its tracks' combined state.
  *  Hidden on web, which has no file download. */
 export function DownloadCollectionButton({ kind, collectionId, tracks }: DownloadCollectionButtonProps) {
   const theme = useTheme();
   const trackIds = useMemo(() => tracks.map((t) => t.id), [tracks]);
   const state = useCollectionDownloadState(trackIds);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  // The Favourites collection is shown to the user as the Liked Songs screen.
+  const noun = kind === 'favourites' ? 'liked songs' : kind;
 
   if (Platform.OS === 'web' || tracks.length === 0) return null;
 
@@ -64,7 +66,7 @@ export function DownloadCollectionButton({ kind, collectionId, tracks }: Downloa
     <>
       <ConfirmModal
         visible={confirmingRemove}
-        title={`Remove downloaded ${kind}?`}
+        title={`Remove downloaded ${noun}?`}
         message="It will be deleted from this device. You can download it again."
         confirmLabel="Remove"
         onConfirm={() => {
@@ -76,7 +78,7 @@ export function DownloadCollectionButton({ kind, collectionId, tracks }: Downloa
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={
-          state.kind === 'downloaded' ? `Remove ${kind} download` : state.kind === 'downloading' ? `Cancel ${kind} download` : `${label} ${kind}`
+          state.kind === 'downloaded' ? `Remove ${noun} download` : state.kind === 'downloading' ? `Cancel ${noun} download` : `${label} ${noun}`
         }
         hitSlop={8}
         onPress={onPress}

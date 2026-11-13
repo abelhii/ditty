@@ -65,6 +65,7 @@ export function normalizeTrack(raw: SubsonicSong): Track {
     samplingRate: raw.samplingRate,
     replayGain: raw.replayGain,
     starred: raw.starred != null,
+    starredAt: raw.starred,
     playCount: raw.playCount,
   };
 }
