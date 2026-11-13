@@ -12,12 +12,11 @@ import { useDownloadsStore } from '@/features/downloads/use-downloads-store';
 export function useCollectionRowDownloadState(
   kind: CollectionKind,
   collectionId: string,
-  songCount: number,
 ): { state: RowDownloadStateView; memberIds: string[] } {
   const items = useDownloadsStore((state) => state.items);
   const downloadedIds = useDownloadsStore((state) => state.downloadedIds);
   return useMemo(() => {
     const memberIds = getCollectionTrackIds(kind, collectionId);
-    return { state: rowDownloadState(items, downloadedIds, memberIds, songCount), memberIds };
-  }, [items, downloadedIds, kind, collectionId, songCount]);
+    return { state: rowDownloadState(items, downloadedIds, memberIds), memberIds };
+  }, [items, downloadedIds, kind, collectionId]);
 }

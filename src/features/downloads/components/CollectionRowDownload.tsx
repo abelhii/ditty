@@ -35,7 +35,7 @@ const TARGET_SIZE = 44;
 export function CollectionRowDownload({ kind, collectionId, name, songCount, style }: CollectionRowDownloadProps) {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const { state, memberIds } = useCollectionRowDownloadState(kind, collectionId, songCount);
+  const { state, memberIds } = useCollectionRowDownloadState(kind, collectionId);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [fetching, setFetching] = useState(false);
 
