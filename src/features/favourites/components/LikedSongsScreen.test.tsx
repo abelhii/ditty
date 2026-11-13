@@ -22,17 +22,36 @@ jest.mock('@/api/kv-storage', () => ({
   removeItem: () => {},
 }));
 jest.mock('@/components/TrackActionsMenu', () => ({ TrackActionsMenu: () => null }));
-jest.mock('@/player/PlaybackController', () => ({ play: jest.fn(), playNow: jest.fn() }));
+jest.mock('@/player/PlaybackController', () => ({
+  play: jest.fn(),
+  playNow: jest.fn(),
+  playShuffled: jest.fn(),
+}));
+jest.mock('@/features/downloads/components/DownloadCollectionButton', () => ({
+  DownloadCollectionButton: () => null,
+}));
+jest.mock('@/features/downloads/downloads-runtime', () => ({ FAVOURITES_ID: 'starred' }));
+const mockHasPlayable = jest.fn(() => true);
+jest.mock('@/features/downloads/hooks/use-has-playable-tracks', () => ({
+  useHasPlayableTracks: () => mockHasPlayable(),
+}));
 
-const makeTrack = (id: string, title: string): Track => ({
+const makeTrack = (id: string, title: string, starredAt: string): Track => ({
   id,
   title,
   artist: 'Artist',
   album: 'Album',
-  duration: 100,
+  duration: 1800,
   starred: true,
+  starredAt,
 });
-const mockTracks = [makeTrack('1', 'First'), makeTrack('2', 'Second'), makeTrack('3', 'Third')];
+// Server order is arbitrary; the default sort is newest-liked first: Third, First, Second.
+const mockTracks = [
+  makeTrack('1', 'First', '2026-02-01T00:00:00Z'),
+  makeTrack('2', 'Second', '2026-01-01T00:00:00Z'),
+  makeTrack('3', 'Third', '2026-03-01T00:00:00Z'),
+];
+const [first, second, third] = mockTracks;
 
 jest.mock('@/features/favourites/hooks/use-favourites', () => ({
   useFavourites: () => ({
@@ -46,12 +65,59 @@ jest.mock('@/features/favourites/hooks/use-favourites', () => ({
 }));
 
 describe('LikedSongsScreen', () => {
-  it('replaces the Queue with the whole list, starting at the tapped track', async () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockHasPlayable.mockReturnValue(true);
+  });
+
+  it('shows the count and total duration in the header', async () => {
+    await render(<LikedSongsScreen />);
+
+    expect(screen.getByText('3 songs · 1 hr 30 min')).toBeTruthy();
+  });
+
+  it('replaces the Queue with the sorted list, starting at the tapped track', async () => {
     await render(<LikedSongsScreen />);
 
     await fireEvent.press(screen.getByText('Second'));
 
-    expect(PlaybackController.play).toHaveBeenCalledWith(mockTracks, 1);
+    expect(PlaybackController.play).toHaveBeenCalledWith([third, first, second], 2);
     expect(PlaybackController.playNow).not.toHaveBeenCalled();
+  });
+
+  it('Play starts at the first row of the default (recently liked) order', async () => {
+    await render(<LikedSongsScreen />);
+
+    await fireEvent.press(screen.getByLabelText('Play Liked Songs'));
+
+    expect(PlaybackController.play).toHaveBeenCalledWith([third, first, second], 0);
+  });
+
+  it('Play follows the chosen sort', async () => {
+    await render(<LikedSongsScreen />);
+
+    await fireEvent.press(screen.getByLabelText('Sort by Title A-Z'));
+    await fireEvent.press(screen.getByLabelText('Play Liked Songs'));
+
+    expect(PlaybackController.play).toHaveBeenCalledWith([first, second, third], 0);
+  });
+
+  it('Shuffle plays the whole list shuffled', async () => {
+    await render(<LikedSongsScreen />);
+
+    await fireEvent.press(screen.getByLabelText('Shuffle Liked Songs'));
+
+    expect(PlaybackController.playShuffled).toHaveBeenCalledWith([third, first, second]);
+  });
+
+  it('hints that nothing is downloaded when offline with no playable tracks, but stays tappable', async () => {
+    mockHasPlayable.mockReturnValue(false);
+    await render(<LikedSongsScreen />);
+
+    expect(screen.getByLabelText('Play Liked Songs').props.accessibilityHint).toBe(
+      'Nothing in Liked Songs is downloaded',
+    );
+    await fireEvent.press(screen.getByLabelText('Play Liked Songs'));
+    expect(PlaybackController.play).toHaveBeenCalled();
   });
 });

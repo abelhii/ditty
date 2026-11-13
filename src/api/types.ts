@@ -27,6 +27,8 @@ export type Track = {
   replayGain?: ReplayGain;
   /** Whether the user has favourited (starred) this track — see CONTEXT.md's Favourite. */
   starred: boolean;
+  /** ISO timestamp the Track was starred, when the server reports it (getStarred2 does). */
+  starredAt?: string;
   /** Times played, when the server reports it. Absent otherwise. */
   playCount?: number;
 };
