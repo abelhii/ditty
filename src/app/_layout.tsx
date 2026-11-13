@@ -72,12 +72,16 @@ export default function TabLayout() {
         {status === 'hydrating' && <ThemedView style={{ flex: 1 }} />}
         {status === 'authenticated' && (
           <>
-            <View style={styles.shell}>
-              <View style={styles.pane}>
-                <AppTabs />
+            {Platform.OS === 'web' ? (
+              <View style={styles.shell}>
+                <View style={styles.pane}>
+                  <AppTabs />
+                </View>
+                <QueueSidebar />
               </View>
-              <QueueSidebar />
-            </View>
+            ) : (
+              <AppTabs />
+            )}
             {wide ? <WidePlayer /> : <MiniPlayer />}
             <NowPlayingScreen />
             <QueueScreen />
@@ -95,7 +99,8 @@ export default function TabLayout() {
 }
 
 // Content pane and the wide layout's right-hand Queue sidebar side by side. The sidebar renders
-// nothing on narrow layouts, leaving the pane as the whole screen.
+// nothing on narrow layouts, leaving the pane as the whole screen. Web only (the wide layout is web
+// only), so the native tree stays exactly AppTabs.
 const styles = StyleSheet.create({
   shell: { flex: 1, flexDirection: 'row' },
   pane: { flex: 1, minWidth: 0 },
