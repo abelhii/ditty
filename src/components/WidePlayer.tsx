@@ -1,4 +1,4 @@
-import { Share, StyleSheet, View, Pressable } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CoverArtSize, getCoverArtUrl } from '@/api/subsonic/endpoints/media';
@@ -8,7 +8,6 @@ import { FavouriteButton } from '@/components/FavouriteButton';
 import { PlayPauseButton, SkipButton } from '@/components/MiniPlayer';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { showNotice } from '@/components/use-notice-store';
 import { VolumeSlider } from '@/components/VolumeSlider';
 import {
   Radius,
@@ -20,6 +19,7 @@ import {
   WidePlayerWidth,
 } from '@/constants/theme';
 import { Scrubber } from '@/features/player/components/Scrubber';
+import { shareTrack } from '@/features/player/share-track';
 import { useQueueSidebarWidth } from '@/features/player/hooks/use-queue-sidebar-width';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
@@ -37,12 +37,6 @@ const REPEAT_LABEL: Record<RepeatMode, string> = {
   all: 'Repeat all',
   one: 'Repeat one',
 };
-
-/** What the Share button sends: the track's name and artist as plain text. No stream link, since
- *  that URL carries the user's credentials. */
-export function shareMessage(track: { title: string; artist: string }): string {
-  return `${track.title} by ${track.artist}`;
-}
 
 /**
  * The wide layout's floating player: an 820px pill docked at the bottom of the content pane (between
@@ -73,11 +67,7 @@ export function WidePlayer() {
     credentials &&
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.list);
 
-  const share = () => {
-    Share.share({ message: shareMessage(currentTrack) }).catch(() => {
-      showNotice("Sharing isn't available here.");
-    });
-  };
+  const share = () => shareTrack(currentTrack);
 
   return (
     <View style={[styles.container, { bottom: insets.bottom + WidePlayerOffset, right: queueSidebarWidth }]}>

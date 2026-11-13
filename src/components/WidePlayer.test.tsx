@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Share } from 'react-native';
 
 import type { Track } from '@/api/types';
-import { shareMessage, WidePlayer } from '@/components/WidePlayer';
+import { WidePlayer } from '@/components/WidePlayer';
+import { shareMessage } from '@/features/player/share-track';
 import * as PlaybackController from '@/player/PlaybackController';
 import { createQueueState } from '@/player/QueueManager';
 import { usePlaybackStatusStore } from '@/player/use-playback-status-store';

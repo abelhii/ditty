@@ -17,9 +17,11 @@ import { PlayerOverlay } from '@/features/player/components/PlayerOverlay';
 import { QueuePanel } from '@/features/player/components/QueuePanel';
 import { Scrubber } from '@/features/player/components/Scrubber';
 import { formatTrackAudioLabel } from '@/features/player/trackAudioLabel';
+import { shareTrack } from '@/features/player/share-track';
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import * as PlaybackController from '@/player/PlaybackController';
 import { getCurrentTrack, type RepeatMode } from '@/player/QueueManager';
+import { useNextTrack } from '@/player/hooks/use-next-track';
 import { useProgress } from '@/player/hooks/use-progress';
 import { playbackErrorMessage, usePlaybackStatusStore } from '@/player/use-playback-status-store';
 import { useAutoDjStore } from '@/player/use-auto-dj-store';
@@ -34,6 +36,7 @@ const QUEUE_PANEL_PALETTE = {
 };
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
+const UP_NEXT_ART_SIZE = 48;
 const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', one: 'off' };
 const REPEAT_LABEL: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
@@ -53,6 +56,9 @@ export function NowPlayingScreen() {
   const credentials = useAuthStore((state) => state.credentials);
 
   const currentTrack = usePlayerStore((state) => getCurrentTrack(state.queue));
+  const nextTrack = useNextTrack();
+  const queueLength = usePlayerStore((state) => state.queue.tracks.length);
+  const queueSource = usePlayerStore((state) => state.queue.source);
   const shuffle = usePlayerStore((state) => state.queue.shuffle);
   const repeat = usePlayerStore((state) => state.queue.repeat);
   const autoDj = useAutoDjStore((state) => state.enabled);
@@ -119,6 +125,10 @@ export function NowPlayingScreen() {
     credentials &&
     getCoverArtUrl(credentials.serverUrl, currentTrack.coverArtId, credentials, CoverArtSize.detail);
   const audioLabel = formatTrackAudioLabel(currentTrack);
+  const nextCoverArtUri =
+    credentials &&
+    nextTrack &&
+    getCoverArtUrl(credentials.serverUrl, nextTrack.coverArtId, credentials, CoverArtSize.list);
 
   return (
     <PlayerOverlay onRequestClose={dismiss}>
@@ -142,6 +152,11 @@ export function NowPlayingScreen() {
                 style={styles.chevron}>
                 <Icon name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={26} />
               </Pressable>
+              {queueSource ? (
+                <ThemedText type="small" numberOfLines={1} style={styles.playingFrom}>
+                  Playing from {queueSource}
+                </ThemedText>
+              ) : null}
             </View>
 
             {/* Scrolls when the content is taller than the viewport (e.g. a landscape phone), so
@@ -192,6 +207,20 @@ export function NowPlayingScreen() {
                       tintColor={PlayerSurface.text}
                     />
                   </Pressable>
+                  {!wide && (
+                    <Pressable
+                      hitSlop={10}
+                      accessibilityRole="button"
+                      accessibilityLabel="Share"
+                      onPress={() => shareTrack(currentTrack)}
+                      style={({ pressed }) => pressed && styles.pressed}>
+                      <SymbolView
+                        name={{ ios: 'square.and.arrow.up', android: 'share', web: 'share' }}
+                        size={32}
+                        tintColor={PlayerSurface.text}
+                      />
+                    </Pressable>
+                  )}
                 </View>
               </View>
 
@@ -249,15 +278,44 @@ export function NowPlayingScreen() {
                 onPress={() => PlaybackController.setAutoDj(!autoDj)}
               />
 
-              {!wide && (
+              {!wide && queueLength > 0 && (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Open Queue"
-                  style={({ pressed }) => [styles.queueButton, pressed && styles.pressed]}
+                  accessibilityLabel={
+                    nextTrack
+                      ? `Up next: ${nextTrack.title} by ${nextTrack.artist}, ${queueLength} in queue`
+                      : `Open Queue, nothing up next, ${queueLength} in queue`
+                  }
+                  accessibilityHint="Opens the Queue"
+                  style={({ pressed }) => [styles.upNext, pressed && styles.pressed]}
                   onPress={openQueue}>
-                  <ThemedText type="small" style={styles.textSecondary}>
-                    Queue
-                  </ThemedText>
+                  {nextTrack ? (
+                    <>
+                      <CoverArtImage uri={nextCoverArtUri || undefined} style={styles.upNextArt} iconSize={20} />
+                      <View style={styles.meta}>
+                        <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                          Up next · {queueLength} in queue
+                        </ThemedText>
+                        <ThemedText type="smallBold" numberOfLines={1} style={styles.title}>
+                          {nextTrack.title}
+                        </ThemedText>
+                        <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                          {nextTrack.artist}
+                        </ThemedText>
+                      </View>
+                    </>
+                  ) : (
+                    // Last Track (or repeat-one / a 1-Track Queue): keep the way into the Queue.
+                    <View style={styles.meta}>
+                      <ThemedText type="smallBold" numberOfLines={1} style={styles.title}>
+                        Queue · {queueLength} in queue
+                      </ThemedText>
+                      <ThemedText type="small" numberOfLines={1} style={styles.textSecondary}>
+                        Nothing up next
+                      </ThemedText>
+                    </View>
+                  )}
+                  <Icon name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }} />
                 </Pressable>
               )}
             </ScrollView>
@@ -418,11 +476,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: Colors.light.accent,
   },
-  queueButton: {
-    paddingVertical: Spacing.one,
-    paddingHorizontal: Spacing.three,
-    borderWidth: 1,
-    borderColor: PlayerSurface.trackBackground,
+  playingFrom: {
+    color: PlayerSurface.textSecondary,
+    // Clear of the absolutely-positioned chevron on both sides, so the text stays centred.
+    maxWidth: '100%',
+    paddingHorizontal: Spacing.six,
+  },
+  upNext: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    width: '100%',
+    padding: Spacing.two,
+    borderRadius: Radius.md,
+    backgroundColor: PlayerSurface.panel,
+  },
+  upNextArt: {
+    width: UP_NEXT_ART_SIZE,
+    height: UP_NEXT_ART_SIZE,
     borderRadius: Radius.pill,
   },
   pressed: {
