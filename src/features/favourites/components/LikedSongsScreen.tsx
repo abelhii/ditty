@@ -80,7 +80,7 @@ export function LikedSongsScreen() {
                       accessibilityLabel="Play Liked Songs"
                       accessibilityHint={canPlay ? undefined : 'Nothing in Liked Songs is downloaded'}
                       style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
-                      onPress={() => sorted.length > 0 && PlaybackController.play(sorted, 0)}>
+                      onPress={() => sorted.length > 0 && PlaybackController.play(sorted, 0, 'Liked Songs')}>
                       <ThemedView style={[styles.playButtonInner, { backgroundColor: theme.accent }]}>
                         <ThemedText type="smallBold" style={{ color: theme.onAccent }}>
                           Play
@@ -92,7 +92,7 @@ export function LikedSongsScreen() {
                       accessibilityLabel="Shuffle Liked Songs"
                       accessibilityHint={canPlay ? undefined : 'Nothing in Liked Songs is downloaded'}
                       style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
-                      onPress={() => sorted.length > 0 && PlaybackController.playShuffled(sorted)}>
+                      onPress={() => sorted.length > 0 && PlaybackController.playShuffled(sorted, 'Liked Songs')}>
                       <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
                         <ThemedText type="smallBold">Shuffle</ThemedText>
                       </ThemedView>
@@ -131,7 +131,7 @@ export function LikedSongsScreen() {
                 <TrackRow
                   track={item}
                   coverArtUri={coverUri(item.coverArtId, CoverArtSize.list)}
-                  onPress={() => PlaybackController.play(sorted, index)}
+                  onPress={() => PlaybackController.play(sorted, index, 'Liked Songs')}
                   onOverflowPress={() => setMenuTrack(item)}
                 />
               )}

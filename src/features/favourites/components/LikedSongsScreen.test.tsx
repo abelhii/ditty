@@ -81,7 +81,7 @@ describe('LikedSongsScreen', () => {
 
     await fireEvent.press(screen.getByText('Second'));
 
-    expect(PlaybackController.play).toHaveBeenCalledWith([third, first, second], 2);
+    expect(PlaybackController.play).toHaveBeenCalledWith([third, first, second], 2, 'Liked Songs');
     expect(PlaybackController.playNow).not.toHaveBeenCalled();
   });
 
@@ -90,7 +90,7 @@ describe('LikedSongsScreen', () => {
 
     await fireEvent.press(screen.getByLabelText('Play Liked Songs'));
 
-    expect(PlaybackController.play).toHaveBeenCalledWith([third, first, second], 0);
+    expect(PlaybackController.play).toHaveBeenCalledWith([third, first, second], 0, 'Liked Songs');
   });
 
   it('Play follows the chosen sort', async () => {
@@ -99,7 +99,7 @@ describe('LikedSongsScreen', () => {
     await fireEvent.press(screen.getByLabelText('Sort by Title A-Z'));
     await fireEvent.press(screen.getByLabelText('Play Liked Songs'));
 
-    expect(PlaybackController.play).toHaveBeenCalledWith([first, second, third], 0);
+    expect(PlaybackController.play).toHaveBeenCalledWith([first, second, third], 0, 'Liked Songs');
   });
 
   it('Shuffle plays the whole list shuffled', async () => {
@@ -107,7 +107,7 @@ describe('LikedSongsScreen', () => {
 
     await fireEvent.press(screen.getByLabelText('Shuffle Liked Songs'));
 
-    expect(PlaybackController.playShuffled).toHaveBeenCalledWith([third, first, second]);
+    expect(PlaybackController.playShuffled).toHaveBeenCalledWith([third, first, second], 'Liked Songs');
   });
 
   it('hints that nothing is downloaded when offline with no playable tracks, but stays tappable', async () => {
