@@ -14,6 +14,13 @@ jest.mock('@/api/kv-storage', () => ({ getItem: () => null, setItem: () => {}, r
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ back: mockBack }) }));
 
+const mockPlay = jest.fn();
+const mockPlayShuffled = jest.fn();
+jest.mock('@/player/PlaybackController', () => ({
+  play: (...args: unknown[]) => mockPlay(...args),
+  playShuffled: (...args: unknown[]) => mockPlayShuffled(...args),
+}));
+
 const mockDelete = jest.fn();
 const mockRemove = jest.fn();
 jest.mock('@/features/playlists/hooks/use-delete-playlist', () => ({
@@ -32,7 +39,7 @@ jest.mock('@/features/playlists/hooks/use-playlist', () => ({
     error: null,
     refetch: () => {},
     data: {
-      playlist: { id: 'p1', name: 'Road trip', songCount: 2, duration: 600, isPublic: false, coverArtId: undefined },
+      playlist: { id: 'p1', name: 'Road trip', owner: 'Jane Doe', songCount: 2, duration: 600, isPublic: false, coverArtId: undefined },
       tracks: [
         { id: 't1', title: 'First' },
         { id: 't2', title: 'Second' },
@@ -142,5 +149,26 @@ describe('PlaylistDetailScreen destructive actions', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Remove' }));
 
     expect(mockRemove).toHaveBeenCalledWith({ playlistId: 'p1', index: 1 });
+  });
+});
+
+describe('PlaylistDetailScreen header', () => {
+  it('shows the owner in the subtitle', async () => {
+    await render(<PlaylistDetailScreen playlistId="p1" />);
+
+    expect(screen.getByText(/Jane Doe · 2 songs/)).toBeTruthy();
+  });
+
+  it('Shuffle plays the whole Playlist shuffled; Play starts it in order', async () => {
+    await render(<PlaylistDetailScreen playlistId="p1" />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Shuffle Playlist' }));
+    expect(mockPlayShuffled).toHaveBeenCalledWith([
+      { id: 't1', title: 'First' },
+      { id: 't2', title: 'Second' },
+    ]);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Play Playlist' }));
+    expect(mockPlay).toHaveBeenCalledWith(expect.any(Array), 0);
   });
 });

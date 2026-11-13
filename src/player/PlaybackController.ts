@@ -48,6 +48,21 @@ export function play(tracks: Track[], startIndex = 0): void {
   usePlayerStore.setState({ queue, desiredPlaying: tracks.length > 0 });
 }
 
+/** Replaces the Queue with `tracks`, turns shuffle on and starts from a random Track — the whole
+ *  collection is queued, the rest follow in shuffled order. In Offline mode the start is drawn only
+ *  from downloaded Tracks; if there are none, `play` leaves the Queue untouched and shows its Notice.
+ *  An empty list does nothing. `random` is injectable for tests. */
+export function playShuffled(tracks: Track[], random: () => number = Math.random): void {
+  if (tracks.length === 0) return;
+  const playable = tracks.flatMap((track, index) => (isPlayableNow(track) ? [index] : []));
+  if (playable.length === 0) {
+    play(tracks, 0);
+    return;
+  }
+  play(tracks, playable[Math.floor(random() * playable.length)]);
+  usePlayerStore.setState({ queue: QueueManager.setShuffle(currentQueue(), true, random) });
+}
+
 /**
  * Plays `track` now *without destroying an existing queue* — search's exploratory song tap, as
  * opposed to album detail's queue-replacing `play`.

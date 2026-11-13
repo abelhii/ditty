@@ -17,6 +17,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { DownloadCollectionButton } from '@/features/downloads/components/DownloadCollectionButton';
 import { useHasPlayableTracks } from '@/features/downloads/hooks/use-has-playable-tracks';
 import { useAlbum } from '@/features/library/hooks/use-album';
+import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
 import { useListBottomInset } from '@/hooks/use-list-bottom-inset';
 
@@ -29,6 +30,7 @@ type AlbumDetailScreenProps = {
  *  entry points. */
 export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
   const router = useRouter();
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
   const listBottomInset = useListBottomInset();
   const credentials = useAuthStore((state) => state.credentials);
@@ -79,8 +81,18 @@ export function AlbumDetailScreen({ albumId }: AlbumDetailScreenProps) {
                           accessibilityHint={canPlay ? undefined : "Nothing in this album is downloaded"}
                           style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
                           onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
+                          <ThemedView style={[styles.playButtonInner, { backgroundColor: theme.accent }]}>
+                            <ThemedText type="smallBold" style={{ color: theme.onAccent }}>Play</ThemedText>
+                          </ThemedView>
+                        </Pressable>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel="Shuffle album"
+                          accessibilityHint={canPlay ? undefined : "Nothing in this album is downloaded"}
+                          style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
+                          onPress={() => tracks.length > 0 && PlaybackController.playShuffled(tracks)}>
                           <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
-                            <ThemedText type="smallBold">Play</ThemedText>
+                            <ThemedText type="smallBold">Shuffle</ThemedText>
                           </ThemedView>
                         </Pressable>
                         <FavouriteButton target={{ kind: 'album', item: album }} size={26} />
@@ -147,7 +159,7 @@ const styles = StyleSheet.create({
   },
   playButtonInner: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.six,
+    paddingHorizontal: Spacing.four,
     borderRadius: Spacing.five,
   },
 });

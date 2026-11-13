@@ -81,6 +81,7 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                       {playlist.name}
                     </ThemedText>
                     <ThemedText type="small" themeColor="textSecondary">
+                      {playlist.owner ? `${playlist.owner} · ` : ''}
                       {playlist.songCount} {playlist.songCount === 1 ? 'song' : 'songs'} ·{' '}
                       {formatTotalDuration(playlist.duration)}
                       {playlist.isPublic ? ' · Public' : ''}
@@ -92,8 +93,18 @@ export function PlaylistDetailScreen({ playlistId }: PlaylistDetailScreenProps) 
                         accessibilityHint={canPlay ? undefined : 'Nothing in this Playlist is downloaded'}
                         style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
                         onPress={() => tracks.length > 0 && PlaybackController.play(tracks, 0)}>
+                        <ThemedView style={[styles.playButtonInner, { backgroundColor: theme.accent }]}>
+                          <ThemedText type="smallBold" style={{ color: theme.onAccent }}>Play</ThemedText>
+                        </ThemedView>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Shuffle Playlist"
+                        accessibilityHint={canPlay ? undefined : 'Nothing in this Playlist is downloaded'}
+                        style={({ pressed }) => [pressed && styles.pressed, !canPlay && styles.unavailable]}
+                        onPress={() => tracks.length > 0 && PlaybackController.playShuffled(tracks)}>
                         <ThemedView type="backgroundSelected" style={styles.playButtonInner}>
-                          <ThemedText type="smallBold">Play</ThemedText>
+                          <ThemedText type="smallBold">Shuffle</ThemedText>
                         </ThemedView>
                       </Pressable>
                       <DownloadCollectionButton kind="playlist" collectionId={playlist.id} tracks={tracks} />
@@ -280,7 +291,7 @@ const styles = StyleSheet.create({
   },
   playButtonInner: {
     paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.six,
+    paddingHorizontal: Spacing.four,
     borderRadius: Spacing.five,
   },
   emptyList: {
