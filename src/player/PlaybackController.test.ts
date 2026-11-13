@@ -279,3 +279,47 @@ describe('removeFromQueue', () => {
     expect(showNotice).not.toHaveBeenCalled();
   });
 });
+
+describe('playShuffled', () => {
+  const tracks = ['a', 'b', 'c', 'd'].map((id) => track(id));
+
+  it('queues the whole collection, shuffle on, starting from the randomly picked Track', () => {
+    PlaybackController.playShuffled(tracks, () => 0.5); // 0.5 * 4 -> index 2
+
+    const { queue, desiredPlaying } = usePlayerStore.getState();
+    expect(queue.shuffle).toBe(true);
+    expect(queue.tracks[queue.currentIndex].id).toBe('c');
+    expect(queue.tracks.map((t) => t.id).sort()).toEqual(['a', 'b', 'c', 'd']);
+    expect(queue.originalOrder.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(desiredPlaying).toBe(true);
+  });
+
+  it('does nothing for an empty list', () => {
+    PlaybackController.play([track('x')]);
+    PlaybackController.playShuffled([]);
+
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['x']);
+  });
+
+  it('offline: starts only from a downloaded Track but still queues everything', () => {
+    useOfflineStore.setState({ manual: true });
+    useDownloadsStore.setState({ downloadedIds: { b: true } });
+
+    PlaybackController.playShuffled(tracks, () => 0.99);
+
+    const { queue } = usePlayerStore.getState();
+    expect(queue.tracks[queue.currentIndex].id).toBe('b');
+    expect(queue.tracks).toHaveLength(4);
+    expect(queue.shuffle).toBe(true);
+  });
+
+  it('offline with nothing downloaded: leaves the Queue alone and shows a Notice', () => {
+    PlaybackController.play([track('x')]);
+    useOfflineStore.setState({ manual: true });
+
+    PlaybackController.playShuffled(tracks);
+
+    expect(usePlayerStore.getState().queue.tracks.map((t) => t.id)).toEqual(['x']);
+    expect(showNotice).toHaveBeenCalledTimes(1);
+  });
+});
