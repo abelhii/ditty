@@ -110,13 +110,13 @@ export function NowPlayingScreen() {
     [translateY, dismiss, atTop],
   );
 
-  // Android back closes the Queue if it is open on top, otherwise the player.
+  // Android back closes the top overlay (Lyrics renders above the Queue), otherwise the player.
   useEffect(() => {
     if (!nowPlayingOpen) return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
       const ui = usePlayerUiStore.getState();
-      if (ui.queueOpen) ui.closeQueue();
-      else if (ui.lyricsOpen) ui.closeLyrics();
+      if (ui.lyricsOpen) ui.closeLyrics();
+      else if (ui.queueOpen) ui.closeQueue();
       else dismiss();
       return true;
     });
