@@ -187,7 +187,8 @@ export default function SettingsScreen() {
       />
       <ThemedText type="small" themeColor="textSecondary">
         Original streams the file untouched. Other settings have the server convert to MP3 (High
-        320 kbps, Normal 192, Low 96) to save data. Downloaded tracks always play as downloaded.
+        320 kbps, Normal 192, Low 96) to save data. A change applies from the next Track that
+        loads; the current Track keeps playing as it is. Downloaded tracks always play as downloaded.
       </ThemedText>
     </ThemedView>
   );
