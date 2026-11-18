@@ -14,8 +14,8 @@ export function syncOverlayBackHistory(): () => void {
 
   const depth = () => {
     const ui = usePlayerUiStore.getState();
-    if (!ui.nowPlayingOpen) return 0;
-    return 1 + (ui.queueOpen ? 1 : 0) + (ui.lyricsOpen ? 1 : 0);
+    // Queue can be open without the full player (MiniPlayer's queue button), so count each alone.
+    return (ui.nowPlayingOpen ? 1 : 0) + (ui.queueOpen ? 1 : 0) + (ui.lyricsOpen ? 1 : 0);
   };
 
   const sync = () => {
