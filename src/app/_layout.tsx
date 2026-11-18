@@ -28,6 +28,7 @@ import { useThemePreferenceStore } from '@/hooks/use-theme-preference-store';
 import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
 import { ScrobbleReporter } from '@/player/ScrobbleReporter';
+import { syncOverlayBackHistory } from '@/utils/overlay-back-history';
 import { registerServiceWorker } from '@/utils/register-service-worker';
 import { syncWebThemeChrome } from '@/utils/sync-web-theme-chrome';
 
@@ -58,6 +59,8 @@ export default function TabLayout() {
   useEffect(() => startOfflineWatcher(), []);
 
   useEffect(() => registerServiceWorker(), []);
+
+  useEffect(() => syncOverlayBackHistory(), []);
 
   useEffect(() => {
     hydrateDownloads();
