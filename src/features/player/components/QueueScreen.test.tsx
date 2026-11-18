@@ -77,6 +77,19 @@ describe('QueueScreen controls', () => {
     expect(screen.getByRole('button', { name: 'Close Queue' })).toBeTruthy();
   });
 
+  it('toggles shuffle and cycles repeat from the Queue', async () => {
+    await render(<QueueScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Shuffle' }));
+    expect(usePlayerStore.getState().queue.shuffle).toBe(true);
+    expect(screen.getByRole('button', { name: 'Shuffle', selected: true })).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Repeat off' }));
+    expect(usePlayerStore.getState().queue.repeat).toBe('all');
+    await fireEvent.press(screen.getByRole('button', { name: 'Repeat all' }));
+    expect(usePlayerStore.getState().queue.repeat).toBe('one');
+  });
+
   it('labels each drag handle with its track', async () => {
     await render(<QueueScreen />);
 
