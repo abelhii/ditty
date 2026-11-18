@@ -28,6 +28,7 @@ import { useThemePreferenceStore } from '@/hooks/use-theme-preference-store';
 import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
 import { ScrobbleReporter } from '@/player/ScrobbleReporter';
+import { registerServiceWorker } from '@/utils/register-service-worker';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -50,6 +51,8 @@ export default function TabLayout() {
   }, [hydrate]);
 
   useEffect(() => startOfflineWatcher(), []);
+
+  useEffect(() => registerServiceWorker(), []);
 
   useEffect(() => {
     hydrateDownloads();
