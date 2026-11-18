@@ -170,6 +170,14 @@ describe('NowPlayingScreen', () => {
     expect(screen.queryByRole('button', { name: 'Play' })).toBeNull();
   });
 
+  it('has a Queue button in the header that opens the Queue', async () => {
+    usePlayerStore.getState().setQueue(createQueueState([track('a'), track('b')]));
+    await render(<NowPlayingScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Open Queue, 2 Tracks' }));
+    expect(usePlayerUiStore.getState().queueOpen).toBe(true);
+  });
+
   it('exposes the shuffle and repeat state', async () => {
     await render(<NowPlayingScreen />);
 

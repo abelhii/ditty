@@ -16,12 +16,15 @@ import { dropTarget, layoutQueueItems, shiftFor, type QueueRowSection } from '@/
 import { useIsWideLayout } from '@/hooks/use-is-wide-layout';
 import { useTheme } from '@/hooks/use-theme';
 import * as PlaybackController from '@/player/PlaybackController';
+import type { RepeatMode } from '@/player/QueueManager';
 import { usePlayerStore } from '@/player/use-player-store';
 import { usePlayerUiStore } from '@/player/use-player-ui-store';
 
 const ROW_HEIGHT = 64;
 const HEADING_HEIGHT = 40;
 const REMOVE_THRESHOLD = 80;
+const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: 'all', all: 'one', one: 'off' };
+const REPEAT_LABEL: Record<RepeatMode, string> = { off: 'Repeat off', all: 'Repeat all', one: 'Repeat one' };
 
 /**
  * The full queue as a JS overlay stacked above the now-playing screen. Already-played tracks are
@@ -63,10 +66,53 @@ export function QueueScreen() {
             </View>
           </View>
 
+          <QueueModeControls />
           <QueueList />
         </View>
       </ThemedView>
     </PlayerOverlay>
+  );
+}
+
+/** Shuffle and repeat toggles, so playback order can be changed while looking at the Queue. */
+function QueueModeControls() {
+  const theme = useTheme();
+  const shuffle = usePlayerStore((state) => state.queue.shuffle);
+  const repeat = usePlayerStore((state) => state.queue.repeat);
+
+  return (
+    <View style={styles.modes}>
+      <Pressable
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Shuffle"
+        accessibilityState={{ selected: shuffle }}
+        style={({ pressed }) => [styles.modeButton, pressed && styles.pressed]}
+        onPress={() => PlaybackController.setShuffle(!shuffle)}>
+        <SymbolView
+          name={{ ios: 'shuffle', android: 'shuffle', web: 'shuffle' }}
+          size={22}
+          tintColor={shuffle ? theme.accent : theme.textSecondary}
+        />
+      </Pressable>
+      <Pressable
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={REPEAT_LABEL[repeat]}
+        accessibilityState={{ selected: repeat !== 'off' }}
+        style={({ pressed }) => [styles.modeButton, pressed && styles.pressed]}
+        onPress={() => PlaybackController.setRepeat(NEXT_REPEAT[repeat])}>
+        <SymbolView
+          name={
+            repeat === 'one'
+              ? { ios: 'repeat.1', android: 'repeat_one', web: 'repeat_one' }
+              : { ios: 'repeat', android: 'repeat', web: 'repeat' }
+          }
+          size={22}
+          tintColor={repeat !== 'off' ? theme.accent : theme.textSecondary}
+        />
+      </Pressable>
+    </View>
   );
 }
 
@@ -438,6 +484,18 @@ const styles = StyleSheet.create({
   },
   headerEnd: {
     alignItems: 'flex-end',
+  },
+  modes: {
+    flexDirection: 'row',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.one,
+  },
+  modeButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heading: {
     position: 'absolute',

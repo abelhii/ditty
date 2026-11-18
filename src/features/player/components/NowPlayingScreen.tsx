@@ -156,6 +156,16 @@ export function NowPlayingScreen() {
                 style={styles.chevron}>
                 <Icon name={{ ios: 'chevron.down', android: 'expand_more', web: 'expand_more' }} size={26} />
               </Pressable>
+              {!wide && queueLength > 0 && (
+                <Pressable
+                  hitSlop={12}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open Queue, ${queueLength} ${queueLength === 1 ? 'Track' : 'Tracks'}`}
+                  onPress={openQueue}
+                  style={styles.queueButton}>
+                  <Icon name={{ ios: 'list.bullet', android: 'queue_music', web: 'queue_music' }} size={26} />
+                </Pressable>
+              )}
               {queueSource ? (
                 <ThemedText type="small" numberOfLines={1} style={styles.playingFrom}>
                   Playing from {queueSource}
@@ -434,6 +444,11 @@ const styles = StyleSheet.create({
   chevron: {
     position: 'absolute',
     left: Spacing.four,
+    top: Spacing.one,
+  },
+  queueButton: {
+    position: 'absolute',
+    right: Spacing.four,
     top: Spacing.one,
   },
   scroll: {
