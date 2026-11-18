@@ -29,6 +29,7 @@ import { AudioEngine } from '@/player/AudioEngine';
 import { NotificationBridge } from '@/player/NotificationBridge';
 import { ScrobbleReporter } from '@/player/ScrobbleReporter';
 import { registerServiceWorker } from '@/utils/register-service-worker';
+import { syncWebThemeChrome } from '@/utils/sync-web-theme-chrome';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,6 +46,10 @@ export default function TabLayout() {
   useEffect(() => {
     if (Platform.OS !== 'web') Appearance.setColorScheme(themePreference === 'system' ? 'unspecified' : themePreference);
   }, [themePreference]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') syncWebThemeChrome(colorScheme === 'dark' ? 'dark' : 'light');
+  }, [colorScheme]);
 
   useEffect(() => {
     hydrate();
